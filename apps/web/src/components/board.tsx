@@ -1,6 +1,6 @@
 "use client";
 
-import type { TicketIndex, TicketIndexEntry, TicketState } from "@ticket-app/core";
+import type { TicketIndex, TicketIndexEntry, TicketState } from "@/lib/types";
 import { useEffect, useMemo, useState } from "react";
 import TicketDetailModal from "@/components/ticket-detail-modal";
 import { BOARD_LABELS, BOARD_STATES, PRIORITY_STYLES, groupTicketsForBoard } from "@/lib/utils";

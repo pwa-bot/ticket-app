@@ -48,9 +48,6 @@ importers:
 
   apps/web:
     dependencies:
-      '@ticket-app/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
