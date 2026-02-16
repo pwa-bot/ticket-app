@@ -294,24 +294,158 @@ Everything in Team, plus:
 ## Dashboard Page (`/dashboard`)
 
 ### Hero
-**H1:** A fast, read-only view over your repo tickets
+**H1:** A dashboard that reads straight from Git
+**Subhead:** Ticket's dashboard is a fast view over `.tickets/index.json` and your ticket files. No separate source of truth. No syncing your backlog into a SaaS.
 
-### Sections
-1. What it is: Board + list views, filters, PR linking
-2. How it reads: Fetches `.tickets/index.json`, loads tickets on demand
-3. PR linking: Branch and title conventions
-4. Multi-repo (paid): See tickets across repos, saved views
-5. Security: GitHub OAuth, minimal permissions, no write access in v1
+**Primary CTA:** Connect GitHub
+**Secondary CTA:** Read the docs
+**Small line:** Read-only in v1. Edit via CLI and git.
+
+### Section: How it works
+**Headline:** Repo-native by design
+
+**Body:** The dashboard loads one file, then fetches individual tickets only when you open them.
+
+**Steps:**
+1. CLI generates `.tickets/index.json` on every change
+2. Dashboard reads `index.json` for board and list views
+3. Clicking a ticket loads the Markdown file and renders it
+4. PRs link automatically by branch and title convention
+
+### Section: Views
+**Headline:** Fast views for scanning and triage
+
+**Cards:**
+- **Board view:** Columns = workflow states
+- **List view:** Filter by state, priority, label, repo
+- **Ticket detail:** Rendered Markdown plus linked PRs
+
+**Note:** No editing in the web UI in v1. That keeps the protocol clean and agent-friendly.
+
+### Section: PR linking
+**Headline:** PRs connect themselves
+
+**Body:** If your branch and PR title follow the convention, Ticket links them automatically.
+
+Branch: `tk-{short_id}-{slug}`
+PR title: `[TK-{short_id}] {title}`
+
+**Result:** Ticket detail shows linked PRs and current status.
+
+### Section: Multi-repo portfolio (teaser)
+**Headline:** See all work across repos
+**Body:** On Pro and Team, you can view tickets across multiple repos in one place, with saved filters and views.
+**Note:** Your tickets still live in each repo.
+
+### FAQ
+- **Q:** Does Ticket store my tickets? **A:** No. Tickets live in your repo. The dashboard reads and renders them.
+- **Q:** What permissions does the dashboard need? **A:** Read access to selected repos only. It does not write to your repo in v1.
+- **Q:** How does it stay up to date? **A:** MVP supports manual refresh. Paid plans can enable webhooks for instant refresh.
+
+### Footer CTA
+**Headline:** Get a clean portfolio view without leaving Git.
+Buttons: Connect GitHub, View pricing
 
 ---
 
 ## Security Page (`/security`)
 
-- OAuth token storage encrypted
-- Webhook signature verification (if used)
-- Least-privilege approach
-- Read-only dashboard in v1
-- No ticket data stored as canonical in SaaS
+### Hero
+**H1:** Security by design
+**Subhead:** Ticket keeps your backlog in Git. The hosted dashboard is an optional overlay and does not become your source of truth.
+
+### Section: Data ownership
+**Headline:** Your tickets live in your repo
+
+- Ticket files live under `.tickets/` in your repository
+- Git history is the audit log
+- The dashboard renders what's already in Git
+
+### Section: OAuth token handling
+**Headline:** GitHub OAuth tokens are protected
+
+- Tokens are stored server-side only
+- Tokens are encrypted at rest
+- Tokens are never logged
+- We request the minimum access needed for selected repos
+
+**If access is revoked or expired:** We stop indexing and prompt you to reconnect.
+
+### Section: Read-only in v1
+**Headline:** No write access required
+
+In v1, the dashboard is read-only:
+- It does not edit ticket files
+- It does not merge PRs
+- It does not modify your repo
+
+This reduces risk and keeps Git canonical.
+
+### Section: Webhooks (when enabled)
+**Headline:** Verified, signed, and replay-safe
+
+When webhooks are enabled:
+- Webhook signatures are verified
+- Deliveries are deduplicated by delivery ID
+- Replay attempts are rejected
+
+### Section: Repo selection
+**Headline:** Least privilege repo indexing
+
+- Only repos you explicitly select are indexed
+- We respect GitHub permissions
+- If access changes, indexing stops for that repo
+
+### Section: Responsible defaults
+**Headline:** Built for agent-heavy workflows
+
+- The CLI provides strict validation for safe automation
+- `--ci` mode disables interactive and fuzzy behavior
+- Git hooks prevent malformed tickets from landing
+
+### Footer CTA
+**Headline:** Keep your workflow in Git. Add an overlay when you want it.
+Buttons: Read the docs, Connect GitHub
+
+---
+
+## Docs Landing Page (`/docs`)
+
+### Hero
+**H1:** Docs
+**Subhead:** Everything you need to adopt the Ticket protocol, run it with agents, and optionally use the dashboard.
+
+### Quick links (cards)
+
+1. **Getting started**
+   - Install CLI
+   - `ticket init`
+   - Create your first ticket
+
+2. **Ticket format**
+   - YAML frontmatter rules
+   - Required fields
+   - Template conventions
+
+3. **Workflow**
+   - States and transitions
+   - Terminal state behavior
+
+4. **index.json**
+   - Why it exists
+   - How it's generated
+   - Rebuild and recovery
+
+5. **CLI reference**
+   - Commands
+   - `--ci` mode for agents
+   - Exit codes
+
+6. **PR linking**
+   - Branch and PR title conventions
+   - Auto-link behavior
+
+**Footer note:** Tickets live in your repo. If you stop using the dashboard, nothing breaks.
 
 ---
 
