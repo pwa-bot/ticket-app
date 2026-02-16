@@ -91,6 +91,19 @@ Any extra context, links, screenshots.
 | Field | Type | Rules |
 |-------|------|-------|
 | `labels` | array | Lowercase strings. Always include as `labels: []` if empty. |
+| `assignee` | string | Actor responsible for implementation. Format: `human:<slug>` or `agent:<slug>`. |
+| `reviewer` | string | Actor responsible for PR review. Format: `human:<slug>` or `agent:<slug>`. |
+| `author` | string | Actor who created the ticket. Format: `human:<slug>` or `agent:<slug>`. Can be derived from git blame. |
+
+### 3.4.1 Actor Format
+
+Actors follow the convention `<type>:<slug>`:
+- `human:morgan` — a person
+- `human:mathieu` — another person
+- `agent:openclaw` — an AI agent
+- `agent:codex` — another AI agent
+
+In v1, these are opaque strings. The CLI treats them as labels. Web can filter on them. Later versions may map to GitHub usernames or team memberships.
 
 ### 3.5 Derived Fields (Not Stored)
 
@@ -182,6 +195,51 @@ linking:
 | `id` | Full ULID (26 chars) | `01ARZ3NDEKTSV4RRFFQ69G5FAV` |
 | `short_id` | First 8 chars of ULID | `01ARZ3ND` |
 | `display_id` | `{id_prefix}-{short_id}` | `TK-01ARZ3ND` |
+
+### `.tickets/policy.yml` (Optional)
+
+Merge and approval policy. Separate from config to keep core format clean. Policy is optional — without it, agent uses sensible defaults (require human review for p0/p1).
+
+```yaml
+version: 1
+
+merge_policy:
+  default: review_required
+
+  rules:
+    - match:
+        priority: [p3]
+        labels_any: [polish, chore]
+      policy: auto_merge_on_green
+
+    - match:
+        priority: [p0, p1]
+      policy: require_approvals
+      approvers: [human:morgan, human:mathieu]
+
+approvers:
+  human:morgan:
+    can_approve: [p0, p1, p2, p3]
+  human:mathieu:
+    can_approve: [p0, p1, p2, p3]
+  agent:openclaw:
+    can_approve: [p3]  # Only low-risk tickets
+```
+
+### Merge Policies
+
+| Policy | Behavior |
+|--------|----------|
+| `auto_merge_on_green` | Agent merges (or enables GitHub auto-merge) when CI passes |
+| `review_required` | Requires at least one approval before merge |
+| `require_approvals` | Requires approval from specific actors in `approvers` list |
+
+### Policy Enforcement
+
+- **v1**: Policy is advisory. Agent respects it behaviorally.
+- **v1.1+**: GitHub check validates policy before allowing merge.
+
+Enforcement uses GitHub primitives (branch protection, CODEOWNERS, required reviews) — ticket.app does not reinvent these.
 
 ---
 
@@ -298,7 +356,10 @@ In `--ci` mode:
 | `ticket start <id>` | Shortcut for `move <id> in_progress` |
 | `ticket done <id>` | Shortcut for `move <id> done` |
 | `ticket edit <id>` | Open in $EDITOR, validate on save, regenerate index, auto-commit |
+| `ticket assign <id> <actor>` | Set assignee (e.g., `human:morgan`, `agent:openclaw`) |
+| `ticket reviewer <id> <actor>` | Set reviewer for PR |
 | `ticket validate [<id>] [--all] [--fix-index]` | Validate tickets, optionally regenerate index |
+| `ticket policy [validate]` | Show or validate policy.yml (advisory) |
 | `ticket rebuild-index` | Scan all tickets, regenerate index.json |
 | `ticket branch <id>` | Print branch name, copy to clipboard if available |
 | `ticket install-hooks` | Install git hooks |
@@ -527,6 +588,32 @@ Agent-safe usage:
 
 Optional skill wrapper:
 - `ticket` skill calls CLI actions and pushes commits
+
+### PR Comment Commands
+
+Agents monitor PR comments for mentions. Deterministic command grammar:
+
+| Command | Action |
+|---------|--------|
+| `@openclaw fix lint` | Fix linting errors, push commit |
+| `@openclaw implement requested changes` | Address review feedback |
+| `@openclaw rebase and update` | Rebase on main, resolve conflicts |
+| `@openclaw merge when green` | Enable auto-merge or merge when CI passes |
+
+Agent always replies with:
+1. What action it will take
+2. Link to commit(s) pushed
+3. What is still pending (tests, review)
+
+### Agent Policy Behavior
+
+Agent reads `.tickets/policy.yml` to determine behavior:
+
+- **auto_merge_on_green**: Agent merges or enables GitHub auto-merge when CI passes
+- **review_required**: Agent waits for human approval, pings reviewer if stale
+- **require_approvals**: Agent waits for specific approvers, does not bypass
+
+Policy is advisory in v1. GitHub branch protection provides hard enforcement.
 
 ---
 
