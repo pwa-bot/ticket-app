@@ -8,6 +8,10 @@ import { runShow } from "./commands/show.js";
 import { runDone, runMove, runStart } from "./commands/move.js";
 import { runAssign, runReviewer } from "./commands/actor.js";
 import { runRebuildIndex } from "./commands/rebuild-index.js";
+import { runEdit } from "./commands/edit.js";
+import { runBranch } from "./commands/branch.js";
+import { runValidate } from "./commands/validate.js";
+import { runInstallHooks } from "./commands/install-hooks.js";
 
 async function main(): Promise<void> {
   const program = new Command();
@@ -103,6 +107,44 @@ async function main(): Promise<void> {
     });
 
   program
+    .command("edit")
+    .description("Edit ticket metadata")
+    .argument("<id>", "Ticket id (ULID or short id)")
+    .option("--title <title>", "Replace ticket title")
+    .option("--priority <priority>", "Change priority (p0-p3)")
+    .option("--labels <labels>", "Label update or replacement", collectEditLabels, [])
+    .option("--ci", "Enable CI mode (exact id matching only)")
+    .action(async (id: string, options: { title?: string; priority?: string; labels?: string[]; ci?: boolean }) => {
+      await runEdit(process.cwd(), id, options);
+    });
+
+  program
+    .command("branch")
+    .description("Create or checkout a branch for a ticket")
+    .argument("<id>", "Ticket id (ULID or short id)")
+    .option("--ci", "Print branch name only; do not switch branches")
+    .action(async (id: string, options: { ci?: boolean }) => {
+      await runBranch(process.cwd(), id, options);
+    });
+
+  program
+    .command("validate")
+    .description("Validate tickets and index")
+    .option("--fix", "Auto-fix supported issues")
+    .option("--ci", "CI mode")
+    .action(async (options: { fix?: boolean; ci?: boolean }) => {
+      await runValidate(process.cwd(), options);
+    });
+
+  program
+    .command("install-hooks")
+    .description("Install git hooks for automatic validation")
+    .option("--force", "Overwrite existing hooks without prompting")
+    .action(async (options: { force?: boolean }) => {
+      await runInstallHooks(process.cwd(), options);
+    });
+
+  program
     .command("rebuild-index")
     .description("Force regenerate index.json from all ticket files")
     .action(async () => {
@@ -113,6 +155,10 @@ async function main(): Promise<void> {
 }
 
 function collectLabel(value: string, previous: string[]): string[] {
+  return [...previous, value];
+}
+
+function collectEditLabels(value: string, previous: string[]): string[] {
   return [...previous, value];
 }
 
