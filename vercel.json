@@ -1,7 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "pnpm install",
+  "installCommand": "corepack enable && pnpm install",
   "buildCommand": "pnpm turbo build --filter=@ticket-app/web",
-  "outputDirectory": "apps/web/.next",
-  "framework": "nextjs"
+  "outputDirectory": "apps/web/.next"
 }
