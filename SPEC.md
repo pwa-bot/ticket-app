@@ -425,7 +425,59 @@ Approval philosophy:
 
 ---
 
-## 14. MVP Scope
+## 14. Security (v1)
+
+### 14.1 GitHub OAuth token handling
+
+- Use GitHub OAuth for user sign-in and repo access.
+- Store OAuth access tokens server-side only.
+- Tokens must be stored **encrypted at rest**:
+  - Use a managed KMS if available (preferred), or
+  - Use envelope encryption (AES-256-GCM with per-record nonce) with an app-level master key.
+- Never log tokens.
+- Only request minimum scopes needed:
+  - MVP read-only dashboard: `repo:read` equivalent permissions (exact scopes depend on GitHub OAuth app settings).
+- Support token revocation:
+  - If GitHub returns 401, mark token invalid and prompt reconnect.
+
+### 14.2 Webhook verification (v1.1)
+
+If using webhooks (not required for MVP), verify all deliveries:
+
+- Verify GitHub webhook signature (HMAC) using the webhook secret.
+- Reject requests with:
+  - Missing signature headers
+  - Invalid signature
+- Implement replay protection:
+  - Store recent delivery IDs (or event IDs) for 24 hours in a dedupe store.
+  - If a delivery ID repeats, ignore it.
+  - Apply a timestamp tolerance if GitHub provides a timestamp header (if not, delivery ID dedupe is sufficient).
+
+### 14.3 Least privilege and repo selection
+
+- Web app must only index repositories explicitly selected by the authenticated user/org.
+- Do not index all accessible repos by default.
+- Store a per-org allowlist of repo IDs.
+- If repo permissions change (removed access), remove it from index and show "access lost" in UI.
+
+### 14.4 Data safety boundaries
+
+- The web app is read-only in v1:
+  - No ticket mutations via web.
+  - No write operations to GitHub aside from optional webhook installation in v1.1 via GitHub App.
+- Any future write features must be implemented via PRs or GitHub checks rather than direct file mutations.
+
+### 14.5 Rate limiting
+
+- Apply IP-based rate limiting on OAuth and webhook endpoints.
+- Suggested limits:
+  - OAuth endpoints: 10 requests/minute per IP
+  - Webhook endpoints: 100 requests/minute per IP
+- Use standard 429 responses with Retry-After header.
+
+---
+
+## 15. MVP Scope
 
 ### CLI (Week 1)
 
@@ -458,7 +510,7 @@ Approval philosophy:
 
 ---
 
-## 15. Agent Usage (OpenClaw)
+## 16. Agent Usage (OpenClaw)
 
 Instructions for any OpenClaw instance:
 
