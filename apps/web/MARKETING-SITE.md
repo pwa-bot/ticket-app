@@ -1,5 +1,12 @@
 # Marketing Site Spec for ticket.app
 
+## Branch
+
+**Work on `marketing-site` branch.** Do not merge to main.
+Vercel will auto-deploy a preview URL for this branch.
+
+---
+
 ## Positioning
 
 **Do NOT lead with OpenClaw.** Lead with the broader value prop.
