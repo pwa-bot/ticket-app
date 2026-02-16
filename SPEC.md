@@ -130,14 +130,31 @@ In v1, these are opaque strings. The CLI treats them as labels. Web can filter o
 
 ```yaml
 x_ticket:
-  assignee: agent:openclaw
+  source:
+    kind: intake
+    id: in_01J...
   relations:
+    blocks: []
     blocked_by: []
+  last_run_id: run_01J...
   enforcement:
     required_reviews: 1
 ```
 
-v1 CLI ignores `x_ticket` entirely.
+**Reserved fields under `x_ticket`:**
+
+| Field | Future Purpose |
+|-------|----------------|
+| `source` | Link to intake/feedback system (`kind` + `id`) |
+| `relations` | Dependency tracking (`blocks`, `blocked_by`) |
+| `last_run_id` | Agent run trace reference |
+| `enforcement` | Per-ticket policy overrides |
+
+**Rules:**
+- v1 CLI ignores `x_ticket` entirely
+- v1 Web renders but does not interpret `x_ticket`
+- Never store PII (names, emails, screenshots) in ticket files
+- External references use `ticket://` URIs (see §17)
 
 ---
 
@@ -306,11 +323,21 @@ Rules:
       "state": "ready",
       "priority": "p1",
       "labels": ["growth", "onboarding"],
-      "path": ".tickets/tickets/01ARZ3NDEKTSV4RRFFQ69G5FAV.md"
+      "assignee": "human:morgan",
+      "reviewer": "agent:openclaw",
+      "path": ".tickets/tickets/01ARZ3NDEKTSV4RRFFQ69G5FAV.md",
+      "extras": {
+        "source_kind": "intake",
+        "source_id": "in_01J..."
+      }
     }
   ]
 }
 ```
+
+**Field notes:**
+- `assignee`, `reviewer`: Included if set in ticket frontmatter (for web filtering)
+- `extras`: Optional object for future extension data (v1 ignores, v2+ can filter/group)
 
 #### Regeneration Triggers
 
@@ -614,6 +641,86 @@ Agent reads `.tickets/policy.yml` to determine behavior:
 - **require_approvals**: Agent waits for specific approvers, does not bypass
 
 Policy is advisory in v1. GitHub branch protection provides hard enforcement.
+
+---
+
+## 17. Link Schemes (Reserved)
+
+Standard URI formats for cross-referencing:
+
+| Scheme | Purpose | Example |
+|--------|---------|---------|
+| `ticket://<repo>/<id>` | Link to ticket in repo | `ticket://pwa-bot/fasting-app/01ARZ3ND` |
+| `ticket://intake/<id>` | Link to intake object (future) | `ticket://intake/in_01J...` |
+
+**Usage in ticket body:**
+
+```markdown
+## Source
+
+Intake: ticket://intake/in_01J...
+```
+
+**Rules:**
+- v1 treats these as plain text
+- v2+ web may render as clickable links
+- Prefer body `## Source` section over `x_ticket.source` for human readability
+
+---
+
+## 18. Data Governance
+
+### 18.1 No PII in Repository
+
+Ticket files must **never** contain:
+- Raw user emails
+- User real names (unless public contributors)
+- Screenshots with PII
+- Support conversation transcripts
+
+If intake/feedback systems exist (future), they store PII in hosted overlay with proper retention policies. Ticket files contain only:
+- Sanitized summary
+- Reference URI (`ticket://intake/<id>`)
+
+### 18.2 Repository is Source of Truth
+
+The web dashboard caches and indexes but **never stores authoritative state**.
+
+- All ticket state lives in `.tickets/` files
+- Web cache is disposable — can be rebuilt from repo
+- If web cache and repo disagree, repo wins
+
+### 18.3 Future Write Operations Must Be PR-Based
+
+One-way door to avoid: server directly editing ticket files on `main`.
+
+When/if web writes are added:
+- Web creates PRs that add/edit ticket files
+- Merge applies the change
+- Git history remains the audit trail
+- No "shadow writes" that bypass git
+
+This ensures:
+- Full audit trail via `git log`
+- Branch protection still applies
+- Human review possible for any mutation
+
+---
+
+## 19. Future Extensibility (Reserved, Not Built)
+
+These features are **not in v1** but the format preserves the path:
+
+| Feature | Hook Reserved |
+|---------|---------------|
+| In-app feedback intake | `x_ticket.source`, `ticket://intake/` |
+| Cross-repo portfolio | Web supports multi-repo from day 1 |
+| Ticket relations | `x_ticket.relations.blocks`, `blocked_by` |
+| Agent run traces | `x_ticket.last_run_id` |
+| Attachments | `## Links` body section (link, don't embed) |
+| Custom workflows | `workflow` field in config.yml |
+
+**Principle:** Reserve extension points now. Do not add product surface area now.
 
 ---
 

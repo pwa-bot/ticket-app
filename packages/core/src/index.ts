@@ -28,20 +28,24 @@ export interface Ticket extends TicketFrontmatter {
 // Index entry (minimal data for list views)
 export interface TicketIndexEntry {
   id: string;
+  short_id: string;
+  display_id: string;
   title: string;
   state: TicketState;
   priority: Priority;
   labels: string[];
-  created: string;
-  updated: string;
+  path: string;
   assignee?: Actor;
   reviewer?: Actor;
+  // Extensibility hook - v1 ignores, v2+ can filter/group
+  extras?: Record<string, unknown>;
 }
 
 // Full index.json structure
 export interface TicketIndex {
-  version: 1;
-  generated: string; // ISO 8601
+  format_version: 1;
+  generated_at: string; // ISO 8601
+  workflow: 'simple-v1';
   tickets: TicketIndexEntry[];
 }
 
