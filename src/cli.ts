@@ -6,6 +6,7 @@ import { runNew } from "./commands/new.js";
 import { runList } from "./commands/list.js";
 import { runShow } from "./commands/show.js";
 import { runDone, runMove, runStart } from "./commands/move.js";
+import { runAssign, runReviewer } from "./commands/actor.js";
 import { runRebuildIndex } from "./commands/rebuild-index.js";
 
 async function main(): Promise<void> {
@@ -79,6 +80,26 @@ async function main(): Promise<void> {
     .option("--ci", "Enable CI mode (exact id matching only)")
     .action(async (id: string, options: { ci?: boolean }) => {
       await runDone(process.cwd(), id, options);
+    });
+
+  program
+    .command("assign")
+    .description("Set the assignee for a ticket")
+    .argument("<id>", "Ticket id (ULID or short id)")
+    .argument("<actor>", "Actor (human:<slug> or agent:<slug>)")
+    .option("--ci", "Enable CI mode (exact id matching only)")
+    .action(async (id: string, actor: string, options: { ci?: boolean }) => {
+      await runAssign(process.cwd(), id, actor, options);
+    });
+
+  program
+    .command("reviewer")
+    .description("Set the reviewer for a ticket")
+    .argument("<id>", "Ticket id (ULID or short id)")
+    .argument("<actor>", "Actor (human:<slug> or agent:<slug>)")
+    .option("--ci", "Enable CI mode (exact id matching only)")
+    .action(async (id: string, actor: string, options: { ci?: boolean }) => {
+      await runReviewer(process.cwd(), id, actor, options);
     });
 
   program
