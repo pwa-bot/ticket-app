@@ -1,0 +1,79 @@
+---
+title: Getting started
+description: Install Ticket, initialize a repo, and create your first ticket.
+---
+
+# Getting started
+
+## Install
+
+Choose one install method. Exact commands depend on how you publish the CLI. Examples:
+
+```bash
+# Homebrew (example)
+brew install ticketapp/tap/ticket
+
+# npm (example)
+npm i -g @ticketapp/cli
+```
+
+## Initialize a repo
+
+From your repo root:
+
+```bash
+ticket init
+```
+
+This creates:
+
+* `.tickets/config.yml`
+* `.tickets/template.md`
+* `.tickets/index.json`
+* `.tickets/tickets/`
+
+Commit and push:
+
+```bash
+git add .tickets
+git commit -m "ticket: init"
+git push
+```
+
+## Create a ticket
+
+```bash
+ticket new "Add paywall experiment" --priority p1
+```
+
+This creates a new file in `.tickets/tickets/` with a ULID filename.
+
+Push it:
+
+```bash
+git push
+```
+
+## Move a ticket
+
+```bash
+ticket list --state ready
+ticket start TK-01ARZ3ND
+ticket done TK-01ARZ3ND
+git push
+```
+
+## Use with agents
+
+Agents should use strict mode:
+
+```bash
+ticket move TK-01ARZ3ND in_progress --ci
+ticket validate --ci
+```
+
+In `--ci` mode:
+
+* No fuzzy matching
+* No interactive prompts
+* Errors are deterministic

@@ -1,0 +1,35 @@
+---
+title: Workflow
+description: States, transitions, and terminal behavior in v1.
+---
+
+# Workflow
+
+Ticket v1 uses a simple, hardcoded workflow.
+
+## States
+
+- `backlog`
+- `ready`
+- `in_progress`
+- `blocked`
+- `done`
+
+## Allowed transitions
+
+- `backlog -> ready`
+- `ready -> in_progress`
+- `in_progress -> done`
+- `any -> blocked`
+- `blocked -> ready`
+- `blocked -> in_progress`
+
+## Terminal behavior
+
+- `done` is terminal in v1
+- Tickets remain in `.tickets/tickets/`
+- No archive folder and no automatic moves
+
+## Why it is simple
+
+The ticket body is the spec. The workflow is for coordination and visibility.

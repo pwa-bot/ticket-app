@@ -1,0 +1,56 @@
+---
+title: index.json
+description: Why it exists, how it is generated, and how to recover when it breaks.
+---
+
+# index.json
+
+`index.json` makes the dashboard fast and avoids GitHub API rate issues. The CLI regenerates it on every ticket mutation.
+
+## Location
+
+`.tickets/index.json`
+
+## Format
+
+```json
+{
+  "format_version": 1,
+  "generated_at": "2026-02-16T18:22:11Z",
+  "workflow": "simple-v1",
+  "tickets": [
+    {
+      "id": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+      "short_id": "01ARZ3ND",
+      "display_id": "TK-01ARZ3ND",
+      "title": "Add paywall experiment",
+      "state": "ready",
+      "priority": "p1",
+      "labels": ["growth"],
+      "path": ".tickets/tickets/01ARZ3NDEKTSV4RRFFQ69G5FAV.md"
+    }
+  ]
+}
+```
+
+## Deterministic ordering
+
+To avoid noisy diffs, the CLI writes tickets in a stable order:
+
+1. state order: backlog, ready, in_progress, blocked, done
+2. priority: p0, p1, p2, p3
+3. id lexicographic
+
+## Recovery
+
+If `index.json` is missing, corrupted, or out of sync:
+
+```bash
+ticket rebuild-index
+```
+
+To validate all tickets and fix index if needed:
+
+```bash
+ticket validate --all --fix-index
+```

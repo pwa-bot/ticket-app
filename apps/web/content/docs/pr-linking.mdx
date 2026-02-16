@@ -1,0 +1,33 @@
+---
+title: PR linking
+description: Branch and PR title conventions so the dashboard can link work automatically.
+---
+
+# PR linking
+
+Ticket links PRs to tickets by convention.
+
+## Branch convention
+
+```text
+tk-{short_id}-{slug}
+```
+
+Example: `tk-01arz3nd-paywall-experiment`
+
+## PR title convention
+
+```text
+[{display_id}] {title}
+```
+
+Example: `[TK-01ARZ3ND] Add paywall experiment`
+
+## Auto-linking logic
+
+A PR is linked to a ticket if:
+
+* PR title contains `[TK-<short_id>]`, or
+* branch name contains `tk-<short_id>`
+
+The dashboard displays linked PRs on the ticket detail view.

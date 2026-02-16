@@ -1,0 +1,128 @@
+---
+title: CLI reference
+description: Commands, CI mode, hooks, and safe automation behavior.
+---
+
+# CLI reference
+
+Binary: `ticket`
+
+## Commands
+
+### init
+
+```bash
+ticket init
+```
+
+### new
+
+```bash
+ticket new "Title" --priority p2
+```
+
+### list
+
+```bash
+ticket list
+ticket list --state ready
+ticket list --priority p0
+ticket list --label growth
+```
+
+### show
+
+```bash
+ticket show TK-01ARZ3ND
+```
+
+### move
+
+```bash
+ticket move TK-01ARZ3ND in_progress
+```
+
+### start and done
+
+```bash
+ticket start TK-01ARZ3ND
+ticket done TK-01ARZ3ND
+```
+
+### edit
+
+```bash
+ticket edit TK-01ARZ3ND --title "New title"
+ticket edit TK-01ARZ3ND --priority p0
+ticket edit TK-01ARZ3ND --add-label urgent
+ticket edit TK-01ARZ3ND --remove-label wontfix
+```
+
+Modify ticket metadata without opening an editor. Supports `--ci` mode.
+
+### assign
+
+```bash
+ticket assign TK-01ARZ3ND human:morgan
+ticket assign TK-01ARZ3ND agent:openclaw
+```
+
+Set the assignee. Actor format: `human:<slug>` or `agent:<slug>`.
+
+### reviewer
+
+```bash
+ticket reviewer TK-01ARZ3ND human:morgan
+```
+
+Set the reviewer. Same actor format as assign.
+
+### validate
+
+```bash
+ticket validate
+ticket validate TK-01ARZ3ND
+ticket validate --all
+ticket validate --all --fix-index
+```
+
+### rebuild-index
+
+```bash
+ticket rebuild-index
+```
+
+### branch
+
+```bash
+ticket branch TK-01ARZ3ND
+```
+
+### install-hooks
+
+```bash
+ticket install-hooks
+```
+
+## CI mode
+
+Use `--ci` for agents and automation:
+
+```bash
+ticket move TK-01ARZ3ND in_progress --ci
+ticket validate --ci
+```
+
+Rules in `--ci` mode:
+
+* No fuzzy matching
+* No interactive prompts
+* Ambiguity is an error
+* `ticket edit` errors
+
+## Git hooks
+
+* pre-commit validates changed ticket files
+* pre-push validates changed ticket files only
+
+Repo-wide validation should run in CI with `ticket validate --all`.
