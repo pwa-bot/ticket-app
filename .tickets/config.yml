@@ -1,0 +1,7 @@
+format_version: 1
+id_prefix: TK
+workflow: simple-v1
+
+linking:
+  branch_pattern: "tk-{short_id}-{slug}"
+  pr_title_pattern: "[{short_id}] {title}"
