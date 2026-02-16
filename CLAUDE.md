@@ -2,44 +2,85 @@
 
 ## What We're Building
 
-A Git-native issue tracking CLI that stores tickets as markdown files.
+A Git-native issue tracking system with:
+1. **CLI** (`apps/cli`) — TypeScript CLI for ticket management
+2. **Web** (`apps/web`) — Next.js dashboard for visual board view
+3. **Core** (`packages/core`) — Shared types and utilities
+
+## Monorepo Structure (Turborepo + pnpm)
+
+```
+ticket-app/
+├── apps/
+│   ├── cli/          # TypeScript CLI
+│   │   ├── src/
+│   │   │   ├── cli.ts
+│   │   │   ├── commands/
+│   │   │   └── lib/
+│   │   └── package.json
+│   └── web/          # Next.js dashboard
+│       ├── src/app/
+│       └── package.json
+├── packages/
+│   └── core/         # Shared types
+│       └── src/index.ts
+├── .tickets/         # Our own tickets (dogfooding)
+├── SPEC.md           # Complete specification
+├── turbo.json
+├── pnpm-workspace.yaml
+└── package.json
+```
 
 ## Key Files
 
 - `SPEC.md` — Complete v1.0.1 specification (READ THIS FIRST)
+- `packages/core/src/index.ts` — Shared types (Ticket, TicketState, etc.)
 - `.tickets/config.yml` — Configuration
-- `.tickets/template.md` — Template for new tickets
-- `.tickets/index.json` — Generated index (CLI must update this)
-- `.tickets/tickets/` — Where ticket files live
+- `.tickets/index.json` — Generated index for web to read
 
-## Tech Stack
+## Commands
 
-- TypeScript
-- Node.js CLI (Commander.js)
+```bash
+pnpm turbo build      # Build all packages
+pnpm turbo dev        # Dev mode
+pnpm turbo test       # Run all tests
+```
+
+## CLI Tech Stack
+
+- TypeScript + Commander.js
 - simple-git for auto-commits
 - ulid for ID generation
-- gray-matter for frontmatter parsing
+- gray-matter for frontmatter
 - Vitest for testing
 
-## CLI Build Order
+## Web Tech Stack
 
-1. `ticket init` — Create .tickets/ structure
-2. `ticket new "Title"` — Create ticket with ULID, write file, update index.json, auto-commit
-3. `ticket list` — Read from index.json, display tickets
-4. `ticket show <id>` — Display ticket details
-5. `ticket move <id> <state>` — Validate transition, update file, update index.json, auto-commit
-6. `ticket start <id>` — Shortcut for move to in_progress
-7. `ticket done <id>` — Shortcut for move to done
-8. `ticket validate` — Validate ticket frontmatter
-9. `ticket rebuild-index` — Regenerate index.json from all ticket files
+- Next.js 16 (App Router)
+- Tailwind CSS
+- GitHub OAuth for repo access
+- Reads index.json from GitHub API
+
+## CLI Status
+
+✅ Implemented: init, new, list, show, move, start, done, assign, reviewer, rebuild-index
+⏳ Remaining: edit, validate, policy, branch, install-hooks
+
+## Web Status
+
+⏳ Not started — needs:
+1. GitHub OAuth flow (/api/auth/github)
+2. Repo picker (list user's repos with .tickets/)
+3. Kanban board (fetch index.json, render columns)
+4. Ticket detail modal (fetch individual .md file)
 
 ## Important Rules
 
-1. **Always update index.json** after any mutation
-2. **Auto-commit** after mutations with format: `ticket: TK-XXXXXXXX → state`
+1. **Always update index.json** after CLI mutations
+2. **Auto-commit** after mutations: `ticket: TK-XXXXXXXX → state`
 3. **ULID IDs** — 26 chars uppercase, display as TK-{first 8 chars}
-4. **Deterministic index sorting** — state order, then priority, then id
-5. **Strict frontmatter** — id, title, state, priority required; labels optional
+4. **Types from core** — Import from `@ticket-app/core`
+5. **Web is read-only** — No write operations in v1
 
 ## Workflow States
 
@@ -48,27 +89,3 @@ A Git-native issue tracking CLI that stores tickets as markdown files.
 Also: `any` → `blocked`, `blocked` → `ready` or `in_progress`
 
 `done` is terminal.
-
-## Project Structure
-
-```
-ticket-app/
-  src/
-    cli.ts          # Main CLI entry
-    commands/       # Command implementations
-    lib/
-      ticket.ts     # Ticket file operations
-      index.ts      # index.json operations
-      git.ts        # Git operations
-      ulid.ts       # ID generation
-  package.json
-  tsconfig.json
-```
-
-## Testing
-
-Use Vitest. Test:
-- Frontmatter parsing
-- State transitions (valid and invalid)
-- Index.json generation
-- ULID generation
