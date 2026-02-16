@@ -1,0 +1,66 @@
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
+import { cookies } from "next/headers";
+
+const SESSION_COOKIE = "ticket_app_session";
+const OAUTH_STATE_COOKIE = "ticket_app_oauth_state";
+const SELECTED_REPO_COOKIE = "ticket_app_repo";
+
+function getSecret(): string {
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (!secret) {
+    throw new Error("NEXTAUTH_SECRET is required");
+  }
+  return secret;
+}
+
+function getKey(): Buffer {
+  return createHash("sha256").update(getSecret()).digest();
+}
+
+export function encryptToken(token: string): string {
+  const iv = randomBytes(12);
+  const key = getKey();
+  const cipher = createCipheriv("aes-256-gcm", key, iv);
+  const encrypted = Buffer.concat([cipher.update(token, "utf8"), cipher.final()]);
+  const tag = cipher.getAuthTag();
+
+  return `${iv.toString("base64url")}.${tag.toString("base64url")}.${encrypted.toString("base64url")}`;
+}
+
+export function decryptToken(payload: string): string | null {
+  try {
+    const [ivPart, tagPart, dataPart] = payload.split(".");
+    if (!ivPart || !tagPart || !dataPart) {
+      return null;
+    }
+
+    const key = getKey();
+    const iv = Buffer.from(ivPart, "base64url");
+    const tag = Buffer.from(tagPart, "base64url");
+    const encrypted = Buffer.from(dataPart, "base64url");
+
+    const decipher = createDecipheriv("aes-256-gcm", key, iv);
+    decipher.setAuthTag(tag);
+    const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
+
+    return decrypted.toString("utf8");
+  } catch {
+    return null;
+  }
+}
+
+export async function getAccessTokenFromCookies(): Promise<string | null> {
+  const store = await cookies();
+  const encrypted = store.get(SESSION_COOKIE)?.value;
+  if (!encrypted) {
+    return null;
+  }
+
+  return decryptToken(encrypted);
+}
+
+export const cookieNames = {
+  session: SESSION_COOKIE,
+  oauthState: OAUTH_STATE_COOKIE,
+  selectedRepo: SELECTED_REPO_COOKIE,
+};
