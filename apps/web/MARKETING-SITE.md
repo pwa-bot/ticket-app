@@ -196,6 +196,18 @@ Buttons: Install CLI, Connect GitHub
 **Subhead:** Deterministic commands, strict validation, collision-free IDs. Your orchestrator can operate tickets without touching a browser.
 
 ### Install
+
+Clone and build from source (npm package coming soon):
+
+```bash
+git clone https://github.com/pwa-bot/ticket-app.git
+cd ticket-app/apps/cli
+pnpm install && pnpm build
+npm link
+```
+
+Or install via npm (when published):
+
 ```bash
 npm i -g @ticketapp/cli
 ```
@@ -868,10 +880,30 @@ ticket done TK-01ARZ3ND
 ### edit
 
 ```bash
-ticket edit TK-01ARZ3ND
+ticket edit TK-01ARZ3ND --title "New title"
+ticket edit TK-01ARZ3ND --priority p0
+ticket edit TK-01ARZ3ND --add-label urgent
+ticket edit TK-01ARZ3ND --remove-label wontfix
 ```
 
-Note: `ticket edit` is not supported in `--ci` mode.
+Modify ticket metadata without opening an editor. Supports `--ci` mode.
+
+### assign
+
+```bash
+ticket assign TK-01ARZ3ND human:morgan
+ticket assign TK-01ARZ3ND agent:openclaw
+```
+
+Set the assignee. Actor format: `human:<slug>` or `agent:<slug>`.
+
+### reviewer
+
+```bash
+ticket reviewer TK-01ARZ3ND human:morgan
+```
+
+Set the reviewer. Same actor format as assign.
 
 ### validate
 
