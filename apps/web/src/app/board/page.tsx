@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import Board from "@/components/board";
 import { getAccessTokenFromCookies } from "@/lib/auth";
 
 interface BoardPageProps {
@@ -17,12 +16,13 @@ export default async function BoardPage({ searchParams }: BoardPageProps) {
   const repo = typeof repoParam === "string" ? repoParam : undefined;
 
   if (!repo) {
-    redirect("/repos");
+    redirect("/app");
   }
 
-  return (
-    <main className="min-h-screen bg-slate-100 p-6 text-slate-900">
-      <Board repo={repo} />
-    </main>
-  );
+  const [owner, repoName] = repo.split("/");
+  if (!owner || !repoName) {
+    redirect("/app");
+  }
+
+  redirect(`/app/${encodeURIComponent(owner)}/${encodeURIComponent(repoName)}`);
 }

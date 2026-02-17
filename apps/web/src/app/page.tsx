@@ -5,7 +5,7 @@ export default async function HomePage() {
   const token = await getAccessTokenFromCookies();
 
   if (token) {
-    redirect("/board");
+    redirect("/app");
   }
 
   return (

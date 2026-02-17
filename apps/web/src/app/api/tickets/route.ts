@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAccessTokenFromCookies } from "@/lib/auth";
-import { getTicketIndex } from "@/lib/github";
+import { clearTicketIndexCache, getTicketIndex } from "@/lib/github";
 
 export async function GET(request: Request) {
   const token = await getAccessTokenFromCookies();
@@ -10,11 +10,15 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const repo = url.searchParams.get("repo");
+  const refresh = url.searchParams.get("refresh") === "1";
   if (!repo) {
     return NextResponse.json({ error: "Missing repo query parameter" }, { status: 400 });
   }
 
   try {
+    if (refresh) {
+      clearTicketIndexCache(repo);
+    }
     const index = await getTicketIndex(token, repo);
     return NextResponse.json(index);
   } catch (error) {

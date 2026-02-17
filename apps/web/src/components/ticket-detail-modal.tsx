@@ -10,6 +10,13 @@ interface TicketDetail {
   html_url: string | null;
   frontmatter: Record<string, unknown>;
   body: string;
+  linked_prs: Array<{
+    id: number;
+    number: number;
+    title: string;
+    state: string;
+    html_url: string;
+  }>;
 }
 
 interface TicketDetailModalProps {
@@ -116,6 +123,28 @@ export default function TicketDetailModal({ repo, ticketId, onClose }: TicketDet
               <article className="prose max-w-none rounded-lg border border-slate-200 bg-white p-4 prose-slate">
                 <ReactMarkdown>{ticket.body}</ReactMarkdown>
               </article>
+            </section>
+
+            <section>
+              <h4 className="mb-2 text-sm font-semibold uppercase tracking-wider text-slate-500">Linked PRs</h4>
+              {ticket.linked_prs.length === 0 ? (
+                <p className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">No linked pull requests found.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {ticket.linked_prs.map((pr) => (
+                    <li key={pr.id} className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
+                      <div className="flex items-center justify-between gap-3">
+                        <a href={pr.html_url} target="_blank" rel="noreferrer" className="font-medium text-slate-900 underline">
+                          #{pr.number} {pr.title}
+                        </a>
+                        <span className="rounded border border-slate-300 px-2 py-0.5 text-xs uppercase text-slate-700">
+                          {pr.state}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </section>
 
             <section className="flex items-center justify-between text-sm text-slate-600">

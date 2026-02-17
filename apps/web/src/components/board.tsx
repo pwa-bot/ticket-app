@@ -1,12 +1,15 @@
 "use client";
 
-import type { TicketIndex, TicketIndexEntry, TicketState } from "@/lib/types";
-import { useEffect, useMemo, useState } from "react";
+import type { Priority, TicketIndex, TicketIndexEntry, TicketState } from "@/lib/types";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import TicketDetailModal from "@/components/ticket-detail-modal";
 import { BOARD_LABELS, BOARD_STATES, PRIORITY_STYLES, groupTicketsForBoard } from "@/lib/utils";
 
 interface BoardProps {
+  owner: string;
   repo: string;
+  ticketId?: string;
 }
 
 type BoardTicket = TicketIndexEntry & {
@@ -65,7 +68,7 @@ function Column({
         <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-700">{BOARD_LABELS[state]}</h3>
         <span className="rounded bg-white px-2 py-0.5 text-xs text-slate-600">{tickets.length}</span>
       </header>
-      <div className="flex flex-1 flex-col gap-3 p-3">
+      <div className="flex max-h-[calc(100vh-200px)] flex-1 flex-col gap-3 overflow-y-auto p-3">
         {tickets.map((ticket) => (
           <TicketCard key={ticket.id} ticket={ticket} onOpen={onOpen} />
         ))}
@@ -75,22 +78,37 @@ function Column({
   );
 }
 
-export default function Board({ repo }: BoardProps) {
+export default function Board({ owner, repo, ticketId }: BoardProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const fullRepo = `${owner}/${repo}`;
   const [index, setIndex] = useState<BoardIndex | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(ticketId ?? null);
 
   useEffect(() => {
-    const controller = new AbortController();
+    setSelectedTicketId(ticketId ?? null);
+  }, [ticketId]);
 
-    async function loadTickets() {
-      setLoading(true);
+  const loadTickets = useCallback(
+    async ({ forceRefresh = false }: { forceRefresh?: boolean } = {}) => {
+      if (forceRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
 
       try {
-        const response = await fetch(`/api/tickets?repo=${encodeURIComponent(repo)}`, {
-          signal: controller.signal,
+        const params = new URLSearchParams({ repo: fullRepo });
+        if (forceRefresh) {
+          params.set("refresh", "1");
+        }
+
+        const response = await fetch(`/api/tickets?${params.toString()}`, {
           cache: "no-store",
         });
 
@@ -101,33 +119,98 @@ export default function Board({ repo }: BoardProps) {
         const data = (await response.json()) as BoardIndex;
         setIndex(data);
       } catch (err) {
-        if (!controller.signal.aborted) {
-          setError(err instanceof Error ? err.message : "Unknown error");
-        }
+        setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
+        setLoading(false);
+        setRefreshing(false);
       }
+    },
+    [fullRepo],
+  );
+
+  useEffect(() => {
+    void loadTickets();
+  }, [loadTickets]);
+
+  function getSearchQuery() {
+    const query = searchParams.toString();
+    return query ? `?${query}` : "";
+  }
+
+  function openTicket(id: string) {
+    setSelectedTicketId(id);
+    router.push(`/app/${owner}/${repo}/${id}${getSearchQuery()}`);
+  }
+
+  function closeTicket() {
+    setSelectedTicketId(null);
+    router.push(`/app/${owner}/${repo}${getSearchQuery()}`);
+  }
+
+  const stateFilter = searchParams.get("state");
+  const priorityFilter = searchParams.get("priority");
+  const labelFilter = searchParams.get("label");
+
+  const activeStateFilter = BOARD_STATES.includes(stateFilter as TicketState) ? (stateFilter as TicketState) : null;
+  const activePriorityFilter = ["p0", "p1", "p2", "p3"].includes(priorityFilter ?? "")
+    ? (priorityFilter as Priority)
+    : null;
+  const activeLabelFilter = labelFilter && labelFilter.length > 0 ? labelFilter : null;
+
+  const allTickets = index?.tickets ?? [];
+
+  const labelOptions = useMemo(() => {
+    return Array.from(new Set(allTickets.flatMap((ticket) => ticket.labels))).sort((a, b) => a.localeCompare(b));
+  }, [allTickets]);
+
+  const filteredTickets = useMemo(() => {
+    return allTickets.filter((ticket) => {
+      if (activeStateFilter && ticket.state !== activeStateFilter) {
+        return false;
+      }
+      if (activePriorityFilter && ticket.priority !== activePriorityFilter) {
+        return false;
+      }
+      if (activeLabelFilter && !ticket.labels.includes(activeLabelFilter)) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [activeLabelFilter, activePriorityFilter, activeStateFilter, allTickets]);
+
+  const grouped = useMemo(() => groupTicketsForBoard(filteredTickets), [filteredTickets]);
+
+  function setFilterParam(key: "state" | "priority" | "label", value: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) {
+      params.set(key, value);
+    } else {
+      params.delete(key);
     }
 
-    void loadTickets();
-
-    return () => controller.abort();
-  }, [repo]);
-
-  const grouped = useMemo(() => groupTicketsForBoard(index?.tickets ?? []), [index]);
+    const query = params.toString();
+    router.push(query ? `${pathname}?${query}` : pathname);
+  }
 
   return (
     <div className="mx-auto max-w-7xl">
       <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Kanban Board</h1>
-          <p className="mt-1 text-sm text-slate-600">{repo}</p>
+          <h1 className="text-2xl font-semibold">{fullRepo}</h1>
+          <p className="mt-1 text-sm text-slate-600">Kanban board</p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void loadTickets({ forceRefresh: true })}
+            disabled={refreshing || loading}
+            className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {refreshing ? "Refreshing..." : "Refresh"}
+          </button>
           <a
-            href="/repos"
+            href="/app"
             className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white"
           >
             Change repo
@@ -149,15 +232,64 @@ export default function Board({ repo }: BoardProps) {
           <div className="mb-4 text-xs uppercase tracking-wider text-slate-500">
             Generated {new Date(index.generated_at ?? index.generated ?? Date.now()).toLocaleString()}
           </div>
-          <div className="grid gap-4 lg:grid-cols-4">
+          <div className="mb-4 grid gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-3">
+            <label className="text-sm text-slate-700">
+              <span className="mb-1 block font-medium">State</span>
+              <select
+                value={activeStateFilter ?? ""}
+                onChange={(event) => setFilterParam("state", event.target.value)}
+                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2"
+              >
+                <option value="">All states</option>
+                {BOARD_STATES.map((state) => (
+                  <option key={state} value={state}>
+                    {BOARD_LABELS[state]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-sm text-slate-700">
+              <span className="mb-1 block font-medium">Priority</span>
+              <select
+                value={activePriorityFilter ?? ""}
+                onChange={(event) => setFilterParam("priority", event.target.value)}
+                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2"
+              >
+                <option value="">All priorities</option>
+                <option value="p0">P0</option>
+                <option value="p1">P1</option>
+                <option value="p2">P2</option>
+                <option value="p3">P3</option>
+              </select>
+            </label>
+            <label className="text-sm text-slate-700">
+              <span className="mb-1 block font-medium">Label</span>
+              <select
+                value={activeLabelFilter ?? ""}
+                onChange={(event) => setFilterParam("label", event.target.value)}
+                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2"
+              >
+                <option value="">All labels</option>
+                {labelOptions.map((label) => (
+                  <option key={label} value={label}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="mb-4 text-sm text-slate-600">
+            Showing {filteredTickets.length} of {allTickets.length} tickets
+          </div>
+          <div className="grid gap-4 lg:grid-cols-5">
             {BOARD_STATES.map((state) => (
-              <Column key={state} state={state} tickets={grouped[state]} onOpen={setSelectedTicketId} />
+              <Column key={state} state={state} tickets={grouped[state]} onOpen={openTicket} />
             ))}
           </div>
         </>
       )}
 
-      {selectedTicketId && <TicketDetailModal repo={repo} ticketId={selectedTicketId} onClose={() => setSelectedTicketId(null)} />}
+      {selectedTicketId && <TicketDetailModal repo={fullRepo} ticketId={selectedTicketId} onClose={closeTicket} />}
     </div>
   );
 }

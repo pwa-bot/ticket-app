@@ -65,17 +65,24 @@ export default function RepoPicker() {
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      {repos.map((repo) => (
-        <a
-          key={repo.id}
-          href={`/board?repo=${encodeURIComponent(repo.full_name)}`}
-          className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow"
-        >
-          <p className="text-lg font-semibold">{repo.full_name}</p>
-          <p className="mt-2 text-sm text-slate-600">{repo.private ? "Private" : "Public"} repository</p>
-          <p className="mt-3 text-xs text-slate-500">Open board</p>
-        </a>
-      ))}
+      {repos.map((repo) => {
+        const [owner, name] = repo.full_name.split("/");
+        if (!owner || !name) {
+          return null;
+        }
+
+        return (
+          <a
+            key={repo.id}
+            href={`/app/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`}
+            className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow"
+          >
+            <p className="text-lg font-semibold">{repo.full_name}</p>
+            <p className="mt-2 text-sm text-slate-600">{repo.private ? "Private" : "Public"} repository</p>
+            <p className="mt-3 text-xs text-slate-500">Open board</p>
+          </a>
+        );
+      })}
     </div>
   );
 }
