@@ -1,7 +1,7 @@
 ---
 id: 01KHPTPPBVD1JCWQ7RZV0TRBEJ
 title: Multi-repo portfolio view
-state: ready
+state: in_progress
 priority: p1
 labels:
   - dashboard
