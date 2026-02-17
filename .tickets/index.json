@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-17T23:43:19.013Z",
+  "generated_at": "2026-02-17T23:43:23.039Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -200,19 +200,6 @@
       "path": ".tickets/tickets/01KHMG8JASDQ7VC5YZK8NFBKZP.md"
     },
     {
-      "id": "01KHPTPPBVD1JCWQ7RZV0TRBEJ",
-      "short_id": "01KHPTPP",
-      "display_id": "TK-01KHPTPP",
-      "title": "Multi-repo portfolio view",
-      "state": "in_progress",
-      "priority": "p1",
-      "labels": [
-        "dashboard",
-        "phase-2"
-      ],
-      "path": ".tickets/tickets/01KHPTPPBVD1JCWQ7RZV0TRBEJ.md"
-    },
-    {
       "id": "01KHMG84AJMCWQCCE84328MF5G",
       "short_id": "01KHMG84",
       "display_id": "TK-01KHMG84",
@@ -237,6 +224,19 @@
         "contract-v1"
       ],
       "path": ".tickets/tickets/01KHMG85TGQZ1TDCBJ6JDYA10V.md"
+    },
+    {
+      "id": "01KHPTPPBVD1JCWQ7RZV0TRBEJ",
+      "short_id": "01KHPTPP",
+      "display_id": "TK-01KHPTPP",
+      "title": "Multi-repo portfolio view",
+      "state": "done",
+      "priority": "p1",
+      "labels": [
+        "dashboard",
+        "phase-2"
+      ],
+      "path": ".tickets/tickets/01KHPTPPBVD1JCWQ7RZV0TRBEJ.md"
     }
   ]
 }
