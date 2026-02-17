@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-17T22:14:32.764Z",
+  "generated_at": "2026-02-17T22:14:32.993Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -159,6 +159,19 @@
         "phase-2"
       ],
       "path": ".tickets/tickets/01KHPTPQ1JFRRABBXV22NVET6G.md"
+    },
+    {
+      "id": "01KHPTPQ8PNKT4NWNAMPV8WZX2",
+      "short_id": "01KHPTPQ",
+      "display_id": "TK-01KHPTPQ",
+      "title": "Saved views and filters",
+      "state": "backlog",
+      "priority": "p2",
+      "labels": [
+        "dashboard",
+        "phase-2"
+      ],
+      "path": ".tickets/tickets/01KHPTPQ8PNKT4NWNAMPV8WZX2.md"
     },
     {
       "id": "01KHMG861RFP1FWRX8BXP68D9P",
