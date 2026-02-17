@@ -43,10 +43,11 @@ async function main(): Promise<void> {
     .command("new")
     .description("Create a new ticket")
     .argument("<title>", "Ticket title")
-    .option("--priority <priority>", "Ticket priority", "p1")
+    .option("-p, --priority <priority>", "Ticket priority", "p1")
     .option("--state <state>", "Initial ticket state", "backlog")
     .option("--label <label>", "Label to add", collectLabel, [])
-    .action(async (title: string, options: { priority: string; state: string; label: string[] }) => {
+    .option("--ci", "CI mode (accepted for consistency)")
+    .action(async (title: string, options: { priority: string; state: string; label: string[]; ci?: boolean }) => {
       await runNew(process.cwd(), title, options);
     });
 
@@ -57,7 +58,8 @@ async function main(): Promise<void> {
     .option("--label <label>", "Filter by label")
     .option("--format <format>", "Output format: table|kanban", "table")
     .option("--json", "Emit a JSON envelope")
-    .action(async (options: { state?: string; label?: string; format?: string; json?: boolean }, command: Command) => {
+    .option("--ci", "CI mode (accepted for consistency)")
+    .action(async (options: { state?: string; label?: string; format?: string; json?: boolean; ci?: boolean }, command: Command) => {
       const global = getGlobalOptions(command);
       await runList(process.cwd(), { ...options, json: options.json ?? global.json ?? false });
     });

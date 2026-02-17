@@ -70,11 +70,11 @@ created: 2026-02-16T00:00:00.000Z
     await expect(runValidate(cwd, {})).rejects.toThrow("invalid state 'nope'");
     await expect(runValidate(cwd, {})).rejects.toThrow("invalid priority 'p9'");
     await expect(runValidate(cwd, {})).rejects.toThrow("labels must be an array of strings");
-    await expect(runValidate(cwd, {})).rejects.toThrow("missing required field 'updated'");
+    // Note: created/updated are optional per PROTOCOL.md §2.6
     await expect(runValidate(cwd, {})).rejects.toThrow("index.json is missing, invalid, or stale");
   });
 
-  it("fixes missing updated timestamp and regenerates stale index", async () => {
+  it("regenerates stale index with --fix", async () => {
     const cwd = await mkTempRepo();
     const id = "01ARZ3NDEKTSV4RRFFQ69G5FAB";
     await writeTicket(
@@ -86,16 +86,11 @@ title: Needs fix
 state: backlog
 priority: p2
 labels: []
-created: 2026-02-16T00:00:00.000Z
 ---
 `
     );
 
     await runValidate(cwd, { fix: true, ci: true });
-
-    const markdown = await fs.readFile(path.join(cwd, ".tickets/tickets", `${id}.md`), "utf8");
-    const parsed = matter(markdown);
-    expect(typeof parsed.data.updated).toBe("string");
 
     const indexRaw = await fs.readFile(path.join(cwd, ".tickets/index.json"), "utf8");
     const index = JSON.parse(indexRaw) as { tickets: Array<{ id: string }> };

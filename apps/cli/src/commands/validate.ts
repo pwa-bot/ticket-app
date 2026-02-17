@@ -145,15 +145,8 @@ export async function runValidate(cwd: string, options: ValidateCommandOptions):
     assertRequired(data, "state", file, errors);
     assertRequired(data, "priority", file, errors);
     assertRequired(data, "labels", file, errors);
-    assertRequired(data, "created", file, errors);
-    if (!("updated" in data) && fix) {
-      parsed.data.updated = new Date().toISOString();
-      await writeTicket(ticketPath, parsed);
-      touchedTicket = true;
-      data.updated = parsed.data.updated;
-    } else {
-      assertRequired(data, "updated", file, errors);
-    }
+    // Note: created/updated are optional per PROTOCOL.md §2.6
+    // Implementations SHOULD derive these from Git history
 
     if (typeof data.title !== "string" || !data.title.trim()) {
       errors.push(`${file}: title must be a non-empty string`);
