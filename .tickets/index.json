@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-17T23:43:24.173Z",
+  "generated_at": "2026-02-17T23:43:24.400Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -174,19 +174,6 @@
       "path": ".tickets/tickets/01KHMG8JASDQ7VC5YZK8NFBKZP.md"
     },
     {
-      "id": "01KHPTPPTCQABJH5VA0HZGYAQ9",
-      "short_id": "01KHPTPP",
-      "display_id": "TK-01KHPTPP",
-      "title": "PR linking and CI status in ticket cards",
-      "state": "in_progress",
-      "priority": "p1",
-      "labels": [
-        "dashboard",
-        "phase-2"
-      ],
-      "path": ".tickets/tickets/01KHPTPPTCQABJH5VA0HZGYAQ9.md"
-    },
-    {
       "id": "01KHMG84AJMCWQCCE84328MF5G",
       "short_id": "01KHMG84",
       "display_id": "TK-01KHMG84",
@@ -237,6 +224,19 @@
         "phase-2"
       ],
       "path": ".tickets/tickets/01KHPTPPK4J0QS0J4TGA7YHWM7.md"
+    },
+    {
+      "id": "01KHPTPPTCQABJH5VA0HZGYAQ9",
+      "short_id": "01KHPTPP",
+      "display_id": "TK-01KHPTPP",
+      "title": "PR linking and CI status in ticket cards",
+      "state": "done",
+      "priority": "p1",
+      "labels": [
+        "dashboard",
+        "phase-2"
+      ],
+      "path": ".tickets/tickets/01KHPTPPTCQABJH5VA0HZGYAQ9.md"
     }
   ]
 }

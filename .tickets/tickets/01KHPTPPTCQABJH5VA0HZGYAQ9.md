@@ -1,7 +1,7 @@
 ---
 id: 01KHPTPPTCQABJH5VA0HZGYAQ9
 title: PR linking and CI status in ticket cards
-state: in_progress
+state: done
 priority: p1
 labels:
   - dashboard
