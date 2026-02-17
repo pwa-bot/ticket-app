@@ -1,11 +1,13 @@
 import { PRIORITY_ORDER, STATE_ORDER, type TicketState } from "../lib/constants.js";
 import { ERROR_CODE, EXIT_CODE, TicketError } from "../lib/errors.js";
 import { readIndex } from "../lib/io.js";
+import { successEnvelope, writeEnvelope } from "../lib/json.js";
 
 export interface ListCommandOptions {
   state?: string;
   label?: string;
   format?: string;
+  json?: boolean;
 }
 
 function validateState(value: string): TicketState {
@@ -101,6 +103,11 @@ export async function runList(cwd: string, options: ListCommandOptions): Promise
 
       return a.id.localeCompare(b.id);
     });
+
+  if (options.json) {
+    writeEnvelope(successEnvelope({ tickets, count: tickets.length }));
+    return;
+  }
 
   if (format === "kanban") {
     renderKanban(tickets);

@@ -6,10 +6,12 @@ import { ERROR_CODE, EXIT_CODE, TicketError } from "../lib/errors.js";
 import type { TicketIndexEntry, TicketsIndex } from "../lib/index.js";
 import { shortId, displayId } from "../lib/ulid.js";
 import { rebuildIndex } from "../lib/index.js";
+import { successEnvelope, writeEnvelope } from "../lib/json.js";
 
 export interface ValidateCommandOptions {
   fix?: boolean;
   ci?: boolean;
+  json?: boolean;
 }
 
 const ULID_RE = /^[0-9A-HJKMNP-TV-Z]{26}$/;
@@ -199,8 +201,18 @@ export async function runValidate(cwd: string, options: ValidateCommandOptions):
     );
   }
 
+  const fixesApplied = Boolean(fix && (touchedTicket || indexStale));
+  if (options.json) {
+    writeEnvelope(successEnvelope({
+      valid: true,
+      fix_requested: fix,
+      fixes_applied: fixesApplied
+    }));
+    return;
+  }
+
   if (fix) {
-    if (touchedTicket || indexStale) {
+    if (fixesApplied) {
       console.log("Validation passed (applied fixes).");
       return;
     }

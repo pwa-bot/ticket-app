@@ -94,19 +94,19 @@ export default function ProtocolPage() {
               <h3 className="font-semibold">Does not include</h3>
               <ul className="mt-3 space-y-2 text-sm text-muted">
                 <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-subtle">&mdash;</span>
+                  <span className="mt-0.5 text-subtle">&times;</span>
                   CLI commands
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-subtle">&mdash;</span>
+                  <span className="mt-0.5 text-subtle">&times;</span>
                   Dashboard UI
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-subtle">&mdash;</span>
+                  <span className="mt-0.5 text-subtle">&times;</span>
                   Pricing or business model
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-subtle">&mdash;</span>
+                  <span className="mt-0.5 text-subtle">&times;</span>
                   GitHub-specific features
                 </li>
               </ul>
@@ -188,7 +188,7 @@ export default function ProtocolPage() {
         <div className="mx-auto max-w-6xl px-6 py-20 text-center">
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Link
-              href="https://github.com/nickarilla/ticket-app/blob/main/PROTOCOL.md"
+              href="https://github.com/pwa-bot/ticket-app/blob/main/PROTOCOL.md"
               className="rounded-lg bg-foreground px-6 py-3 text-sm font-medium text-background transition-opacity hover:opacity-80"
             >
               View PROTOCOL.md
@@ -198,12 +198,6 @@ export default function ProtocolPage() {
               className="rounded-lg border border-border px-6 py-3 text-sm font-medium transition-colors hover:bg-surface"
             >
               Install CLI
-            </Link>
-            <Link
-              href="/api/auth/github"
-              className="rounded-lg border border-border px-6 py-3 text-sm font-medium transition-colors hover:bg-surface"
-            >
-              Connect GitHub
             </Link>
           </div>
         </div>

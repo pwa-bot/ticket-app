@@ -13,6 +13,15 @@ import { runBranch } from "./commands/branch.js";
 import { runValidate } from "./commands/validate.js";
 import { runInstallHooks } from "./commands/install-hooks.js";
 import { EXIT_CODE, TicketError } from "./lib/errors.js";
+import { failureEnvelope, writeEnvelope } from "./lib/json.js";
+
+interface GlobalCliOptions {
+  json?: boolean;
+}
+
+function getGlobalOptions(command: Command): GlobalCliOptions {
+  return command.optsWithGlobals<GlobalCliOptions>();
+}
 
 async function main(): Promise<void> {
   const program = new Command();
@@ -20,7 +29,8 @@ async function main(): Promise<void> {
   program
     .name("ticket")
     .description("Git-native issue tracking CLI")
-    .version("0.1.0");
+    .version("0.1.0")
+    .option("--json", "Emit a JSON envelope");
 
   program
     .command("init")
@@ -46,8 +56,10 @@ async function main(): Promise<void> {
     .option("--state <state>", "Filter by state")
     .option("--label <label>", "Filter by label")
     .option("--format <format>", "Output format: table|kanban", "table")
-    .action(async (options: { state?: string; label?: string; format?: string }) => {
-      await runList(process.cwd(), options);
+    .option("--json", "Emit a JSON envelope")
+    .action(async (options: { state?: string; label?: string; format?: string; json?: boolean }, command: Command) => {
+      const global = getGlobalOptions(command);
+      await runList(process.cwd(), { ...options, json: options.json ?? global.json ?? false });
     });
 
   program
@@ -55,8 +67,10 @@ async function main(): Promise<void> {
     .description("Show a ticket")
     .argument("<id>", "Ticket id (ULID or short id)")
     .option("--ci", "Enable CI mode (exact id matching only)")
-    .action(async (id: string, options: { ci?: boolean }) => {
-      await runShow(process.cwd(), id, options);
+    .option("--json", "Emit a JSON envelope")
+    .action(async (id: string, options: { ci?: boolean; json?: boolean }, command: Command) => {
+      const global = getGlobalOptions(command);
+      await runShow(process.cwd(), id, { ...options, json: options.json ?? global.json ?? false });
     });
 
   program
@@ -133,8 +147,10 @@ async function main(): Promise<void> {
     .description("Validate tickets and index")
     .option("--fix", "Auto-fix supported issues")
     .option("--ci", "CI mode")
-    .action(async (options: { fix?: boolean; ci?: boolean }) => {
-      await runValidate(process.cwd(), options);
+    .option("--json", "Emit a JSON envelope")
+    .action(async (options: { fix?: boolean; ci?: boolean; json?: boolean }, command: Command) => {
+      const global = getGlobalOptions(command);
+      await runValidate(process.cwd(), { ...options, json: options.json ?? global.json ?? false });
     });
 
   program
@@ -164,6 +180,17 @@ function collectEditLabels(value: string, previous: string[]): string[] {
 }
 
 main().catch((error) => {
+  const jsonMode = process.argv.includes("--json");
+  if (jsonMode) {
+    writeEnvelope(failureEnvelope(error));
+    if (error instanceof TicketError) {
+      process.exitCode = error.exitCode;
+      return;
+    }
+    process.exitCode = EXIT_CODE.UNEXPECTED;
+    return;
+  }
+
   if (error instanceof TicketError) {
     console.error(error.message);
     process.exitCode = error.exitCode;

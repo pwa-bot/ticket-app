@@ -46,14 +46,8 @@ export default function DashboardPage() {
             Connect GitHub
           </Link>
           <Link
-            href="/protocol"
-            className="rounded-lg border border-border px-6 py-3 text-sm font-medium transition-colors hover:bg-surface"
-          >
-            Read the Protocol
-          </Link>
-          <Link
             href="/pricing"
-            className="text-sm font-medium text-muted underline underline-offset-4 transition-colors hover:text-foreground"
+            className="rounded-lg border border-border px-6 py-3 text-sm font-medium transition-colors hover:bg-surface"
           >
             View pricing
           </Link>
@@ -61,6 +55,43 @@ export default function DashboardPage() {
         <p className="mt-4 text-xs text-subtle">
           Read-only in v1. Edit via CLI and git.
         </p>
+      </section>
+
+      {/* How to connect */}
+      <section className="border-t border-border bg-surface">
+        <div className="mx-auto max-w-6xl px-6 py-20">
+          <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            Three steps to get started
+          </h2>
+          <div className="mt-8 grid gap-6 sm:grid-cols-3 sm:max-w-3xl">
+            <div className="rounded-lg border border-border bg-white p-6">
+              <span className="text-sm font-medium text-brand">1</span>
+              <h3 className="mt-2 font-semibold">Connect GitHub</h3>
+              <p className="mt-2 text-sm text-muted">
+                Sign in with GitHub OAuth. No write access required.
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-white p-6">
+              <span className="text-sm font-medium text-brand">2</span>
+              <h3 className="mt-2 font-semibold">Select repos</h3>
+              <p className="mt-2 text-sm text-muted">
+                Choose which repos to display. Only repos with{" "}
+                <code className="font-mono text-xs">.tickets/</code> are shown.
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-white p-6">
+              <span className="text-sm font-medium text-brand">3</span>
+              <h3 className="mt-2 font-semibold">
+                Reads{" "}
+                <code className="font-mono text-xs">.tickets/index.json</code>
+              </h3>
+              <p className="mt-2 text-sm text-muted">
+                The dashboard loads the CLI-generated index for fast rendering.
+                Git stays authoritative.
+              </p>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* What the dashboard is */}
@@ -75,7 +106,7 @@ export default function DashboardPage() {
           </p>
           <ul className="mt-6 space-y-2">
             {[
-              "Board and list views across tickets",
+              "Dashboard views across tickets",
               "Filters by state, priority, labels, repo",
               "Ticket detail view renders Markdown cleanly",
               "Deep links are shareable and bookmarkable",
@@ -101,7 +132,7 @@ export default function DashboardPage() {
           <p className="mt-4 max-w-2xl text-muted">
             Ticket.app uses the Indexed Profile of the protocol.
           </p>
-          <ol className="mt-6 space-y-3 text-sm text-muted">
+          <ul className="mt-6 space-y-3 text-sm text-muted list-none">
             <li>
               <span className="font-medium text-foreground">1.</span> Tickets
               live as Markdown files:{" "}
@@ -114,7 +145,7 @@ export default function DashboardPage() {
               generates a derived index:{" "}
               <code className="font-mono text-xs">.tickets/index.json</code>
             </li>
-          </ol>
+          </ul>
           <p className="mt-6 font-medium">
             Result: Fast loading without a canonical database.
           </p>
@@ -250,12 +281,6 @@ export default function DashboardPage() {
               className="rounded-lg border border-border px-6 py-3 text-sm font-medium transition-colors hover:bg-surface-2"
             >
               View pricing
-            </Link>
-            <Link
-              href="/cli"
-              className="rounded-lg border border-border px-6 py-3 text-sm font-medium transition-colors hover:bg-surface-2"
-            >
-              Install CLI
             </Link>
           </div>
         </div>

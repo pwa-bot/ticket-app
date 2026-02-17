@@ -14,7 +14,7 @@ importers:
 
   apps/cli:
     dependencies:
-      '@ticket-app/core':
+      '@ticketdotapp/core':
         specifier: workspace:*
         version: link:../../packages/core
       chalk:

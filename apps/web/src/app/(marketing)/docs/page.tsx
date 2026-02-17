@@ -34,7 +34,7 @@ export default function DocsPage() {
         </li>
         <li>
           <Link
-            href="https://github.com/nickarilla/ticket-app"
+            href="https://github.com/pwa-bot/ticket-app"
             className="text-brand underline underline-offset-4 hover:text-brand/80"
           >
             GitHub repository

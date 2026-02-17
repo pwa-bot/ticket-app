@@ -95,7 +95,7 @@ export default function OSSPage() {
           <ul className="mt-6 space-y-3 text-sm text-muted">
             <li>
               <Link
-                href="https://github.com/nickarilla/ticket-app"
+                href="https://github.com/pwa-bot/ticket-app"
                 className="text-brand underline underline-offset-4 hover:text-brand/80"
               >
                 GitHub repositories
@@ -103,7 +103,7 @@ export default function OSSPage() {
             </li>
             <li>
               <Link
-                href="https://github.com/nickarilla/ticket-app/issues"
+                href="https://github.com/pwa-bot/ticket-app/issues"
                 className="text-brand underline underline-offset-4 hover:text-brand/80"
               >
                 Issues and discussions
@@ -121,7 +121,7 @@ export default function OSSPage() {
         <div className="mx-auto max-w-6xl px-6 py-20 text-center">
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Link
-              href="https://github.com/nickarilla/ticket-app"
+              href="https://github.com/pwa-bot/ticket-app"
               className="rounded-lg bg-foreground px-6 py-3 text-sm font-medium text-background transition-opacity hover:opacity-80"
             >
               GitHub repositories

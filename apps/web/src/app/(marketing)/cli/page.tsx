@@ -47,7 +47,7 @@ export default function CLIPage() {
         <div className="mx-auto max-w-6xl px-6 py-16">
           <h2 className="mb-4 text-xl font-semibold">Install</h2>
           <div className="max-w-md">
-            <CodeCard label="npm">npm i -g @ticketapp/cli</CodeCard>
+            <CodeCard label="npm">npm i -g @ticketdotapp/cli</CodeCard>
           </div>
         </div>
       </section>
@@ -203,22 +203,16 @@ ticket validate --all --fix-index --ci`}
           </h2>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
-              href="/protocol"
+              href="#install"
               className="rounded-lg bg-foreground px-6 py-3 text-sm font-medium text-background transition-opacity hover:opacity-80"
             >
+              Install CLI
+            </Link>
+            <Link
+              href="/protocol"
+              className="rounded-lg border border-border px-6 py-3 text-sm font-medium transition-colors hover:bg-surface-2"
+            >
               Read the Protocol
-            </Link>
-            <Link
-              href="/api/auth/github"
-              className="rounded-lg border border-border px-6 py-3 text-sm font-medium transition-colors hover:bg-surface-2"
-            >
-              Connect GitHub
-            </Link>
-            <Link
-              href="/pricing"
-              className="rounded-lg border border-border px-6 py-3 text-sm font-medium transition-colors hover:bg-surface-2"
-            >
-              View Pricing
             </Link>
           </div>
         </div>

@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function OverlaySection() {
   const bullets = [
-    "Board and list views",
+    "Dashboard views",
     "Filters by state, priority, labels, repo",
     "PR linking by convention (branch and title)",
     "Read-only in v1, edit via git and CLI",

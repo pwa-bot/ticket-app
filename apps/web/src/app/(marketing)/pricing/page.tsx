@@ -17,7 +17,7 @@ const tiers = [
       "Ticket Protocol (CC0)",
       "CLI (open source)",
       "Single-repo dashboard view",
-      "Board and list views",
+      "Dashboard views",
       "PR linking by convention",
     ],
     cta: "Install CLI",
@@ -56,7 +56,7 @@ const tiers = [
     price: "$50 / mo",
     features: [
       "Everything in Team",
-      "Governance features",
+      "GitHub checks that block merges when tickets are invalid",
       "Advanced org controls",
       "Priority support",
     ],

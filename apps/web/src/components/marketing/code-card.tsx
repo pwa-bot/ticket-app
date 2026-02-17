@@ -20,15 +20,15 @@ export function CodeCard({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border">
+    <div className="relative overflow-hidden rounded-lg border border-border">
       {label && (
         <div className="flex items-center justify-between border-b border-white/10 bg-code-bg px-4 py-2">
           <span className="text-xs text-code-fg/60">{label}</span>
           <button
             onClick={copy}
-            className="text-xs text-code-fg/40 transition-colors hover:text-code-fg/80"
+            className="rounded px-2 py-1 text-xs text-code-fg/60 transition-colors hover:bg-white/10 hover:text-code-fg"
           >
-            {copied ? "Copied" : "Copy"}
+            {copied ? "Copied!" : "Copy"}
           </button>
         </div>
       )}
@@ -40,10 +40,17 @@ export function CodeCard({
       {!label && (
         <button
           onClick={copy}
-          className="absolute right-3 top-3 text-xs text-code-fg/40 transition-colors hover:text-code-fg/80"
+          className="absolute right-3 top-3 rounded px-2 py-1 text-xs text-code-fg/60 transition-colors hover:bg-white/10 hover:text-code-fg"
         >
-          {copied ? "Copied" : "Copy"}
+          {copied ? "Copied!" : "Copy"}
         </button>
+      )}
+      {copied && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center">
+          <span className="rounded-full bg-foreground px-3 py-1 text-xs font-medium text-background shadow-lg">
+            Copied to clipboard
+          </span>
+        </div>
       )}
     </div>
   );
