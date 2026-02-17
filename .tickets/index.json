@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-17T00:33:29.105Z",
+  "generated_at": "2026-02-17T00:33:29.350Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -93,6 +93,20 @@
         "contract-v1"
       ],
       "path": ".tickets/tickets/01KHMG86G7ZPTKKE8PWBTVYRYZ.md"
+    },
+    {
+      "id": "01KHMG8D7XQXNCPTTVPMG5V72V",
+      "short_id": "01KHMG8D",
+      "display_id": "TK-01KHMG8D",
+      "title": "Determinism hooks for tests (ULID, SOURCE_DATE_EPOCH)",
+      "state": "backlog",
+      "priority": "p2",
+      "labels": [
+        "refactor",
+        "contract-v1",
+        "testing"
+      ],
+      "path": ".tickets/tickets/01KHMG8D7XQXNCPTTVPMG5V72V.md"
     },
     {
       "id": "01KHMG861RFP1FWRX8BXP68D9P",
