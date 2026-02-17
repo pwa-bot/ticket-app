@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-17T23:57:30.054Z",
+  "generated_at": "2026-02-17T23:57:30.290Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -188,6 +188,20 @@
         "api"
       ],
       "path": ".tickets/tickets/01KHQ0K7AG8W8MGND7R7TKB5MX.md"
+    },
+    {
+      "id": "01KHQ0K7S8KF3008MGBJP99AMX",
+      "short_id": "01KHQ0K7",
+      "display_id": "TK-01KHQ0K7",
+      "title": "UI pending change model and PR status badges",
+      "state": "ready",
+      "priority": "p0",
+      "labels": [
+        "frontend",
+        "ui",
+        "pending"
+      ],
+      "path": ".tickets/tickets/01KHQ0K7S8KF3008MGBJP99AMX.md"
     },
     {
       "id": "01KHQ0K7HVXXBNSFGT0PEGHE5T",
