@@ -1,7 +1,7 @@
 ---
 id: 01KHPTPPK4J0QS0J4TGA7YHWM7
 title: Attention table view (supervisory control plane)
-state: in_progress
+state: done
 priority: p1
 labels:
   - dashboard
