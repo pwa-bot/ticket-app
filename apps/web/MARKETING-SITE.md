@@ -601,59 +601,112 @@ Ticket.app is a hosted overlay for:
 
 ### Hero
 
-**H1:** A fast overlay for what's already in Git
+**H1:** A dashboard that reads from Git
 
-**Subhead:** The dashboard reads `.tickets/index.json` and ticket files from your repo. No separate database. No sync issues. Git is authoritative.
+**Subhead:** Ticket.app is a fast overlay on top of the Ticket Protocol. It reads `.tickets/index.json` and ticket files from your repo. Git stays authoritative.
 
 **Buttons:**
 - Primary: Connect GitHub
-- Secondary: Install CLI
+- Secondary: Read the Protocol
+- Link: View pricing
+
+**Microcopy:** Read-only in v1. Edit via CLI and git.
 
 ---
 
-### Section: What you get
+### Section: What the dashboard is
 
-**Headline:** Visibility without complexity
+**Headline:** Visibility without moving your workflow into SaaS
+
+**Body:** The dashboard does not replace your repo. It renders what's already there: ticket files and a derived index for speed.
 
 **Bullets:**
-- Board view (Kanban columns by state)
-- List view with filters
-- Multi-repo portfolio (paid)
-- PR linking by convention
-- Deep links to individual tickets
+- Board and list views across tickets
+- Filters by state, priority, labels, repo
+- Ticket detail view renders Markdown cleanly
+- Deep links are shareable and bookmarkable
 
 ---
 
 ### Section: How it works
 
-**Headline:** Derived, not stored
+**Headline:** Two files power the UI
 
-1. Connect your GitHub repo
-2. Dashboard fetches `.tickets/index.json`
-3. Click a ticket → fetches the markdown file
-4. Changes happen via CLI and git push
+**Body:** Ticket.app uses the Indexed Profile of the protocol.
 
-**Callout:** The dashboard is read-only in v1. Edit tickets via CLI or direct file edits.
+1. Tickets live as Markdown files:
+   - `.tickets/tickets/<ULID>.md`
+2. The CLI generates a derived index:
+   - `.tickets/index.json`
+
+**Result:** Fast loading without a canonical database.
+
+**Small note:** If index.json is stale, ticket files are authoritative.
 
 ---
 
-### Section: PR linking
+### Section: PR linking and merge context
 
-**Headline:** Automatic by convention
+**Headline:** Link work to code by convention
 
-When your branch or PR title includes the ticket ID:
-- Branch: `tk-01arz3nd-fix-login`
-- PR title: `[TK-01ARZ3ND] Fix login bug`
+**Body:** If your branch and PR title follow the convention, the dashboard links them automatically.
 
-The dashboard shows linked PRs on the ticket detail.
+**Branch:** `tk-{short_id}-{slug}`
+**PR title:** `[TK-{short_id}] {title}`
+
+**What you see:**
+- Linked PRs on ticket detail
+- CI status (if available)
+- Last updated signals
+
+---
+
+### Section: Multi-repo portfolio (paid)
+
+**Headline:** See work across all repos
+
+**Body:** Upgrade for portfolio views across multiple repos, saved filters, and shareable dashboards.
+
+**Examples:**
+- "All ready tickets across repos"
+- "Everything blocked"
+- "P0 and P1 in flight"
+
+---
+
+### Section: Security and permissions
+
+**Headline:** Read-only by default
+
+**Body:** In v1, Ticket.app does not write to your repo. It reads selected repos via GitHub OAuth and respects GitHub permissions.
+
+**Bullets:**
+- Repo allowlist (only repos you select)
+- Tokens stored securely
+- Webhooks optional later for faster refresh
+
+**CTA:** Read Security
+
+---
+
+### FAQ
+
+**Q:** Do I need the dashboard to use Ticket?
+**A:** No. The protocol and CLI work without any hosted service.
+
+**Q:** What happens if I stop paying?
+**A:** Nothing breaks. Your tickets remain in Git. You just lose hosted coordination features.
+
+**Q:** Why not just use GitHub Issues?
+**A:** Ticket is a protocol: specs in Markdown, deterministic CLI for agents, and a fast derived index for overlays.
 
 ---
 
 ### Footer CTA
 
-**Headline:** See your backlog. Don't babysit it.
+**Headline:** Add visibility when you want it. Keep Git as the source of truth.
 
-**Buttons:** Connect GitHub, Install CLI, View Pricing
+**Buttons:** Connect GitHub, View pricing, Install CLI
 
 ---
 
