@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-17T23:43:34.031Z",
+  "generated_at": "2026-02-17T23:43:34.263Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -165,7 +165,7 @@
       "short_id": "01KHMG86",
       "display_id": "TK-01KHMG86",
       "title": "Make ticket init idempotent",
-      "state": "ready",
+      "state": "in_progress",
       "priority": "p1",
       "labels": [
         "refactor",
