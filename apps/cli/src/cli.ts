@@ -35,8 +35,10 @@ async function main(): Promise<void> {
   program
     .command("init")
     .description("Create .tickets/ structure")
-    .action(async () => {
-      await runInit(process.cwd());
+    .option("--json", "Emit a JSON envelope")
+    .action(async (options: { json?: boolean }, command: Command) => {
+      const global = getGlobalOptions(command);
+      await runInit(process.cwd(), { json: options.json ?? global.json ?? false });
     });
 
   program

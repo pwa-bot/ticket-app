@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import AttentionTable from "@/components/attention-table";
 import TicketDetailModal from "@/components/ticket-detail-modal";
-import ViewToggle from "@/components/view-toggle";
 import type { LinkedPrSummary } from "@/components/pr-status-badge";
 import {
   getCreatedTimestamp,
@@ -59,14 +58,6 @@ function extractTicketDates(ticket: AttentionTicket): Pick<AttentionTicket, "cre
   };
 }
 
-function getViewFromQuery(value: string | null): "board" | "table" | null {
-  if (value === "board" || value === "table") {
-    return value;
-  }
-
-  return null;
-}
-
 export default function MultiRepoAttention({ repos }: MultiRepoAttentionProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -75,35 +66,8 @@ export default function MultiRepoAttention({ repos }: MultiRepoAttentionProps) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<"board" | "table">("table");
   const [prMap, setPrMap] = useState<Record<string, LinkedPrSummary[]>>({});
   const [ciMap, setCiMap] = useState<Record<string, CiStatus>>({});
-
-  useEffect(() => {
-    const queryView = getViewFromQuery(searchParams.get("view"));
-    if (queryView) {
-      const normalized = queryView === "board" ? "table" : queryView;
-      setView(normalized);
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem("ticket_view", normalized);
-      }
-      if (normalized !== queryView) {
-        const params = new URLSearchParams(searchParams.toString());
-        params.set("view", normalized);
-        router.replace(`${pathname}?${params.toString()}`);
-      }
-      return;
-    }
-
-    if (typeof window !== "undefined") {
-      const stored = getViewFromQuery(window.localStorage.getItem("ticket_view"));
-      const normalized = stored === "board" ? "table" : stored ?? "table";
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("view", normalized);
-      router.replace(`${pathname}?${params.toString()}`);
-      setView(normalized);
-    }
-  }, [pathname, router, searchParams]);
 
   const loadTickets = useCallback(
     async ({ forceRefresh = false }: { forceRefresh?: boolean } = {}) => {
@@ -314,15 +278,6 @@ export default function MultiRepoAttention({ repos }: MultiRepoAttentionProps) {
     router.push(query ? `${pathname}?${query}` : pathname);
   }
 
-  function setViewMode(nextView: "board" | "table") {
-    const normalized = nextView === "board" ? "table" : nextView;
-    setView(normalized);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("ticket_view", normalized);
-    }
-    setQueryParam("view", normalized);
-  }
-
   const generatedLabel = useMemo(() => {
     const timestamps = Object.values(indexes)
       .map((index) => index.generated_at ?? index.generated)
@@ -346,7 +301,7 @@ export default function MultiRepoAttention({ repos }: MultiRepoAttentionProps) {
           <p className="mt-1 text-sm text-slate-600">{repos.length} repos selected</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <ViewToggle view={view} onChange={setViewMode} boardDisabled />
+          {/* Board view disabled for multi-repo — only show toggle for single repo */}
           <button
             type="button"
             onClick={() => void loadTickets({ forceRefresh: true })}
