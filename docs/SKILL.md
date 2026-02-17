@@ -1,6 +1,15 @@
-# ticket.app OpenClaw Skill
+# ticket.app OpenClaw Skill v2.2
 
-Git-native issue tracking for AI-first teams.
+Git-native issue tracking. **No code change without a ticket.**
+
+## Overview
+
+Ticket is the durable execution ledger for agent work:
+- Tickets live in Git under `.tickets/`
+- Agents operate tickets via the `ticket` CLI
+- Humans view the dashboard overlay at https://ticket.app
+
+---
 
 ## Installation
 
@@ -10,81 +19,38 @@ npm i -g @ticketdotapp/cli
 
 ---
 
-## Core Principle
+## Repo Prerequisites
 
-> **No code change without a ticket.**
+**Check these before any ticket operation.**
 
-This applies to you AND any sub-agents you spawn.
-
----
-
-## Before Starting Any Work
-
-1. Check what's ready:
-   ```bash
-   ticket list --state ready --json --ci
-   ```
-
-2. If using an existing ticket:
-   ```bash
-   ticket start <id> --ci
-   ```
-
-3. If new work:
-   - **Search first** (avoid duplicates):
-     ```bash
-     ticket list --json --ci
-     ```
-   - Check for similar titles/labels before creating
-   - Then create and start:
-     ```bash
-     ticket new "Title" -p p1 --label feature --ci
-     ticket start <id> --ci
-     ```
-
-4. If a sub-agent needs the ticket, push:
-   ```bash
-   git push
-   ```
-
----
-
-## After Completing Work
-
-1. Ensure tests pass (project standard)
-2. Complete the ticket:
-   ```bash
-   ticket done <id> --ci
-   ```
-3. Validate protocol state:
-   ```bash
-   ticket validate --json --ci
-   ```
-4. Push:
-   ```bash
-   git push
-   ```
-
-**Never push broken protocol state.**
-
----
-
-## Handling Blocked Work
-
+### 1. Must be a git repo
 ```bash
-ticket move <id> blocked --ci
-ticket edit <id> --labels +needs-input --ci
+git rev-parse --git-dir
 ```
 
-Add explanation in the ticket body (edit the .md file), then push:
+### 2. `.tickets/` must exist
+If missing, initialize and commit:
 ```bash
+ticket init
 git push
 ```
 
-When unblocked:
+### 3. Index must be healthy
+If broken:
 ```bash
-ticket move <id> in_progress --ci
+ticket rebuild-index
 ```
+
+---
+
+## Golden Rules
+
+1. **Always use `--ci`** for automation (exact ID matching)
+2. **Always use `--json`** when parsing output
+3. **Never create duplicates** without checking existing tickets first
+4. **Never skip states** to complete work
+5. **Always validate before pushing**
+6. **CLI commits automatically** — do not manually commit ticket changes
 
 ---
 
@@ -92,65 +58,155 @@ ticket move <id> in_progress --ci
 
 ```
 backlog → ready → in_progress → done
-            ↓         ↓
-         blocked ←────┘
-            ↓
-    ready or in_progress
+   ↓        ↓         ↓    ↑
+   └──→ blocked ←─────┘    │
+            ↓              │
+    ready or in_progress ──┘
 ```
 
-**Rules:**
-- `ready → in_progress → done` is the only path to completion
-- `ready → done` is **invalid** (must go through `in_progress`)
-- `blocked → done` is **invalid** (must return to `in_progress` first)
-- `done` is terminal (no reopen)
+**Valid transitions:**
+- `backlog` → `ready`, `blocked`
+- `ready` → `in_progress`, `blocked`
+- `in_progress` → `done`, `ready`, `blocked`
+- `blocked` → `ready`, `in_progress`
 
-**Do not bounce states repeatedly.** If stuck, set to `blocked` and document why.
+**Invalid:**
+- `ready` → `done` (must go through `in_progress`)
+- `done` → anything (terminal)
+
+---
+
+## Standard Workflow
+
+### A) Before Starting Work
+
+1. **List what's ready:**
+   ```bash
+   ticket list --state ready --json --ci
+   ```
+
+2. **If using an existing ticket, start it:**
+   ```bash
+   ticket start <id> --ci
+   ```
+
+3. **If new work, check for duplicates first:**
+   ```bash
+   ticket list --json --ci
+   ```
+   Scan for similar titles/labels. Use existing ticket if found.
+
+4. **Create only if none exists:**
+   ```bash
+   ticket new "Title" -p p1 --label feature --ci
+   ticket start <id> --ci
+   ```
+
+5. **If sub-agent will work on it, push immediately:**
+   ```bash
+   git push
+   ```
+
+### B) After Completing Work
+
+1. **Mark done** (only valid from `in_progress`):
+   ```bash
+   ticket done <id> --ci
+   ```
+
+2. **Validate protocol state:**
+   ```bash
+   ticket validate --json --ci
+   ```
+
+3. **Push:**
+   ```bash
+   git push
+   ```
+
+---
+
+## Blocked Work
+
+When progress is blocked:
+
+```bash
+ticket move <id> blocked --ci
+ticket edit <id> --labels +needs-input --ci
+```
+
+Add explanation in ticket body under `## Notes`:
+- What is blocked
+- What is needed to unblock
+- Who is needed (if applicable)
+
+Then validate and push:
+```bash
+ticket validate --json --ci
+git push
+```
+
+When unblocked:
+```bash
+ticket move <id> in_progress --ci
+ticket edit <id> --labels -needs-input --ci
+ticket validate --json --ci
+git push
+```
+
+**Do not oscillate states.** If stuck, go to `blocked` once and document why.
 
 ---
 
 ## Ticket Quality
 
-**Only start tickets in `ready` state.** Tickets in `backlog` may not be fully specced.
+**Only start tickets in `ready` state.** Tickets in `backlog` may not be specced.
 
-Before moving a ticket to `ready`, ensure it has:
+Before moving to `ready`, ensure ticket has:
 - **Problem** — What's broken or missing
 - **Acceptance Criteria** — How to verify it's done
 
-Optional but helpful:
+Optional:
 - Spec or design notes
 - Links to related tickets
 
 ---
 
+## Assignment & Review
+
+### Assign implementation ownership
+```bash
+ticket assign <id> agent:openclaw --ci
+```
+
+### Set a reviewer
+```bash
+ticket reviewer <id> human:morgan --ci
+```
+
+Note: These are metadata. Enforcement is via GitHub (CODEOWNERS, branch protection).
+
+---
+
 ## Git Conventions
 
-### Auto-Commit
-
-Every ticket mutation auto-commits:
-```
-ticket: TK-01ARZ3ND → in_progress
-ticket: TK-01ARZ3ND → done
-```
-
-### Branch Naming
-
+### Branch naming
 ```bash
-ticket branch <id>    # Creates: tk-01arz3nd-add-authentication
+ticket branch <id> --ci
+```
+Convention: `tk-<short_id>-<slug>`
+
+Example: `tk-01arz3nd-add-authentication`
+
+### PR title (required)
+**Must include ticket ID in brackets:**
+```
+[TK-01ARZ3ND] Add authentication
 ```
 
-**Branch MUST include** `tk-<shortid>-`
-
-### PR Title
-
-**PR title MUST contain** `[TK-<shortid>]` prefix:
-```
-[TK-01ARZ3ND] Add user authentication
-```
-
-### When to Push
-
-Push after any meaningful state change:
-- After `ticket start` (if sub-agent needs to see it)
+### When to push
+Push after meaningful state changes:
+- After `ticket start` (if sub-agent needs it)
 - After `ticket done`
 - After `ticket move blocked`
 
@@ -160,135 +216,121 @@ Push after any meaningful state change:
 
 ### Before Spawning
 
-If `.tickets/` does not exist:
-```bash
-ticket init
-git add .tickets
-git commit -m "chore: initialize ticket tracking"
-git push
-```
+1. Ensure `.tickets/` exists (run `ticket init` if not)
+2. Start the ticket and push:
+   ```bash
+   ticket start <id> --ci
+   git push
+   ```
+3. Optionally assign:
+   ```bash
+   ticket assign <id> agent:<name> --ci
+   git push
+   ```
+
+### Spawn Prompt Template
+
+Use this format:
+
+> Work on **[TK-01ARZ3ND]**: Add authentication.
+>
+> 1. Pull latest main
+> 2. Create branch `tk-01arz3nd-add-authentication`
+> 3. Implement changes and run tests
+> 4. When complete:
+>    - `ticket done 01ARZ3ND... --ci`
+>    - `ticket validate --json --ci`
+>    - `git push`
 
 ### Model Selection
 
 | Task Type | Model Tier | Examples |
 |-----------|------------|----------|
-| Implementation (backend) | Strong coding model | Codex CLI, Claude Code |
-| Implementation (frontend) | Strong coding model | Claude Code |
+| Backend implementation | Strong coding | Codex CLI, Claude Code |
+| Frontend/UI | Strong coding | Claude Code |
 | Quick fixes | Current session | Don't spawn |
-| Architecture decisions | Strongest available | Opus-tier |
-| Monitoring, validation | Cheap/fast model | Flash, Haiku-tier |
+| Architecture | Strongest | Opus-tier |
+| Monitoring, validation | Cheap/fast | Flash, Haiku-tier |
 
 **Cost guidance:**
-- P0/P1 tickets: Worth stronger models
-- P2/P3 tickets: Use cheaper models or batch
-- Never use expensive models for routine work
+- P0/P1: Worth stronger models
+- P2/P3: Use cheaper models or batch
+- Routine work: Never use expensive models
 
-### Spawning Pattern
+### After Spawning
 
-1. Create or identify the ticket
-2. Start it: `ticket start <id> --ci`
-3. Push: `git push`
-4. Spawn with ticket context:
-   ```
-   "Work on [TK-01KHMG85]: <description>.
-   When complete:
-   1. Run tests
-   2. ticket done 01KHMG85... --ci
-   3. ticket validate --json --ci
-   4. git push"
-   ```
-5. Monitor for completion
+Monitor and confirm completion:
+```bash
+ticket show <id> --json --ci
+```
 
 ---
 
-## Commands Reference
+## Heartbeat Hygiene
 
-### Always Use `--ci` and `--json`
+When idle or on heartbeat:
 
-In automation, **always** use:
-- `--ci` — Exact ID matching (no fuzzy)
-- `--json` — Machine-readable output
+1. **List in-progress:**
+   ```bash
+   ticket list --state in_progress --json --ci
+   ```
 
-```bash
-ticket list --json --ci
-ticket show <id> --json --ci
-ticket validate --json --ci
-```
+2. **For stale tickets** (>24h no commits):
+   - Complete them, or
+   - Move to `blocked` with explanation
 
-### Essential Commands
-
-```bash
-ticket init                           # Setup .tickets/
-ticket new "Title" -p p1 --ci         # Create ticket
-ticket list --state ready --json --ci # See ready work
-ticket start <id> --ci                # Begin work
-ticket done <id> --ci                 # Complete work
-ticket show <id> --json --ci          # Full details
-ticket validate --json --ci           # Check for errors
-```
-
-### ID Formats
-
-- **Full ID**: `01ARZ3NDEKTSV4RRFFQ69G5FAV` (26 chars)
-- **Short ID**: `01ARZ3ND` (8 chars) — use in commands
-- **Display ID**: `TK-01ARZ3ND` — for PR titles, humans
+3. **Validate:**
+   ```bash
+   ticket validate --json --ci
+   ```
 
 ---
 
 ## Anti-Patterns
 
-❌ **Don't skip ticket creation for code changes**
-> "I'll just fix this quick..." → Untracked work
-
-❌ **Don't create duplicates**
-> Search first with `ticket list --json --ci`
-
-❌ **Don't skip states**
-> `ready → done` is invalid; must go through `in_progress`
-
-❌ **Don't leave tickets in `in_progress` forever**
-> Complete them or move to `blocked` with explanation
-
-❌ **Don't forget to push**
-> Dashboard and sub-agents can't see unpushed changes
-
-❌ **Don't oscillate states**
-> If stuck, go to `blocked` once and document why
-
-❌ **Don't use fuzzy matching in automation**
-> Always use `--ci` flag
-
-❌ **Don't push broken protocol state**
-> Run `ticket validate --json --ci` before push
+❌ "Quick fix" without a ticket
+❌ Creating without checking for duplicates
+❌ Skipping `in_progress` (going `ready` → `done`)
+❌ Leaving tickets in `in_progress` indefinitely
+❌ Forgetting to push
+❌ Using fuzzy matching in automation (always `--ci`)
+❌ Bouncing states repeatedly (use `blocked` instead)
+❌ Pushing without validating
 
 ---
 
-## Heartbeat Integration
+## Command Reference
 
-Add to HEARTBEAT.md:
-
-```markdown
-## Ticket Hygiene
-
-On heartbeat, if no urgent work:
-1. `ticket list --state in_progress --json --ci`
-2. Check for stale tickets (>24h with no commits)
-3. Either complete them or move to `blocked`
-4. `ticket validate --json --ci`
+### Setup
+```bash
+ticket init
+ticket rebuild-index
 ```
 
----
+### Core
+```bash
+ticket new "Title" -p p1 --label x --ci
+ticket list --json --ci
+ticket list --state ready --json --ci
+ticket show <id> --json --ci
+ticket start <id> --ci
+ticket done <id> --ci
+ticket move <id> blocked --ci
+ticket validate --json --ci
+```
 
-## Web Dashboard
+### Metadata
+```bash
+ticket edit <id> --labels +foo --ci
+ticket edit <id> --labels -foo --ci
+ticket assign <id> agent:openclaw --ci
+ticket reviewer <id> human:morgan --ci
+```
 
-https://ticket.app — Read-only view for humans
-
-- Sign in with GitHub
-- Select repos with `.tickets/`
-- Kanban board
-- Ticket detail
-
-**Agents use CLI, not web.**
+### Git helpers
+```bash
+ticket branch <id> --ci
+```
 
 ---
 
@@ -301,17 +343,19 @@ Add to your project:
 
 **No code change without a ticket.**
 
-Before starting:
+### Before starting:
 1. `ticket list --state ready --json --ci`
 2. Existing ticket: `ticket start <id> --ci`
 3. New work: search first, then `ticket new` + `ticket start`
 
-After completing:
+### After completing:
 1. Tests pass
 2. `ticket done <id> --ci`
 3. `ticket validate --json --ci`
 4. `git push`
 
-PR title: `[TK-<id>] <title>`
-Branch: `tk-<id>-<slug>`
+### Conventions:
+- PR title: `[TK-<id>] <title>`
+- Branch: `tk-<id>-<slug>`
+- Always use `--ci` and `--json` in automation
 ```
