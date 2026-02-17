@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-17T23:46:19.867Z",
+  "generated_at": "2026-02-17T23:57:22.912Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -159,6 +159,21 @@
         "testing"
       ],
       "path": ".tickets/tickets/01KHMG8JASDQ7VC5YZK8NFBKZP.md"
+    },
+    {
+      "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
+      "short_id": "01KHQ0K0",
+      "display_id": "TK-01KHQ0K0",
+      "title": "Dashboard write actions via PR-based ticket changes",
+      "state": "ready",
+      "priority": "p0",
+      "labels": [
+        "dashboard",
+        "github",
+        "writes",
+        "epic"
+      ],
+      "path": ".tickets/tickets/01KHQ0K0JMG4HGT2A78FDWJ5BX.md"
     },
     {
       "id": "01KHMG84AJMCWQCCE84328MF5G",
