@@ -180,7 +180,7 @@ This ensures forward compatibility. When future protocol versions add fields lik
 
 - YAML MUST NOT contain tabs.
 - Implementations MUST ignore unknown top-level keys when processing.
-- **Forward compatibility:** Implementations that rewrite frontmatter MUST preserve unknown keys. The `x_ticket` namespace is reserved for extensions and MUST be preserved exactly.
+- **Forward compatibility:** Implementations that rewrite frontmatter MUST preserve unknown keys. The `x_ticket` namespace is reserved for extensions and MUST be preserved semantically.
 
 ---
 
