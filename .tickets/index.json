@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-17T00:39:00.003Z",
+  "generated_at": "2026-02-17T00:46:59.368Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -152,7 +152,7 @@
       "short_id": "01KHMG84",
       "display_id": "TK-01KHMG84",
       "title": "Standardize error model and exit codes",
-      "state": "in_progress",
+      "state": "done",
       "priority": "p1",
       "labels": [
         "refactor",
