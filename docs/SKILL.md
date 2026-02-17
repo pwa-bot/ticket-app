@@ -339,23 +339,142 @@ ticket branch <id> --ci
 Add to your project:
 
 ```markdown
-## Ticket Discipline
+## Ticket Discipline (required)
 
-**No code change without a ticket.**
+No code change without a ticket.
 
-### Before starting:
-1. `ticket list --state ready --json --ci`
-2. Existing ticket: `ticket start <id> --ci`
-3. New work: search first, then `ticket new` + `ticket start`
+### Before starting any work
+1) List ready tickets:
+   - `ticket list --state ready --json --ci`
+2) If using an existing ticket:
+   - `ticket start <id> --ci`
+3) If the work is new:
+   - Check for duplicates first:
+     - `ticket list --json --ci`
+   - Then create:
+     - `ticket new "Title" -p p1 --label <label> --ci`
+   - Start it:
+     - `ticket start <id> --ci`
 
-### After completing:
-1. Tests pass
-2. `ticket done <id> --ci`
-3. `ticket validate --json --ci`
-4. `git push`
+If a sub-agent will work on it, push so they can pull:
+- `git push`
 
-### Conventions:
-- PR title: `[TK-<id>] <title>`
-- Branch: `tk-<id>-<slug>`
-- Always use `--ci` and `--json` in automation
+### After completing work
+1) Mark done:
+   - `ticket done <id> --ci`
+2) Validate:
+   - `ticket validate --json --ci`
+3) Push:
+   - `git push`
+
+### Blocked work
+- `ticket move <id> blocked --ci`
+- `ticket edit <id> --labels +needs-input --ci`
+
+Add a brief explanation under `## Notes` in the ticket file, then:
+- `ticket validate --json --ci`
+- `git push`
+
+### Rules
+- Always use `--ci` in automation.
+- Always use `--json` when parsing output.
+- PR title must include `[TK-<short_id>]`.
+- Branch must follow `tk-<short_id>-<slug>` (use `ticket branch <id> --ci`).
+```
+
+---
+
+## Appendix: Sub-Agent Prompt Templates
+
+### A) Routine Implementation
+
+```text
+Ticket: [TK-<SHORT_ID>] <TITLE>
+Repo: <OWNER>/<REPO>
+
+Rules:
+- Pull latest main
+- Use canonical branch: tk-<short_id>-<slug> (run: ticket branch <SHORT_ID> --ci)
+- No fuzzy matching, always use --ci
+- Do the work, run tests, then:
+  - ticket done <SHORT_ID> --ci
+  - ticket validate --json --ci
+  - git push
+
+PR:
+- Title must start with: [TK-<SHORT_ID>] <TITLE>
+
+Task:
+<WHAT TO DO>
+
+Reply with:
+- Summary of changes
+- Tests run
+- Confirm ticket done + pushed
+- PR link (if created)
+```
+
+### B) Review-Only (No Code Changes)
+
+```text
+Review-only for Ticket: [TK-<SHORT_ID>] <TITLE>
+Repo: <OWNER>/<REPO>
+PR: <PR URL>
+
+Rules:
+- Do NOT make code changes unless explicitly asked
+- Do NOT mark ticket done
+- Leave feedback as PR review comments, and summarize in a single final message
+
+Focus:
+- Does implementation match ticket Acceptance Criteria?
+- Any edge cases missing?
+- Test coverage and failure modes?
+- Naming, architecture, and risk assessment
+- Anything that could break in production
+
+Reply with:
+- 3–8 concrete review comments (grouped by severity)
+- Suggested fixes
+- "Merge readiness" verdict: merge / merge with nits / changes requested
+```
+
+### C) Fix-Only (Address Review Comments)
+
+```text
+Fix-only pass for Ticket: [TK-<SHORT_ID>] <TITLE>
+Repo: <OWNER>/<REPO>
+PR: <PR URL>
+
+Rules:
+- Only address existing review comments and failing checks.
+- No scope expansion. If you think something else should change, leave a note instead of doing it.
+- No fuzzy matching. Always use --ci and the ticket short id.
+- Keep changes minimal and targeted.
+- Run the project's standard tests for the affected area.
+
+Steps:
+1) Pull latest main and update the PR branch.
+2) Read all PR comments and checks.
+3) Implement fixes strictly required to resolve:
+   - Requested changes
+   - CI failures
+   - Lint/type failures
+4) Push updates.
+5) Comment on the PR summarizing what you fixed and what remains.
+
+If and only if all requested changes are resolved and checks are green:
+- ticket done <SHORT_ID> --ci
+- ticket validate --json --ci
+- git push
+
+PR requirements:
+- Keep PR title: [TK-<SHORT_ID>] <TITLE>
+- Do not create a new PR.
+
+Reply with:
+- List of comments addressed (bullet list)
+- Tests run and results
+- Link to the updated PR
+- Whether the ticket was marked done (only if truly complete)
 ```
