@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-17T00:33:22.448Z",
+  "generated_at": "2026-02-17T00:33:28.633Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -41,6 +41,19 @@
         "contract-v1"
       ],
       "path": ".tickets/tickets/01KHMG868YHD8BK7DA7FGT89RB.md"
+    },
+    {
+      "id": "01KHMG8CHHZ5875CGTFYQHD9XP",
+      "short_id": "01KHMG8C",
+      "display_id": "TK-01KHMG8C",
+      "title": "Formalize ticket schema parsing and rendering",
+      "state": "backlog",
+      "priority": "p1",
+      "labels": [
+        "refactor",
+        "contract-v1"
+      ],
+      "path": ".tickets/tickets/01KHMG8CHHZ5875CGTFYQHD9XP.md"
     },
     {
       "id": "01KHMG86G7ZPTKKE8PWBTVYRYZ",
