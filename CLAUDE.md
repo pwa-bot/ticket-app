@@ -63,16 +63,23 @@ pnpm turbo test       # Run all tests
 
 ## CLI Status
 
-✅ Implemented: init, new, list, show, move, start, done, assign, reviewer, rebuild-index
-⏳ Remaining: edit, validate, policy, branch, install-hooks
+✅ All commands implemented:
+- init, new, list, show, move, start, done
+- assign, reviewer, edit, branch
+- validate, install-hooks, rebuild-index
+
+⏳ Future: policy (v1.1)
 
 ## Web Status
 
-⏳ Not started — needs:
-1. GitHub OAuth flow (/api/auth/github)
-2. Repo picker (list user's repos with .tickets/)
-3. Kanban board (fetch index.json, render columns)
-4. Ticket detail modal (fetch individual .md file)
+✅ Dashboard MVP complete:
+- GitHub OAuth flow
+- Repo picker (lists repos with .tickets/)
+- Kanban board with scrollable columns
+- Ticket detail modal
+- URL-based routing: /app/:owner/:repo/:id
+
+✅ Marketing site built (on `marketing-site` branch)
 
 ## Important Rules
 
