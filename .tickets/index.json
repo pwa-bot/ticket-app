@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-17T00:33:29.350Z",
+  "generated_at": "2026-02-17T00:33:29.582Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -107,6 +107,19 @@
         "testing"
       ],
       "path": ".tickets/tickets/01KHMG8D7XQXNCPTTVPMG5V72V.md"
+    },
+    {
+      "id": "01KHMG8DF4Z75CFS4EGBK4P1X9",
+      "short_id": "01KHMG8D",
+      "display_id": "TK-01KHMG8D",
+      "title": "Integration test harness (Vitest)",
+      "state": "backlog",
+      "priority": "p2",
+      "labels": [
+        "testing",
+        "contract-v1"
+      ],
+      "path": ".tickets/tickets/01KHMG8DF4Z75CFS4EGBK4P1X9.md"
     },
     {
       "id": "01KHMG861RFP1FWRX8BXP68D9P",
