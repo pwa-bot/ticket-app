@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AuthButton } from "./auth-button";
 
 const nav = [
   { href: "/protocol", label: "Protocol" },
@@ -31,10 +32,11 @@ export function SiteHeader() {
         <div className="flex items-center gap-3">
           <Link
             href="/cli"
-            className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-80"
+            className="hidden rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-80 sm:block"
           >
             Install CLI
           </Link>
+          <AuthButton />
         </div>
       </div>
     </header>
