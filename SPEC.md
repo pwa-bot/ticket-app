@@ -1,6 +1,39 @@
-# ticket.app v1.0.1 SPEC
+# ticket.app v1.0.2 SPEC
 
 ## Git-native issue tracking for AI-first teams
+
+---
+
+### Table of Contents
+
+**Protocol**
+- [§1 What It Is](#1-what-it-is) — Core principles
+- [§2 Repo Layout](#2-repo-layout-source-of-truth) — File structure
+- [§3 Ticket Format](#3-ticket-file-format) — Frontmatter, fields, parsing
+- [§4 Workflow](#4-workflow-v1-hardcoded) — State machine
+- [§5 Configuration](#5-configuration) — config.yml, policy.yml
+- [§6 Template](#6-template) — Default ticket structure
+- [§7 Index File](#7-index-file) — index.json schema
+
+**CLI**
+- [§8 CLI Specification](#8-cli-specification) — Commands, flags, behavior
+- [§9 Git Hooks](#9-git-hooks) — Pre-commit validation
+- [§10 PR Linking](#10-pr-linking) — Branch/PR conventions
+
+**Web**
+- [§11 Web Dashboard](#11-web-dashboard-v1-read-only) — Features, OAuth, views
+
+**Business**
+- [§12 Monetization](#12-monetization) — Pricing tiers
+- [§13 Tech Stack](#13-tech-stack) — Implementation details
+- [§14 Security](#14-security-v1) — OAuth, data handling
+- [§15 MVP Scope](#15-mvp-scope) — What's in/out of v1
+
+**Integration**
+- [§16 Agent Usage](#16-agent-usage-openclaw) — OpenClaw integration
+- [§17 Link Schemes](#17-link-schemes-reserved) — URI format
+- [§18 Data Governance](#18-data-governance) — Privacy, PII
+- [§19 Future Extensibility](#19-future-extensibility-reserved-not-built) — Reserved hooks
 
 ---
 

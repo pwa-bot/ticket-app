@@ -8,13 +8,12 @@ export type Priority = 'p0' | 'p1' | 'p2' | 'p3';
 export type Actor = `human:${string}` | `agent:${string}`;
 
 // Ticket frontmatter (YAML header in .md files)
+// Note: created_at/updated_at are derived from git blame, not stored in frontmatter
 export interface TicketFrontmatter {
   title: string;
   state: TicketState;
   priority: Priority;
   labels: string[];
-  created: string; // ISO 8601
-  updated: string; // ISO 8601
   assignee?: Actor;
   reviewer?: Actor;
 }
@@ -49,13 +48,16 @@ export interface TicketIndex {
   tickets: TicketIndexEntry[];
 }
 
-// Config.yml structure
+// Config.yml structure (matches .tickets/config.yml)
 export interface TicketConfig {
-  version: 1;
+  format_version: 1;
   id_prefix: string;
-  states: TicketState[];
-  priorities: Priority[];
-  labels: string[];
+  directory: string;
+  workflow: 'simple-v1';
+  linking?: {
+    branch_pattern: string;
+    pr_title_pattern: string;
+  };
 }
 
 // State transitions
