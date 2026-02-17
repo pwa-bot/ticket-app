@@ -24,5 +24,5 @@ export default async function BoardPage({ searchParams }: BoardPageProps) {
     redirect("/space");
   }
 
-  redirect(`/app/${encodeURIComponent(owner)}/${encodeURIComponent(repoName)}`);
+  redirect(`/space/${encodeURIComponent(owner)}/${encodeURIComponent(repoName)}`);
 }
