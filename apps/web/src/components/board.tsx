@@ -210,7 +210,7 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
             {refreshing ? "Refreshing..." : "Refresh"}
           </button>
           <a
-            href="/app"
+            href="/space"
             className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white"
           >
             Change repo

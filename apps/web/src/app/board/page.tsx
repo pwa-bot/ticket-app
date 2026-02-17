@@ -16,12 +16,12 @@ export default async function BoardPage({ searchParams }: BoardPageProps) {
   const repo = typeof repoParam === "string" ? repoParam : undefined;
 
   if (!repo) {
-    redirect("/app");
+    redirect("/space");
   }
 
   const [owner, repoName] = repo.split("/");
   if (!owner || !repoName) {
-    redirect("/app");
+    redirect("/space");
   }
 
   redirect(`/app/${encodeURIComponent(owner)}/${encodeURIComponent(repoName)}`);
