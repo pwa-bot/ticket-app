@@ -1,21 +1,8 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-17T00:46:59.368Z",
+  "generated_at": "2026-02-17T00:47:41.355Z",
   "workflow": "simple-v1",
   "tickets": [
-    {
-      "id": "01KHMG85TGQZ1TDCBJ6JDYA10V",
-      "short_id": "01KHMG85",
-      "display_id": "TK-01KHMG85",
-      "title": "Implement JSON envelope (--json flag)",
-      "state": "backlog",
-      "priority": "p1",
-      "labels": [
-        "refactor",
-        "contract-v1"
-      ],
-      "path": ".tickets/tickets/01KHMG85TGQZ1TDCBJ6JDYA10V.md"
-    },
     {
       "id": "01KHMG868YHD8BK7DA7FGT89RB",
       "short_id": "01KHMG86",
@@ -146,6 +133,19 @@
         "testing"
       ],
       "path": ".tickets/tickets/01KHMG8JASDQ7VC5YZK8NFBKZP.md"
+    },
+    {
+      "id": "01KHMG85TGQZ1TDCBJ6JDYA10V",
+      "short_id": "01KHMG85",
+      "display_id": "TK-01KHMG85",
+      "title": "Implement JSON envelope (--json flag)",
+      "state": "ready",
+      "priority": "p1",
+      "labels": [
+        "refactor",
+        "contract-v1"
+      ],
+      "path": ".tickets/tickets/01KHMG85TGQZ1TDCBJ6JDYA10V.md"
     },
     {
       "id": "01KHMG84AJMCWQCCE84328MF5G",
