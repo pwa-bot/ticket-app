@@ -4,13 +4,14 @@ import { ERROR_CODE, EXIT_CODE, TicketError } from "./errors.js";
 const WORKFLOW_TRANSITIONS: Record<TicketState, TicketState[]> = {
   backlog: ["ready", "blocked"],
   ready: ["in_progress", "blocked"],
-  in_progress: ["done", "blocked"],
+  in_progress: ["done", "ready", "blocked"],
   blocked: ["ready", "in_progress", "blocked"],
   done: []
 };
 
 export function normalizeState(value: string): TicketState {
-  if (!STATE_ORDER.includes(value as TicketState)) {
+  const normalized = value.toLowerCase();
+  if (!STATE_ORDER.includes(normalized as TicketState)) {
     throw new TicketError(
       ERROR_CODE.INVALID_STATE,
       `Invalid state '${value}'. Allowed: ${STATE_ORDER.join(", ")}`,
@@ -18,7 +19,7 @@ export function normalizeState(value: string): TicketState {
       { value, allowed: STATE_ORDER }
     );
   }
-  return value as TicketState;
+  return normalized as TicketState;
 }
 
 export function canTransition(from: TicketState, to: TicketState): boolean {

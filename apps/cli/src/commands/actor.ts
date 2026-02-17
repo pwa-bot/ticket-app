@@ -16,8 +16,8 @@ export interface ActorCommandOptions {
 type ActorField = "assignee" | "reviewer";
 
 function normalizeActor(actor: string): string {
-  const value = actor.trim();
-  if (!/^(human|agent):[a-z0-9][a-z0-9_-]*$/.test(value)) {
+  const value = actor.trim().toLowerCase();
+  if (!/^(human|agent):[a-z0-9][a-z0-9_-]{0,31}$/.test(value)) {
     throw new TicketError(
       ERROR_CODE.INVALID_ACTOR,
       "Invalid actor format. Expected human:<slug> or agent:<slug>",

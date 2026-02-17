@@ -21,6 +21,7 @@ export const ERROR_CODE = {
   INVALID_PRIORITY: "invalid_priority",
   INVALID_TRANSITION: "invalid_transition",
   INVALID_ACTOR: "invalid_actor",
+  INVALID_TITLE: "invalid_title",
   VALIDATION_FAILED: "validation_failed",
   INDEX_OUT_OF_SYNC: "index_out_of_sync",
   IO_ERROR: "io_error"

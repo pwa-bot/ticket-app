@@ -13,7 +13,8 @@ export interface NewCommandOptions {
 }
 
 function normalizeState(state: string): TicketState {
-  if (!STATE_ORDER.includes(state as TicketState)) {
+  const normalized = state.toLowerCase();
+  if (!STATE_ORDER.includes(normalized as TicketState)) {
     throw new TicketError(
       ERROR_CODE.INVALID_STATE,
       `Invalid state '${state}'. Allowed: ${STATE_ORDER.join(", ")}`,
@@ -21,11 +22,12 @@ function normalizeState(state: string): TicketState {
       { state, allowed: STATE_ORDER }
     );
   }
-  return state as TicketState;
+  return normalized as TicketState;
 }
 
 function normalizePriority(priority: string): TicketPriority {
-  if (!PRIORITY_ORDER.includes(priority as TicketPriority)) {
+  const normalized = priority.toLowerCase();
+  if (!PRIORITY_ORDER.includes(normalized as TicketPriority)) {
     throw new TicketError(
       ERROR_CODE.INVALID_PRIORITY,
       `Invalid priority '${priority}'. Allowed: ${PRIORITY_ORDER.join(", ")}`,
@@ -33,16 +35,25 @@ function normalizePriority(priority: string): TicketPriority {
       { priority, allowed: PRIORITY_ORDER }
     );
   }
-  return priority as TicketPriority;
+  return normalized as TicketPriority;
 }
 
 export async function runNew(cwd: string, title: string, options: NewCommandOptions): Promise<void> {
+  const trimmedTitle = title.trim();
+  if (!trimmedTitle) {
+    throw new TicketError(
+      ERROR_CODE.INVALID_TITLE,
+      "Ticket title must not be empty or whitespace-only",
+      EXIT_CODE.USAGE
+    );
+  }
+
   const state = normalizeState(options.state);
   const priority = normalizePriority(options.priority);
   const labels = (options.label ?? []).map((label) => label.toLowerCase());
 
   const created = await createTicket(cwd, {
-    title,
+    title: trimmedTitle,
     state,
     priority,
     labels
@@ -57,7 +68,7 @@ export async function runNew(cwd: string, title: string, options: NewCommandOpti
     await autoCommit(
       cwd,
       [created.path, indexPath],
-      `ticket: create ${display} ${title.trim()}`
+      `ticket: create ${display} ${trimmedTitle}`
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
