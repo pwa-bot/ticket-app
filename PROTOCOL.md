@@ -75,6 +75,7 @@ Implementations that claim Indexed profile support MUST regenerate `index.json` 
 - ULID MUST be exactly 26 characters using Crockford Base32 (0-9, A-Z excluding I, L, O, U).
 - The filename stem MUST equal the `id` field exactly.
 - Implementations SHOULD write ULIDs in uppercase for case-insensitive filesystem compatibility.
+- Implementations SHOULD treat ticket IDs case-insensitively when resolving, but MUST write canonical uppercase.
 
 ---
 
@@ -164,7 +165,7 @@ The following fields MUST NOT be stored in frontmatter. Implementations SHOULD d
 
 The `x_ticket` namespace is reserved for extensions.
 
-- Implementations MUST preserve `x_ticket` exactly (semantic preservation).
+- Implementations that rewrite frontmatter MUST preserve `x_ticket` semantically (formatting and ordering MAY change).
 - Implementations MUST NOT drop unknown frontmatter keys.
 - Implementations MAY ignore unknown keys when processing.
 
@@ -225,10 +226,11 @@ The index file (`.tickets/index.json`) provides a pre-computed summary of all ti
 
 ### 4.2 Generation
 
-- Implementations that modify ticket files MUST regenerate `index.json` before finishing the operation.
+- In an **Indexed profile** repository, implementations that modify ticket files MUST regenerate `index.json` before completing the operation.
+- In a **Core profile** repository, `index.json` MAY be omitted.
 - If `index.json` conflicts with ticket files, ticket files are authoritative.
-- Implementations MUST tolerate missing or stale `index.json` and SHOULD offer a rebuild operation.
-- A repository MAY omit `index.json`. If omitted or out of date, implementations SHOULD rebuild it.
+- Implementations MUST tolerate missing or stale `index.json` (both profiles).
+- Implementations SHOULD offer a rebuild operation or mode.
 
 ### 4.3 Schema
 
@@ -333,7 +335,9 @@ workflow: simple-v1
 
 ## 6. Validation
 
-A conforming implementation SHOULD validate tickets against these rules:
+A conforming implementation SHOULD validate tickets against these rules.
+
+> **Note:** Validation rules are RECOMMENDED, not required for conformance.
 
 ### 6.1 File-Level
 
@@ -394,20 +398,21 @@ The URI scheme is reserved and non-normative in v1. Implementations MAY render t
 
 ## 8. Security Considerations
 
-### 8.1 No PII or Secrets
+### 8.1 No Secrets
 
-Ticket files MUST NOT contain:
-- Email addresses
-- Real names (unless public contributors)
-- Screenshots with personal information
-- Support conversation transcripts
-- Secrets (API keys, tokens, passwords)
+Ticket files MUST NOT contain secrets (API keys, tokens, passwords).
 
-### 8.2 Rendering Safety
+### 8.2 Minimize PII
+
+Ticket files SHOULD NOT contain PII (emails, phone numbers, addresses, private names).
+
+Public contributor names or GitHub handles MAY appear.
+
+### 8.3 Rendering Safety
 
 Implementations that render markdown in a browser MUST sanitize untrusted content to prevent XSS attacks.
 
-### 8.3 Source of Truth
+### 8.4 Source of Truth
 
 The Git repository is the authoritative source. Any caches, databases, or indexes are derived and disposable.
 
