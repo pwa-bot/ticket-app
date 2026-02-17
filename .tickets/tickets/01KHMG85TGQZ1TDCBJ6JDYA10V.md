@@ -1,7 +1,7 @@
 ---
 id: 01KHMG85TGQZ1TDCBJ6JDYA10V
 title: Implement JSON envelope (--json flag)
-state: in_progress
+state: done
 priority: p1
 labels:
   - refactor
