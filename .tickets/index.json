@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-17T23:43:23.039Z",
+  "generated_at": "2026-02-17T23:43:23.265Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -54,19 +54,6 @@
         "contract-v1"
       ],
       "path": ".tickets/tickets/01KHMG8D05HYTQ1D1RYTQXYYE0.md"
-    },
-    {
-      "id": "01KHPTPPK4J0QS0J4TGA7YHWM7",
-      "short_id": "01KHPTPP",
-      "display_id": "TK-01KHPTPP",
-      "title": "Attention table view (supervisory control plane)",
-      "state": "backlog",
-      "priority": "p1",
-      "labels": [
-        "dashboard",
-        "phase-2"
-      ],
-      "path": ".tickets/tickets/01KHPTPPK4J0QS0J4TGA7YHWM7.md"
     },
     {
       "id": "01KHPTPPTCQABJH5VA0HZGYAQ9",
@@ -198,6 +185,19 @@
         "testing"
       ],
       "path": ".tickets/tickets/01KHMG8JASDQ7VC5YZK8NFBKZP.md"
+    },
+    {
+      "id": "01KHPTPPK4J0QS0J4TGA7YHWM7",
+      "short_id": "01KHPTPP",
+      "display_id": "TK-01KHPTPP",
+      "title": "Attention table view (supervisory control plane)",
+      "state": "ready",
+      "priority": "p1",
+      "labels": [
+        "dashboard",
+        "phase-2"
+      ],
+      "path": ".tickets/tickets/01KHPTPPK4J0QS0J4TGA7YHWM7.md"
     },
     {
       "id": "01KHMG84AJMCWQCCE84328MF5G",
