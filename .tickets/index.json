@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-17T00:33:21.985Z",
+  "generated_at": "2026-02-17T00:33:22.215Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -28,6 +28,19 @@
         "contract-v1"
       ],
       "path": ".tickets/tickets/01KHMG85TGQZ1TDCBJ6JDYA10V.md"
+    },
+    {
+      "id": "01KHMG868YHD8BK7DA7FGT89RB",
+      "short_id": "01KHMG86",
+      "display_id": "TK-01KHMG86",
+      "title": "Make ticket init idempotent",
+      "state": "backlog",
+      "priority": "p1",
+      "labels": [
+        "refactor",
+        "contract-v1"
+      ],
+      "path": ".tickets/tickets/01KHMG868YHD8BK7DA7FGT89RB.md"
     },
     {
       "id": "01KHMG861RFP1FWRX8BXP68D9P",
