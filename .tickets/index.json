@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-17T23:57:30.762Z",
+  "generated_at": "2026-02-17T23:57:30.996Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -216,6 +216,20 @@
         "protocol"
       ],
       "path": ".tickets/tickets/01KHQ0K87Y27S53B8ZTT6QJ6JA.md"
+    },
+    {
+      "id": "01KHQ0K8F90AJMSY7WBVGV2KGB",
+      "short_id": "01KHQ0K8",
+      "display_id": "TK-01KHQ0K8",
+      "title": "Patch index.json entry and re-sort deterministically",
+      "state": "ready",
+      "priority": "p0",
+      "labels": [
+        "core",
+        "index",
+        "protocol"
+      ],
+      "path": ".tickets/tickets/01KHQ0K8F90AJMSY7WBVGV2KGB.md"
     },
     {
       "id": "01KHQ0K7HVXXBNSFGT0PEGHE5T",
