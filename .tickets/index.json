@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-17T22:14:32.070Z",
+  "generated_at": "2026-02-17T22:14:32.302Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -67,6 +67,19 @@
         "phase-2"
       ],
       "path": ".tickets/tickets/01KHPTPPBVD1JCWQ7RZV0TRBEJ.md"
+    },
+    {
+      "id": "01KHPTPPK4J0QS0J4TGA7YHWM7",
+      "short_id": "01KHPTPP",
+      "display_id": "TK-01KHPTPP",
+      "title": "Attention table view (supervisory control plane)",
+      "state": "backlog",
+      "priority": "p1",
+      "labels": [
+        "dashboard",
+        "phase-2"
+      ],
+      "path": ".tickets/tickets/01KHPTPPK4J0QS0J4TGA7YHWM7.md"
     },
     {
       "id": "01KHMG86G7ZPTKKE8PWBTVYRYZ",
