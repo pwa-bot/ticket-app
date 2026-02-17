@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-17T00:33:22.215Z",
+  "generated_at": "2026-02-17T00:33:22.448Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -41,6 +41,19 @@
         "contract-v1"
       ],
       "path": ".tickets/tickets/01KHMG868YHD8BK7DA7FGT89RB.md"
+    },
+    {
+      "id": "01KHMG86G7ZPTKKE8PWBTVYRYZ",
+      "short_id": "01KHMG86",
+      "display_id": "TK-01KHMG86",
+      "title": "Add --clear-labels and finalize label semantics",
+      "state": "backlog",
+      "priority": "p2",
+      "labels": [
+        "refactor",
+        "contract-v1"
+      ],
+      "path": ".tickets/tickets/01KHMG86G7ZPTKKE8PWBTVYRYZ.md"
     },
     {
       "id": "01KHMG861RFP1FWRX8BXP68D9P",
