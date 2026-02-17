@@ -1,21 +1,8 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-17T00:35:21.975Z",
+  "generated_at": "2026-02-17T00:38:59.767Z",
   "workflow": "simple-v1",
   "tickets": [
-    {
-      "id": "01KHMG84AJMCWQCCE84328MF5G",
-      "short_id": "01KHMG84",
-      "display_id": "TK-01KHMG84",
-      "title": "Standardize error model and exit codes",
-      "state": "backlog",
-      "priority": "p1",
-      "labels": [
-        "refactor",
-        "contract-v1"
-      ],
-      "path": ".tickets/tickets/01KHMG84AJMCWQCCE84328MF5G.md"
-    },
     {
       "id": "01KHMG85TGQZ1TDCBJ6JDYA10V",
       "short_id": "01KHMG85",
@@ -159,6 +146,19 @@
         "testing"
       ],
       "path": ".tickets/tickets/01KHMG8JASDQ7VC5YZK8NFBKZP.md"
+    },
+    {
+      "id": "01KHMG84AJMCWQCCE84328MF5G",
+      "short_id": "01KHMG84",
+      "display_id": "TK-01KHMG84",
+      "title": "Standardize error model and exit codes",
+      "state": "ready",
+      "priority": "p1",
+      "labels": [
+        "refactor",
+        "contract-v1"
+      ],
+      "path": ".tickets/tickets/01KHMG84AJMCWQCCE84328MF5G.md"
     }
   ]
 }

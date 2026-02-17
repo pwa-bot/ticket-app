@@ -1,7 +1,7 @@
 ---
 id: 01KHMG84AJMCWQCCE84328MF5G
 title: Standardize error model and exit codes
-state: backlog
+state: ready
 priority: p1
 labels:
   - refactor
