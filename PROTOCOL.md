@@ -57,12 +57,12 @@ Implementations that claim Indexed profile support MUST regenerate `index.json` 
 
 ```
 .tickets/
+├── tickets/            # REQUIRED
+│   ├── {ULID}.md
+│   └── ...
 ├── config.yml          # REQUIRED for Indexed profile
 ├── index.json          # REQUIRED for Indexed profile (derived)
-├── template.md         # OPTIONAL
-└── tickets/            # REQUIRED
-    ├── {ULID}.md
-    └── ...
+└── template.md         # OPTIONAL
 ```
 
 ### 1.3 Tickets Directory
@@ -180,7 +180,8 @@ This ensures forward compatibility. When future protocol versions add fields lik
 
 - Implementations SHOULD reject tab-indented YAML as invalid.
 - Implementations MUST ignore unknown top-level keys when processing.
-- **Forward compatibility:** Implementations that rewrite frontmatter MUST preserve unknown keys. The `x_ticket` namespace is reserved for extensions and MUST be preserved semantically.
+
+> **Note:** See §2.7 for frontmatter preservation requirements.
 
 ---
 
