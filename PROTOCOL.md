@@ -178,7 +178,7 @@ This ensures forward compatibility. When future protocol versions add fields lik
 
 ### 2.8 Parsing Rules
 
-- YAML MUST NOT contain tabs.
+- Implementations SHOULD reject tab-indented YAML as invalid.
 - Implementations MUST ignore unknown top-level keys when processing.
 - **Forward compatibility:** Implementations that rewrite frontmatter MUST preserve unknown keys. The `x_ticket` namespace is reserved for extensions and MUST be preserved semantically.
 
