@@ -101,7 +101,7 @@ export default function DashboardPage() {
             Visibility without moving your workflow into SaaS
           </h2>
           <p className="mt-4 max-w-2xl text-muted">
-            The dashboard does not replace your repo. It renders what&apos;s
+            The dashboard does not replace your repo. It renders what's
             already there: ticket files and a derived index for speed.
           </p>
           <ul className="mt-6 space-y-2">
@@ -115,7 +115,7 @@ export default function DashboardPage() {
                 key={item}
                 className="flex items-start gap-2 text-sm text-muted"
               >
-                <span className="mt-0.5 text-success">&check;</span>
+                <span className="mt-0.5 text-success">✓</span>
                 {item}
               </li>
             ))}
@@ -210,7 +210,7 @@ export default function DashboardPage() {
                 key={example}
                 className="rounded-lg border border-border bg-white px-4 py-3 text-sm text-muted"
               >
-                &ldquo;{example}&rdquo;
+                "{example}"
               </div>
             ))}
           </div>
@@ -237,7 +237,7 @@ export default function DashboardPage() {
                 key={item}
                 className="flex items-start gap-2 text-sm text-muted"
               >
-                <span className="mt-0.5 text-success">&check;</span>
+                <span className="mt-0.5 text-success">✓</span>
                 {item}
               </li>
             ))}

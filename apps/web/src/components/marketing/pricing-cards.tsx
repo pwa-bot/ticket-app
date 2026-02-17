@@ -33,7 +33,7 @@ export function PricingCards({ tiers }: { tiers: PricingTier[] }) {
                 key={feature}
                 className="flex items-start gap-2 text-sm text-muted"
               >
-                <span className="mt-0.5 text-success">&check;</span>
+                <span className="mt-0.5 text-success">✓</span>
                 {feature}
               </li>
             ))}

@@ -37,7 +37,7 @@ export default function OSSPage() {
                 key={item}
                 className="flex items-start gap-2 text-sm text-muted"
               >
-                <span className="mt-0.5 text-success">&check;</span>
+                <span className="mt-0.5 text-success">✓</span>
                 {item}
               </li>
             ))}
@@ -65,7 +65,7 @@ export default function OSSPage() {
                 key={item}
                 className="flex items-start gap-2 text-sm text-muted"
               >
-                <span className="mt-0.5 text-subtle">&bull;</span>
+                <span className="mt-0.5 text-subtle">•</span>
                 {item}
               </li>
             ))}

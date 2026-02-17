@@ -34,7 +34,7 @@ export function AgentCLISection() {
             <ul className="mt-6 space-y-2">
               {bullets.map((b) => (
                 <li key={b} className="flex items-start gap-2 text-sm text-muted">
-                  <span className="mt-0.5 text-success">&check;</span>
+                  <span className="mt-0.5 text-success">✓</span>
                   {b}
                 </li>
               ))}

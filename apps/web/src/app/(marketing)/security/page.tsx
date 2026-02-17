@@ -29,15 +29,15 @@ export default function SecurityPage() {
           <h2 className="text-xl font-semibold">Repository access</h2>
           <ul className="mt-2 space-y-2 text-sm text-muted">
             <li className="flex items-start gap-2">
-              <span className="mt-0.5 text-success">&check;</span>
+              <span className="mt-0.5 text-success">✓</span>
               Repo allowlist — only repos you explicitly select
             </li>
             <li className="flex items-start gap-2">
-              <span className="mt-0.5 text-success">&check;</span>
+              <span className="mt-0.5 text-success">✓</span>
               OAuth tokens stored securely with AES-256-GCM encryption
             </li>
             <li className="flex items-start gap-2">
-              <span className="mt-0.5 text-success">&check;</span>
+              <span className="mt-0.5 text-success">✓</span>
               Read-only access in v1 — no writes to your repo
             </li>
           </ul>

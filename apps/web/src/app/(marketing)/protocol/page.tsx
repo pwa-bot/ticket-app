@@ -66,25 +66,25 @@ export default function ProtocolPage() {
               <h3 className="font-semibold">Includes</h3>
               <ul className="mt-3 space-y-2 text-sm text-muted">
                 <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-success">&check;</span>
+                  <span className="mt-0.5 text-success">✓</span>
                   <code className="font-mono text-xs">.tickets/</code>{" "}
                   repository structure
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-success">&check;</span>
+                  <span className="mt-0.5 text-success">✓</span>
                   Ticket file format (YAML frontmatter + Markdown body)
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-success">&check;</span>
+                  <span className="mt-0.5 text-success">✓</span>
                   Five-state workflow and transitions
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-success">&check;</span>
+                  <span className="mt-0.5 text-success">✓</span>
                   <code className="font-mono text-xs">index.json</code> schema
                   for efficient querying
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-success">&check;</span>
+                  <span className="mt-0.5 text-success">✓</span>
                   Forward compatibility rules (
                   <code className="font-mono text-xs">x_ticket</code> namespace)
                 </li>
@@ -94,19 +94,19 @@ export default function ProtocolPage() {
               <h3 className="font-semibold">Does not include</h3>
               <ul className="mt-3 space-y-2 text-sm text-muted">
                 <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-subtle">&times;</span>
+                  <span className="mt-0.5 text-subtle">×</span>
                   CLI commands
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-subtle">&times;</span>
+                  <span className="mt-0.5 text-subtle">×</span>
                   Dashboard UI
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-subtle">&times;</span>
+                  <span className="mt-0.5 text-subtle">×</span>
                   Pricing or business model
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-subtle">&times;</span>
+                  <span className="mt-0.5 text-subtle">×</span>
                   GitHub-specific features
                 </li>
               </ul>

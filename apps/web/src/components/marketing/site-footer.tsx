@@ -61,7 +61,7 @@ export function SiteFooter() {
           ))}
         </div>
         <div className="mt-12 border-t border-border pt-6 text-sm text-subtle">
-          &copy; {new Date().getFullYear()} ticket.app
+          © {new Date().getFullYear()} ticket.app
         </div>
       </div>
     </footer>
