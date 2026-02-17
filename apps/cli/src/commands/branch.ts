@@ -1,4 +1,5 @@
 import { simpleGit } from "simple-git";
+import { assertGitRepository } from "../lib/git.js";
 import { readIndex } from "../lib/io.js";
 import { resolveTicket } from "../lib/resolve.js";
 
@@ -22,6 +23,7 @@ function branchNameForTicket(shortId: string, title: string): string {
 }
 
 export async function runBranch(cwd: string, id: string, options: BranchCommandOptions): Promise<string> {
+  await assertGitRepository(cwd);
   const index = await readIndex(cwd);
   const ticket = resolveTicket(index, id, options.ci ?? false);
   const branchName = branchNameForTicket(ticket.short_id, ticket.title);

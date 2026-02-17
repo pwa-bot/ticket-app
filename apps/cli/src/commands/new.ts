@@ -2,6 +2,7 @@ import path from "node:path";
 import { autoCommit } from "../lib/git.js";
 import { rebuildIndex } from "../lib/index.js";
 import { PRIORITY_ORDER, STATE_ORDER, type TicketPriority, type TicketState } from "../lib/constants.js";
+import { ERROR_CODE, EXIT_CODE, TicketError } from "../lib/errors.js";
 import { createTicket } from "../lib/ticket.js";
 import { displayId } from "../lib/ulid.js";
 
@@ -13,14 +14,24 @@ export interface NewCommandOptions {
 
 function normalizeState(state: string): TicketState {
   if (!STATE_ORDER.includes(state as TicketState)) {
-    throw new Error(`Invalid state '${state}'. Allowed: ${STATE_ORDER.join(", ")}`);
+    throw new TicketError(
+      ERROR_CODE.INVALID_STATE,
+      `Invalid state '${state}'. Allowed: ${STATE_ORDER.join(", ")}`,
+      EXIT_CODE.USAGE,
+      { state, allowed: STATE_ORDER }
+    );
   }
   return state as TicketState;
 }
 
 function normalizePriority(priority: string): TicketPriority {
   if (!PRIORITY_ORDER.includes(priority as TicketPriority)) {
-    throw new Error(`Invalid priority '${priority}'. Allowed: ${PRIORITY_ORDER.join(", ")}`);
+    throw new TicketError(
+      ERROR_CODE.INVALID_PRIORITY,
+      `Invalid priority '${priority}'. Allowed: ${PRIORITY_ORDER.join(", ")}`,
+      EXIT_CODE.USAGE,
+      { priority, allowed: PRIORITY_ORDER }
+    );
   }
   return priority as TicketPriority;
 }

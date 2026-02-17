@@ -12,6 +12,7 @@ import { runEdit } from "./commands/edit.js";
 import { runBranch } from "./commands/branch.js";
 import { runValidate } from "./commands/validate.js";
 import { runInstallHooks } from "./commands/install-hooks.js";
+import { EXIT_CODE, TicketError } from "./lib/errors.js";
 
 async function main(): Promise<void> {
   const program = new Command();
@@ -163,7 +164,13 @@ function collectEditLabels(value: string, previous: string[]): string[] {
 }
 
 main().catch((error) => {
+  if (error instanceof TicketError) {
+    console.error(error.message);
+    process.exitCode = error.exitCode;
+    return;
+  }
+
   const message = error instanceof Error ? error.message : String(error);
   console.error(message);
-  process.exitCode = 1;
+  process.exitCode = EXIT_CODE.UNEXPECTED;
 });

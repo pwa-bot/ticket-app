@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 import { TEMPLATE_PATH, TICKETS_DIR, DEFAULT_TEMPLATE, PRIORITY_ORDER, STATE_ORDER, type TicketPriority, type TicketState } from "./constants.js";
+import { ERROR_CODE, EXIT_CODE, TicketError } from "./errors.js";
 import { generateTicketId } from "./ulid.js";
 
 export interface CreateTicketInput {
@@ -18,13 +19,23 @@ export interface CreatedTicket {
 
 function assertState(state: string): asserts state is TicketState {
   if (!STATE_ORDER.includes(state as TicketState)) {
-    throw new Error(`Invalid state: ${state}`);
+    throw new TicketError(
+      ERROR_CODE.INVALID_STATE,
+      `Invalid state: ${state}`,
+      EXIT_CODE.USAGE,
+      { state, allowed: STATE_ORDER }
+    );
   }
 }
 
 function assertPriority(priority: string): asserts priority is TicketPriority {
   if (!PRIORITY_ORDER.includes(priority as TicketPriority)) {
-    throw new Error(`Invalid priority: ${priority}`);
+    throw new TicketError(
+      ERROR_CODE.INVALID_PRIORITY,
+      `Invalid priority: ${priority}`,
+      EXIT_CODE.USAGE,
+      { priority, allowed: PRIORITY_ORDER }
+    );
   }
 }
 
@@ -40,7 +51,7 @@ async function readTemplate(cwd: string): Promise<string> {
 export async function createTicket(cwd: string, input: CreateTicketInput): Promise<CreatedTicket> {
   const title = input.title.trim();
   if (!title) {
-    throw new Error("Ticket title must be non-empty");
+    throw new TicketError(ERROR_CODE.VALIDATION_FAILED, "Ticket title must be non-empty", EXIT_CODE.VALIDATION_FAILED);
   }
 
   assertState(input.state);

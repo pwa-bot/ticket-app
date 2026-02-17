@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 import { INDEX_PATH, TICKETS_DIR, PRIORITY_ORDER, STATE_ORDER, type TicketPriority, type TicketState } from "./constants.js";
+import { ERROR_CODE, EXIT_CODE, TicketError } from "./errors.js";
 import { displayId, shortId } from "./ulid.js";
 
 export interface TicketIndexEntry {
@@ -40,7 +41,12 @@ function priorityRank(priority: TicketPriority): number {
 
 function ensureString(value: unknown, field: string): string {
   if (typeof value !== "string" || !value.trim()) {
-    throw new Error(`Invalid ticket frontmatter: ${field} must be a non-empty string`);
+    throw new TicketError(
+      ERROR_CODE.VALIDATION_FAILED,
+      `Invalid ticket frontmatter: ${field} must be a non-empty string`,
+      EXIT_CODE.VALIDATION_FAILED,
+      { field }
+    );
   }
   return value.trim();
 }
@@ -50,11 +56,19 @@ function ensureLabels(value: unknown): string[] {
     return [];
   }
   if (!Array.isArray(value)) {
-    throw new Error("Invalid ticket frontmatter: labels must be an array");
+    throw new TicketError(
+      ERROR_CODE.VALIDATION_FAILED,
+      "Invalid ticket frontmatter: labels must be an array",
+      EXIT_CODE.VALIDATION_FAILED
+    );
   }
   return value.map((label) => {
     if (typeof label !== "string") {
-      throw new Error("Invalid ticket frontmatter: labels must contain only strings");
+      throw new TicketError(
+        ERROR_CODE.VALIDATION_FAILED,
+        "Invalid ticket frontmatter: labels must contain only strings",
+        EXIT_CODE.VALIDATION_FAILED
+      );
     }
     return label.toLowerCase().trim();
   }).filter(Boolean);
@@ -83,13 +97,28 @@ export async function rebuildIndex(cwd: string): Promise<TicketsIndex> {
     const labels = ensureLabels(parsed.data.labels);
 
     if (id !== stem) {
-      throw new Error(`Ticket id does not match filename for ${file}`);
+      throw new TicketError(
+        ERROR_CODE.VALIDATION_FAILED,
+        `Ticket id does not match filename for ${file}`,
+        EXIT_CODE.VALIDATION_FAILED,
+        { file, id, stem }
+      );
     }
     if (!isState(state)) {
-      throw new Error(`Invalid state '${state}' in ${file}`);
+      throw new TicketError(
+        ERROR_CODE.INVALID_STATE,
+        `Invalid state '${state}' in ${file}`,
+        EXIT_CODE.VALIDATION_FAILED,
+        { file, state, allowed: STATE_ORDER }
+      );
     }
     if (!isPriority(priority)) {
-      throw new Error(`Invalid priority '${priority}' in ${file}`);
+      throw new TicketError(
+        ERROR_CODE.INVALID_PRIORITY,
+        `Invalid priority '${priority}' in ${file}`,
+        EXIT_CODE.VALIDATION_FAILED,
+        { file, priority, allowed: PRIORITY_ORDER }
+      );
     }
 
     entries.push({

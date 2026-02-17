@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 import { INDEX_PATH, PRIORITY_ORDER, type TicketPriority } from "../lib/constants.js";
+import { ERROR_CODE, EXIT_CODE, TicketError } from "../lib/errors.js";
 import { autoCommit } from "../lib/git.js";
 import { rebuildIndex } from "../lib/index.js";
 import { readIndex } from "../lib/io.js";
@@ -21,7 +22,12 @@ interface LabelChange {
 
 function normalizePriority(priority: string): TicketPriority {
   if (!PRIORITY_ORDER.includes(priority as TicketPriority)) {
-    throw new Error(`Invalid priority '${priority}'. Allowed: ${PRIORITY_ORDER.join(", ")}`);
+    throw new TicketError(
+      ERROR_CODE.INVALID_PRIORITY,
+      `Invalid priority '${priority}'. Allowed: ${PRIORITY_ORDER.join(", ")}`,
+      EXIT_CODE.USAGE,
+      { priority, allowed: PRIORITY_ORDER }
+    );
   }
   return priority as TicketPriority;
 }
@@ -38,7 +44,11 @@ function parseLabelValues(values: string[]): LabelChange[] {
     if (value.startsWith("+")) {
       const label = value.slice(1).trim().toLowerCase();
       if (!label) {
-        throw new Error("Invalid --labels value: '+<label>' requires a non-empty label");
+        throw new TicketError(
+          ERROR_CODE.VALIDATION_FAILED,
+          "Invalid --labels value: '+<label>' requires a non-empty label",
+          EXIT_CODE.USAGE
+        );
       }
       changes.push({ mode: "add", labels: [label] });
       continue;
@@ -47,7 +57,11 @@ function parseLabelValues(values: string[]): LabelChange[] {
     if (value.startsWith("-")) {
       const label = value.slice(1).trim().toLowerCase();
       if (!label) {
-        throw new Error("Invalid --labels value: '-<label>' requires a non-empty label");
+        throw new TicketError(
+          ERROR_CODE.VALIDATION_FAILED,
+          "Invalid --labels value: '-<label>' requires a non-empty label",
+          EXIT_CODE.USAGE
+        );
       }
       changes.push({ mode: "remove", labels: [label] });
       continue;
@@ -123,7 +137,7 @@ export async function runEdit(cwd: string, id: string, options: EditCommandOptio
   if (options.title != null) {
     const title = options.title.trim();
     if (!title) {
-      throw new Error("Title must be non-empty");
+      throw new TicketError(ERROR_CODE.VALIDATION_FAILED, "Title must be non-empty", EXIT_CODE.VALIDATION_FAILED);
     }
     if (parsed.data.title !== title) {
       parsed.data.title = title;
@@ -150,7 +164,7 @@ export async function runEdit(cwd: string, id: string, options: EditCommandOptio
   }
 
   if (changes.length === 0) {
-    throw new Error("No changes to apply");
+    throw new TicketError(ERROR_CODE.VALIDATION_FAILED, "No changes to apply", EXIT_CODE.VALIDATION_FAILED);
   }
 
   parsed.data.updated = new Date().toISOString();

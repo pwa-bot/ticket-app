@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 import { INDEX_PATH } from "../lib/constants.js";
+import { ERROR_CODE, EXIT_CODE, TicketError } from "../lib/errors.js";
 import { autoCommit } from "../lib/git.js";
 import { rebuildIndex } from "../lib/index.js";
 import { readIndex } from "../lib/io.js";
@@ -17,7 +18,11 @@ type ActorField = "assignee" | "reviewer";
 function normalizeActor(actor: string): string {
   const value = actor.trim();
   if (!/^(human|agent):[a-z0-9][a-z0-9_-]*$/.test(value)) {
-    throw new Error("Invalid actor format. Expected human:<slug> or agent:<slug>");
+    throw new TicketError(
+      ERROR_CODE.INVALID_ACTOR,
+      "Invalid actor format. Expected human:<slug> or agent:<slug>",
+      EXIT_CODE.USAGE
+    );
   }
   return value;
 }

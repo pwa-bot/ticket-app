@@ -1,10 +1,13 @@
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { afterEach, describe, expect, it } from "vitest";
 import { runInstallHooks } from "../commands/install-hooks.js";
 
 const tempDirs: string[] = [];
+const execFileAsync = promisify(execFile);
 
 afterEach(async () => {
   await Promise.all(tempDirs.map((dir) => fs.rm(dir, { recursive: true, force: true })));
@@ -14,7 +17,7 @@ afterEach(async () => {
 async function mkTempRepo(): Promise<string> {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "ticket-hooks-test-"));
   tempDirs.push(dir);
-  await fs.mkdir(path.join(dir, ".git/hooks"), { recursive: true });
+  await execFileAsync("git", ["-C", dir, "init"]);
   return dir;
 }
 

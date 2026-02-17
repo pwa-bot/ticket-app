@@ -1,4 +1,5 @@
 import { PRIORITY_ORDER, STATE_ORDER, type TicketState } from "../lib/constants.js";
+import { ERROR_CODE, EXIT_CODE, TicketError } from "../lib/errors.js";
 import { readIndex } from "../lib/io.js";
 
 export interface ListCommandOptions {
@@ -9,14 +10,19 @@ export interface ListCommandOptions {
 
 function validateState(value: string): TicketState {
   if (!STATE_ORDER.includes(value as TicketState)) {
-    throw new Error(`Invalid state '${value}'. Allowed: ${STATE_ORDER.join(", ")}`);
+    throw new TicketError(
+      ERROR_CODE.INVALID_STATE,
+      `Invalid state '${value}'. Allowed: ${STATE_ORDER.join(", ")}`,
+      EXIT_CODE.USAGE,
+      { value, allowed: STATE_ORDER }
+    );
   }
   return value as TicketState;
 }
 
 function validateFormat(value: string): "table" | "kanban" {
   if (value !== "table" && value !== "kanban") {
-    throw new Error("Invalid format. Allowed: table, kanban");
+    throw new TicketError(ERROR_CODE.VALIDATION_FAILED, "Invalid format. Allowed: table, kanban", EXIT_CODE.USAGE, { value });
   }
   return value;
 }

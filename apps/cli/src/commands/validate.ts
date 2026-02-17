@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 import { INDEX_PATH, PRIORITY_ORDER, STATE_ORDER, TICKETS_DIR, type TicketPriority, type TicketState } from "../lib/constants.js";
+import { ERROR_CODE, EXIT_CODE, TicketError } from "../lib/errors.js";
 import type { TicketIndexEntry, TicketsIndex } from "../lib/index.js";
 import { shortId, displayId } from "../lib/ulid.js";
 import { rebuildIndex } from "../lib/index.js";
@@ -187,7 +188,15 @@ export async function runValidate(cwd: string, options: ValidateCommandOptions):
   }
 
   if (errors.length > 0) {
-    throw new Error(`Validation failed:\n- ${errors.join("\n- ")}`);
+    throw new TicketError(
+      ERROR_CODE.VALIDATION_FAILED,
+      `Validation failed:\n- ${errors.join("\n- ")}`,
+      EXIT_CODE.VALIDATION_FAILED,
+      {
+        errors,
+        indexStatus: indexStale ? ERROR_CODE.INDEX_OUT_OF_SYNC : null
+      }
+    );
   }
 
   if (fix) {

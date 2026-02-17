@@ -1,20 +1,31 @@
 import { TicketsIndex, type TicketIndexEntry } from "./index.js";
+import { ERROR_CODE, EXIT_CODE, TicketError } from "./errors.js";
 
 function ambiguousError(entries: TicketIndexEntry[]): never {
   const ids = entries.map((ticket) => ticket.display_id).join(", ");
-  throw new Error(`Ambiguous ticket id. Matches: ${ids}`);
+  throw new TicketError(
+    ERROR_CODE.AMBIGUOUS_ID,
+    `Ambiguous ticket id. Matches: ${ids}`,
+    EXIT_CODE.AMBIGUOUS_ID,
+    { matches: entries.map((ticket) => ticket.id) }
+  );
 }
 
 export function resolveTicket(index: TicketsIndex, query: string, ci: boolean): TicketIndexEntry {
   const trimmed = query.trim();
   if (!trimmed) {
-    throw new Error("Ticket id is required");
+    throw new TicketError(ERROR_CODE.TICKET_NOT_FOUND, "Ticket id is required", EXIT_CODE.USAGE);
   }
 
   if (ci) {
     const exact = index.tickets.filter((ticket) => ticket.id === trimmed || ticket.short_id === trimmed);
     if (exact.length === 0) {
-      throw new Error(`Ticket not found: ${trimmed}`);
+      throw new TicketError(
+        ERROR_CODE.TICKET_NOT_FOUND,
+        `Ticket not found: ${trimmed}`,
+        EXIT_CODE.NOT_FOUND,
+        { query: trimmed }
+      );
     }
     if (exact.length > 1) {
       ambiguousError(exact);
@@ -65,5 +76,10 @@ export function resolveTicket(index: TicketsIndex, query: string, ci: boolean): 
     ambiguousError(titleMatches);
   }
 
-  throw new Error(`Ticket not found: ${query}`);
+  throw new TicketError(
+    ERROR_CODE.TICKET_NOT_FOUND,
+    `Ticket not found: ${query}`,
+    EXIT_CODE.NOT_FOUND,
+    { query }
+  );
 }

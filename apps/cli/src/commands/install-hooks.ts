@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import { assertGitRepository } from "../lib/git.js";
 
 export interface InstallHooksCommandOptions {
   force?: boolean;
@@ -23,6 +24,7 @@ async function defaultConfirm(): Promise<boolean> {
 }
 
 export async function runInstallHooks(cwd: string, options: InstallHooksCommandOptions): Promise<void> {
+  await assertGitRepository(cwd);
   const hooksDir = path.join(cwd, ".git/hooks");
   const hookPath = path.join(hooksDir, "pre-commit");
   const force = options.force ?? false;
