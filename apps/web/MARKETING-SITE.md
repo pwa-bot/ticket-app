@@ -1,66 +1,47 @@
-# Marketing Site Spec for ticket.app
+# Marketing Site Spec v2 — Protocol-First
 
 ## Positioning
 
-**Do NOT lead with OpenClaw.** Lead with the broader value prop.
+**Goal:** Position Ticket as a protocol-first execution ledger for agent-built software, with an open source CLI wedge and paid dashboard coordination.
 
-**H1:** Git-native issue tracking for AI-first teams  
-**Subhead:** Tickets are Markdown in your repo. Agents use the CLI. Humans use a clean dashboard. No seats. No agent accounts.
+**Do NOT lead with:**
+- OpenClaw (mention in "Works with" strip only)
+- "Board" or "Kanban" (dashboard is a view, protocol is the product)
+- "Project management" language
 
-**OpenClaw mention:** "Works with" strip — OpenClaw, Claude Code, GitHub Actions, any orchestrator.
+**Lead with:**
+- "An open protocol for machine-readable work in Git"
+- "CLI for agents, dashboard for humans"
+- Infrastructure framing, not PM tool framing
 
----
+**Core pain we sell:**
+> Agents need durable state, not chat memory.
 
-## Site Goals
-
-1. Explain the product in 10 seconds to agent-native builders
-2. Drive two conversion paths: Install CLI (free) / Connect GitHub (paid upsell)
-3. Build trust: security, "Git is source of truth", no per-seat pricing
-4. Feel premium and inevitable (Linear, Notion, Stripe vibes)
-
-**Avoid:** Kanban-clone vibes, enterprise PM vibes, over-indexing on OpenClaw.
-
----
-
-## Routes (Next.js App Router)
-
-```
-app/
-  layout.tsx
-  page.tsx                    # Home
-  cli/page.tsx
-  dashboard/page.tsx
-  pricing/page.tsx
-  security/page.tsx
-  docs/page.tsx
-  docs/[...slug]/page.tsx     # MDX pages
-  oss/page.tsx
-  terms/page.tsx
-  privacy/page.tsx
-components/
-  SiteHeader.tsx
-  SiteFooter.tsx
-  HeroSection.tsx
-  CodeCard.tsx
-  TerminalCard.tsx
-  ComparisonGrid.tsx
-  PricingTable.tsx
-  FAQ.tsx
-  FinalCTA.tsx
-content/
-  docs/
-    index.mdx
-    format.mdx
-    workflow.mdx
-    index-json.mdx
-    cli.mdx
-    pr-linking.mdx
-    policy.mdx (reserved)
-```
+Ticket turns ephemeral agent runs into persistent, auditable objects tied to code.
 
 ---
 
-## Design Tokens
+## Site Architecture
+
+### Public Marketing
+- `/` — Home
+- `/protocol` — Ticket Protocol (CC0, why it exists, spec link)
+- `/cli` — CLI (install, commands, --ci, JSON)
+- `/dashboard` — Dashboard (read-only overlay, portfolio)
+- `/pricing` — Pricing
+- `/docs` — Docs
+- `/security` — Security
+- `/oss` — Open Source (repos, license, contributing)
+
+### Product (authenticated)
+- `/space` — Repo picker
+- `/space/:owner/:repo` — Board default
+- `/space/:owner/:repo/t/:ticketId` — Ticket detail deep link
+- `/space/settings` — Future
+
+---
+
+## Design Tokens (unchanged)
 
 ```ts
 export const tokens = {
@@ -92,28 +73,62 @@ export const tokens = {
 
 ---
 
+## Navigation
+
+```tsx
+const nav = [
+  { href: "/protocol", label: "Protocol" },
+  { href: "/cli", label: "CLI" },
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/docs", label: "Docs" }
+];
+```
+
+**Header CTA:** Install CLI
+
+---
+
 ## Home Page (`/`)
 
 ### Hero
-- **H1:** Git-native issue tracking for AI-first teams
-- **Subhead:** Tickets are Markdown in your repo. Agents use the CLI. Humans use a clean dashboard. No seats. No agent accounts.
-- **Primary CTA:** Install CLI
-- **Secondary CTA:** Connect GitHub
-- **Microcopy:** CLI is free and open source. Dashboard reads from your repo.
-- **Works with pills:** OpenClaw, Claude Code, GitHub Actions, any orchestrator
 
-### Section: The simplest possible tracker
-**Headline:** Your backlog is a folder.
+**H1:** The open protocol for machine-readable work in Git
 
-**Body:** Ticket lives in your repo under `.tickets/`. Each ticket is a single Markdown file with YAML frontmatter. Git history is your audit log.
+**Subhead:** Tickets are Markdown. State is YAML. History is Git. Agents use the CLI. Humans use a fast dashboard overlay.
+
+**Primary CTA:** Install CLI
+**Secondary CTA:** Read the Protocol
+**Tertiary CTA (link):** Connect GitHub
+
+**Microcopy:** Git is authoritative. Everything else is derived and disposable.
+
+**Works with line:** Works with OpenClaw, Claude Code style runners, GitHub Actions, and custom orchestrators.
+
+---
+
+### Section: Why Ticket exists
+
+**Headline:** Agents need durable state, not chat memory.
+
+**Body:** Orchestrators execute well, but they do not reliably preserve backlog state across runs. Ticket turns work into a durable system of record that agents can read and write deterministically.
 
 **Bullets:**
-- No SaaS database as the source of truth
-- Offline by default
-- Easy for agents to create and update deterministically
+- No lost context between runs, machines, or sessions
+- Work is inspectable, reviewable, and diffable
+- Git history becomes the audit trail
 
-**Code block:**
-```md
+---
+
+### Section: The Protocol
+
+**Headline:** A simple standard any tool can implement.
+
+**Body:** The Ticket Protocol is CC0. Your repo remains the source of truth. Any CLI, dashboard, IDE plugin, or agent can interoperate by reading and writing the same format.
+
+**Code block label:** Example ticket
+
+```markdown
 ---
 id: 01ARZ3NDEKTSV4RRFFQ69G5FAV
 title: Add paywall experiment
@@ -129,350 +144,579 @@ labels: []
 - [ ] …
 ```
 
+**Tiny callout:** Core profile: just ticket files. Indexed profile: adds `config.yml` and `index.json`.
+
+**CTA:** Read Protocol
+
+---
+
 ### Section: Built for agents
-**Headline:** Deterministic CLI. No flakey automation.
 
-**Body:** Agents should not need a browser. Ticket exposes a predictable CLI with `--ci` mode for strict, non-interactive workflows.
+**Headline:** Deterministic CLI, designed for automation.
 
-**Commands:**
+**Body:** Ticket provides a strict CLI contract for agents. Use `--ci` mode for exact ID matching and structured output for reliable orchestration.
+
 ```bash
 ticket init
-ticket new "Add paywall experiment"
-ticket move TK-01ARZ3ND in_progress
-ticket validate --ci
+ticket new "Add paywall experiment" --priority p1 --ci
+ticket move TK-01ARZ3ND in_progress --ci
+ticket validate --json --ci
 ```
 
 **Bullets:**
 - Collision-free IDs (ULID filenames)
 - Strict parsing and validation
-- Git hooks to prevent broken tickets from landing
+- Machine-readable JSON output
+- Works offline, commits changes atomically
 
-### Section: Dashboard overlay
-**Headline:** A fast view over what's already in Git.
+**CTA:** CLI docs
 
-**Body:** The dashboard reads `.tickets/index.json` generated by the CLI, then loads individual tickets on demand. No replatforming your workflow.
+---
+
+### Section: Fast dashboard overlay
+
+**Headline:** A clean view over what's already in Git.
+
+**Body:** The dashboard reads `.tickets/index.json` generated by the CLI, then loads individual ticket files on demand. No separate source of truth.
 
 **Bullets:**
-- Kanban and list views
-- Filter by state, priority, label, repo
-- Auto-link PRs by branch and title convention
+- Board and list views
+- Filters by state, priority, labels, repo
+- PR linking by convention (branch and title)
+- Read-only in v1, edit via git and CLI
 
-**Note (small):** Dashboard is read-only in v1. Edit via CLI and git.
+**CTA:** Dashboard
 
-### Section: Why not Linear or GitHub Issues?
-**Headline:** Built for the agent era.
-
-| Linear | GitHub Issues | Ticket |
-|--------|---------------|--------|
-| Great UI, wrong billing for agents | Repo-native but not agent-first | Repo-native + agent-grade CLI |
-| Seats get expensive with bots | Specs feel bolted on | No per-seat fees |
+---
 
 ### Section: Pricing teaser
-**Headline:** Pay for coordination, not users.
-**Body:** Unlimited agents. No per-seat billing. Start free with the CLI, upgrade for multi-repo dashboard and team features.
 
-### Section: FAQ
-- **Q:** Do I need ticket.app to use Ticket? **A:** No. CLI and format work without hosted service.
-- **Q:** Who owns the data? **A:** You do. Tickets live in your repo.
-- **Q:** Does this work with my orchestrator? **A:** If it can run a CLI or commit files, yes.
+**Headline:** Pay for coordination, not seats.
+
+**Body:** The protocol is free. The CLI is open source. Upgrade for multi-repo portfolio views, saved filters, and team coordination features.
+
+**Mini bullets:**
+- Free: CLI + Protocol + single-repo dashboard
+- Paid: multi-repo portfolio + saved views + faster refresh
+
+**CTA:** Pricing
+
+---
+
+### FAQ
+**Q:** Do I need ticket.app to use Ticket?
+**A:** No. Tickets live in your repo. The CLI works independently.
+
+**Q:** Who owns the data?
+**A:** You do. Git is authoritative.
+
+**Q:** Does this replace Linear?
+**A:** If you use agents, it replaces the parts that break: durable backlog state, automation safety, and per-seat scaling.
+
+---
 
 ### Footer CTA
-**Headline:** Replace issue tracking with something your agents can actually use.
-Buttons: Install CLI, Connect GitHub
+
+**Headline:** Make your backlog something agents can operate reliably.
+
+**Buttons:** Install CLI, Read Protocol, Connect GitHub
+
+---
+
+## Protocol Page (`/protocol`)
+
+### Hero
+
+**H1:** Ticket Protocol
+
+**Subhead:** The open standard for machine-readable work stored in Git. CC0 licensed.
+
+---
+
+### Section: What it defines
+
+**Headline:** A format, not a product.
+
+**Body:** The protocol defines repository layout, ticket file format, workflow states, and the index schema. Any implementation can read and write tickets that conform.
+
+**Includes:**
+- `.tickets/` repository structure
+- Ticket file format (YAML frontmatter + Markdown body)
+- Five-state workflow and transitions
+- `index.json` schema for efficient querying
+- Forward compatibility rules (`x_ticket` namespace)
+
+**Does not include:**
+- CLI commands
+- Dashboard UI
+- Pricing or business model
+- GitHub-specific features
+
+---
+
+### Section: Conformance profiles
+
+**Headline:** Core and Indexed
+
+**Core profile:**
+- Only requires `.tickets/tickets/*.md`
+- Ideal for minimal tooling or manual workflows
+
+**Indexed profile:**
+- Adds `.tickets/config.yml` and `.tickets/index.json`
+- Enables fast dashboards and large-scale querying
+
+**Small note:** ticket.app requires Indexed profile.
+
+---
+
+### Section: Canonical example
+
+**Ticket example:**
+
+```markdown
+---
+id: 01ARZ3NDEKTSV4RRFFQ69G5FAV
+title: Example ticket
+state: ready
+priority: p1
+labels: []
+---
+
+Markdown body…
+```
+
+**Index example:**
+
+```json
+{
+  "format_version": 1,
+  "generated_at": "2026-02-16T18:22:11Z",
+  "workflow": "simple-v1",
+  "tickets": [
+    {
+      "id": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+      "short_id": "01ARZ3ND",
+      "display_id": "TK-01ARZ3ND",
+      "title": "Example ticket",
+      "state": "ready",
+      "priority": "p1",
+      "labels": [],
+      "path": ".tickets/tickets/01ARZ3NDEKTSV4RRFFQ69G5FAV.md"
+    }
+  ]
+}
+```
+
+---
+
+### Section: Principle
+
+**Headline:** Git is authoritative.
+
+**Body:** Any caches, databases, or indexes are derived and disposable. If there is a conflict, ticket files win.
+
+---
+
+### CTA block
+
+**Buttons:**
+- View PROTOCOL.md
+- Install CLI
+- Connect GitHub
 
 ---
 
 ## CLI Page (`/cli`)
 
 ### Hero
-**H1:** A CLI designed for agents
-**Subhead:** Deterministic commands, strict validation, collision-free IDs. Your orchestrator can operate tickets without touching a browser.
+
+**H1:** A CLI designed for deterministic automation
+
+**Subhead:** Ticket is an open protocol. The CLI is the reference implementation for agents: strict mode, structured output, and safe validation.
+
+**Buttons:**
+- Primary: Install CLI
+- Secondary: Read the Protocol
+- Link: CLI docs
+
+---
 
 ### Install
+
 ```bash
 npm i -g @ticketapp/cli
 ```
 
+---
+
 ### Quick start
+
 ```bash
 cd your-repo
 ticket init
-ticket new "Add paywall experiment"
+ticket new "Add paywall experiment" --priority p1 --ci
 git push
 ```
 
-### Common commands
+**Creates:**
+- `.tickets/config.yml`
+- `.tickets/template.md`
+- `.tickets/index.json`
+- `.tickets/tickets/<ULID>.md`
+
+---
+
+### Commands you'll use daily
+
 ```bash
-ticket list --state=ready
+ticket list --state ready
 ticket show TK-01ARZ3ND
-ticket start TK-01ARZ3ND
-ticket done TK-01ARZ3ND
+ticket start TK-01ARZ3ND --ci
+ticket done TK-01ARZ3ND --ci
 ```
 
-### Agent mode (`--ci`)
-**Headline:** Built for non-interactive automation
+---
 
-`--ci` mode disables fuzzy matching and interactive prompts. Fails fast with deterministic exit codes.
+### Agent mode: `--ci`
+
+**Headline:** Strict, non-interactive execution
+
+In `--ci` mode:
+- exact ID matching
+- no fuzzy selection
+- no prompts
+- deterministic exit codes
 
 ```bash
+ticket list --json --ci
 ticket move TK-01ARZ3ND in_progress --ci
-ticket validate --ci
+ticket validate --json --ci
 ```
 
-Rules:
-- IDs must be exact ULID or unambiguous short ID
-- No fuzzy title matching
-- `ticket edit` errors in CI mode
+---
 
-### Validation and hooks
+### Structured output: `--json`
+
+**Headline:** Never parse tables
+
+Use JSON for agents and automation:
+
 ```bash
-ticket validate --all
-ticket install-hooks
+ticket list --json --ci
+ticket show TK-01ARZ3ND --json --ci
 ```
+
+---
+
+### Validation and recovery
+
+```bash
+ticket validate --all --ci
+ticket rebuild-index --ci
+ticket validate --all --fix-index --ci
+```
+
+---
 
 ### PR linking conventions
-Branch: `tk-{short_id}-{slug}`
-PR title: `[TK-{short_id}] {title}`
 
-### FAQ
-- **Q:** Can I create tickets offline? **A:** Yes. Push when ready.
-- **Q:** Who owns the data? **A:** You do. It's in your repo.
+**Branch:** `tk-{short_id}-{slug}`
+**PR title:** `[TK-{short_id}] {title}`
+
+The dashboard links PRs automatically when conventions match.
+
+---
+
+### Footer CTA
+
+**Headline:** Make your backlog something agents can operate reliably.
+
+**Buttons:** Read the Protocol, Connect GitHub, View Pricing
 
 ---
 
 ## Pricing Page (`/pricing`)
 
 ### Hero
-**H1:** Pricing that doesn't punish agents
-**Subhead:** Unlimited agents. No per-seat fees. Start free with the CLI. Upgrade for multi-repo visibility and coordination.
 
-### Tiers
+**H1:** Pricing that doesn't punish agents
+
+**Subhead:** The protocol is CC0. The CLI is open source. Pay only when you want coordination: multi-repo portfolio views, saved filters, and team features. No per-seat billing.
+
+**Buttons:**
+- Primary: Connect GitHub
+- Secondary: Install CLI
+- Link: Read the Protocol
+
+**Microcopy:** If you stop paying, nothing breaks. Tickets still live in your repo.
+
+---
+
+### Pricing table
 
 #### Free — $0
+
+- Ticket Protocol (CC0)
 - CLI (open source)
-- Repo-native format (`.tickets/`)
 - Single-repo dashboard view
-- Board + list views
+- Board and list views
 - PR linking by convention
 
-**Best for:** solo builders, trying the protocol
+**CTA:** Install CLI
 
-#### Pro — $5/repo/month
+---
+
+#### Pro — $5 / repo / month
+
 Everything in Free, plus:
 - Multi-repo dashboard
 - Saved views and filters
-- Faster refresh (webhooks)
-- Team-ready sharing (read-only links)
+- Faster refresh options
+- Shareable links (read-only)
 
-**Best for:** teams with a handful of active repos
+**CTA:** Start Pro
 
-#### Team — $20/month flat
+---
+
+#### Team — $20 / month (flat)
+
 Everything in Pro, plus:
 - Unlimited repos
-- Org-level portfolio view
-- Slack notifications
-- Activity feed (derived from Git)
+- Org portfolio view
+- Team-friendly sharing
+- Slack digests (when enabled)
 
-**Best for:** small studios shipping multiple apps
+**CTA:** Start Team
 
-#### Business — $50/month
+---
+
+#### Business — $50 / month
+
 Everything in Team, plus:
-- Policy checks (GitHub checks)
-- Required review enforcement
-- Advanced analytics
+- Governance features (checks and policy tooling when enabled)
+- Advanced org controls
 - Priority support
 
-**Best for:** teams that need guardrails
+**CTA:** Contact
+
+---
+
+### "How it works" section
+
+**Headline:** You own the data
+- Tickets are Markdown files in your repo
+- Git history is the audit log
+- The dashboard reads `.tickets/index.json` and ticket files
+
+**Headline:** What happens if I cancel?
+- The protocol and CLI keep working
+- Your backlog stays in Git
+- You only lose hosted coordination features
+
+**Headline:** Do agents cost extra?
+- No. Agents are unlimited.
+
+---
 
 ### FAQ
-- **Q:** What happens if I stop paying? **A:** Nothing breaks. Tickets still in repo. CLI still works.
-- **Q:** Do agents cost extra? **A:** No. Unlimited agents.
-- **Q:** Why not per-seat? **A:** Agent teams scale users artificially. We price on repos and coordination.
+
+**Q:** Why not per-seat pricing?
+**A:** Agent-driven teams scale identities quickly. We price coordination, not users.
+
+**Q:** Is the dashboard required?
+**A:** No. It's an overlay for visibility. Git remains authoritative.
+
+**Q:** Can I mix plans across repos?
+**A:** Yes. Pro is per-repo. Team is unlimited repos.
+
+---
+
+### Footer CTA
+
+**Headline:** Start with the protocol. Add coordination when you need it.
+
+**Buttons:** Install CLI, Connect GitHub, Read Docs
+
+---
+
+## OSS Page (`/oss`)
+
+### Hero
+
+**H1:** Open Source
+
+**Subhead:** Ticket is open where it should be: protocol and tooling. Your data stays in your repo.
+
+---
+
+### Section: What's open
+
+**Headline:** Protocol-first.
+
+- Ticket Protocol is CC0
+- CLI is open source
+- Docs and examples are open
+
+---
+
+### Section: What's paid
+
+**Headline:** Pay for coordination.
+
+Ticket.app is a hosted overlay for:
+- multi-repo portfolio views
+- saved filters and sharing
+- faster refresh
+- team coordination integrations
+
+---
+
+### Section: Compatibility promise
+
+**Headline:** Protocol stability matters.
+
+**Body:** The protocol is the interoperability contract. Implementations evolve, but the spec is the shared substrate.
+
+---
+
+### Contributing
+
+- link to GitHub repos
+- link to issues/discussions
+- guidelines: keep protocol small, additive changes preferred
+
+---
+
+### CTA
+
+**Buttons:**
+- GitHub repositories
+- Read the protocol
+- Install CLI
 
 ---
 
 ## Dashboard Page (`/dashboard`)
 
 ### Hero
-**H1:** A dashboard that reads straight from Git
-**Subhead:** Ticket's dashboard is a fast view over `.tickets/index.json` and your ticket files. No separate source of truth. No syncing your backlog into a SaaS.
 
-**Primary CTA:** Connect GitHub
-**Secondary CTA:** Read the docs
-**Small line:** Read-only in v1. Edit via CLI and git.
+**H1:** A fast overlay for what's already in Git
+
+**Subhead:** The dashboard reads `.tickets/index.json` and ticket files from your repo. No separate database. No sync issues. Git is authoritative.
+
+**Buttons:**
+- Primary: Connect GitHub
+- Secondary: Install CLI
+
+---
+
+### Section: What you get
+
+**Headline:** Visibility without complexity
+
+**Bullets:**
+- Board view (Kanban columns by state)
+- List view with filters
+- Multi-repo portfolio (paid)
+- PR linking by convention
+- Deep links to individual tickets
+
+---
 
 ### Section: How it works
-**Headline:** Repo-native by design
 
-**Body:** The dashboard loads one file, then fetches individual tickets only when you open them.
+**Headline:** Derived, not stored
 
-**Steps:**
-1. CLI generates `.tickets/index.json` on every change
-2. Dashboard reads `index.json` for board and list views
-3. Clicking a ticket loads the Markdown file and renders it
-4. PRs link automatically by branch and title convention
+1. Connect your GitHub repo
+2. Dashboard fetches `.tickets/index.json`
+3. Click a ticket → fetches the markdown file
+4. Changes happen via CLI and git push
 
-### Section: Views
-**Headline:** Fast views for scanning and triage
+**Callout:** The dashboard is read-only in v1. Edit tickets via CLI or direct file edits.
 
-**Cards:**
-- **Board view:** Columns = workflow states
-- **List view:** Filter by state, priority, label, repo
-- **Ticket detail:** Rendered Markdown plus linked PRs
-
-**Note:** No editing in the web UI in v1. That keeps the protocol clean and agent-friendly.
+---
 
 ### Section: PR linking
-**Headline:** PRs connect themselves
 
-**Body:** If your branch and PR title follow the convention, Ticket links them automatically.
+**Headline:** Automatic by convention
 
-Branch: `tk-{short_id}-{slug}`
-PR title: `[TK-{short_id}] {title}`
+When your branch or PR title includes the ticket ID:
+- Branch: `tk-01arz3nd-fix-login`
+- PR title: `[TK-01ARZ3ND] Fix login bug`
 
-**Result:** Ticket detail shows linked PRs and current status.
+The dashboard shows linked PRs on the ticket detail.
 
-### Section: Multi-repo portfolio (teaser)
-**Headline:** See all work across repos
-**Body:** On Pro and Team, you can view tickets across multiple repos in one place, with saved filters and views.
-**Note:** Your tickets still live in each repo.
-
-### FAQ
-- **Q:** Does Ticket store my tickets? **A:** No. Tickets live in your repo. The dashboard reads and renders them.
-- **Q:** What permissions does the dashboard need? **A:** Read access to selected repos only. It does not write to your repo in v1.
-- **Q:** How does it stay up to date? **A:** MVP supports manual refresh. Paid plans can enable webhooks for instant refresh.
+---
 
 ### Footer CTA
-**Headline:** Get a clean portfolio view without leaving Git.
-Buttons: Connect GitHub, View pricing
+
+**Headline:** See your backlog. Don't babysit it.
+
+**Buttons:** Connect GitHub, Install CLI, View Pricing
 
 ---
 
-## Security Page (`/security`)
+## Component List
 
-### Hero
-**H1:** Security by design
-**Subhead:** Ticket keeps your backlog in Git. The hosted dashboard is an optional overlay and does not become your source of truth.
+### Global
+- `SiteHeader` — Nav: Protocol, CLI, Dashboard, Pricing, Docs. CTA: Install CLI
+- `SiteFooter` — Product: Protocol, CLI, Dashboard, Pricing. Resources: Docs, Security, OSS. Legal: Terms, Privacy
 
-### Section: Data ownership
-**Headline:** Your tickets live in your repo
+### Home components
+1. `HeroSectionV2` — "Read Protocol" secondary CTA, "Agents need durable state" microcopy
+2. `WhySection` — 3 bullets: Durable state, Audit trail, Deterministic automation
+3. `ProtocolSection` — Ticket format snippet + "Core vs Indexed" callout
+4. `AgentCLISection` — CLI commands + `--ci` and `--json` emphasis
+5. `OverlaySection` — index.json explanation + read-only honesty
+6. `PricingTeaserSectionV2` — Free vs Paid summary
+7. `FAQSection`
+8. `FinalCTASectionV2`
 
-- Ticket files live under `.tickets/` in your repository
-- Git history is the audit log
-- The dashboard renders what's already in Git
+### Protocol page components
+- `ProtocolHero`
+- `ConformanceProfiles`
+- `ProtocolExamples` (ticket + index.json)
+- `PrincipleCallout` ("Git is authoritative")
+- `ProtocolCTA`
 
-### Section: OAuth token handling
-**Headline:** GitHub OAuth tokens are protected
+### OSS page components
+- `OSSHero`
+- `WhatsOpen`
+- `WhatsPaid`
+- `CompatibilityPromise`
+- `Contributing`
+- `OSSCTA`
 
-- Tokens are stored server-side only
-- Tokens are encrypted at rest
-- Tokens are never logged
-- We request the minimum access needed for selected repos
-
-**If access is revoked or expired:** We stop indexing and prompt you to reconnect.
-
-### Section: Read-only in v1
-**Headline:** No write access required
-
-In v1, the dashboard is read-only:
-- It does not edit ticket files
-- It does not merge PRs
-- It does not modify your repo
-
-This reduces risk and keeps Git canonical.
-
-### Section: Webhooks (when enabled)
-**Headline:** Verified, signed, and replay-safe
-
-When webhooks are enabled:
-- Webhook signatures are verified
-- Deliveries are deduplicated by delivery ID
-- Replay attempts are rejected
-
-### Section: Repo selection
-**Headline:** Least privilege repo indexing
-
-- Only repos you explicitly select are indexed
-- We respect GitHub permissions
-- If access changes, indexing stops for that repo
-
-### Section: Responsible defaults
-**Headline:** Built for agent-heavy workflows
-
-- The CLI provides strict validation for safe automation
-- `--ci` mode disables interactive and fuzzy behavior
-- Git hooks prevent malformed tickets from landing
-
-### Footer CTA
-**Headline:** Keep your workflow in Git. Add an overlay when you want it.
-Buttons: Read the docs, Connect GitHub
+### Shared components
+- `CodeCard` (copy button)
+- `TerminalCard`
+- `Callout` (Core vs Indexed)
+- `PillRow` (Works with)
+- `PricingCards`
+- `FAQAccordion`
 
 ---
 
-## Docs Landing Page (`/docs`)
+## Visual Rules
 
-### Hero
-**H1:** Docs
-**Subhead:** Everything you need to adopt the Ticket protocol, run it with agents, and optionally use the dashboard.
-
-### Quick links (cards)
-
-1. **Getting started**
-   - Install CLI
-   - `ticket init`
-   - Create your first ticket
-
-2. **Ticket format**
-   - YAML frontmatter rules
-   - Required fields
-   - Template conventions
-
-3. **Workflow**
-   - States and transitions
-   - Terminal state behavior
-
-4. **index.json**
-   - Why it exists
-   - How it's generated
-   - Rebuild and recovery
-
-5. **CLI reference**
-   - Commands
-   - `--ci` mode for agents
-   - Exit codes
-
-6. **PR linking**
-   - Branch and PR title conventions
-   - Auto-link behavior
-
-**Footer note:** Tickets live in your repo. If you stop using the dashboard, nothing breaks.
+- Code-first visuals (protocol snippet, CLI commands)
+- Do not show fake UI screenshots
+- If showing UI, show only what exists
+- Minimal, Linear-level polish
 
 ---
 
-## What NOT to show
+## Copy Rules
 
-- Approval UI screenshots
-- Policy enforcement beyond what's built
-- "Auto merge on green" unless working
-- Complex workflow diagrams
-- Dates or roadmap bullets
-
-Use language like: "Coming next: policy checks and coordination features."
+- Avoid "project management" language
+- Emphasize protocol, determinism, Git as authority
+- Mention OpenClaw only in "Works with" strip
 
 ---
 
-## Implementation
+## Conversion Paths
 
-- Next.js App Router
-- Tailwind CSS
-- MDX for docs
-- Static hosting on Vercel
-- Lighthouse 95+
-- JS under 150kb initial
-
----
-
-## Completion
-
-Build all pages with the copy above. Run `pnpm build` and `pnpm lint`.
-Output `<promise>DONE</promise>` when complete.
+**Primary:** Install CLI
+**Secondary:** Read Protocol
+**Tertiary:** Connect GitHub (dashboard)
