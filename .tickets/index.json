@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-17T22:14:32.993Z",
+  "generated_at": "2026-02-17T23:43:18.770Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -54,19 +54,6 @@
         "contract-v1"
       ],
       "path": ".tickets/tickets/01KHMG8D05HYTQ1D1RYTQXYYE0.md"
-    },
-    {
-      "id": "01KHPTPPBVD1JCWQ7RZV0TRBEJ",
-      "short_id": "01KHPTPP",
-      "display_id": "TK-01KHPTPP",
-      "title": "Multi-repo portfolio view",
-      "state": "backlog",
-      "priority": "p1",
-      "labels": [
-        "dashboard",
-        "phase-2"
-      ],
-      "path": ".tickets/tickets/01KHPTPPBVD1JCWQ7RZV0TRBEJ.md"
     },
     {
       "id": "01KHPTPPK4J0QS0J4TGA7YHWM7",
@@ -211,6 +198,19 @@
         "testing"
       ],
       "path": ".tickets/tickets/01KHMG8JASDQ7VC5YZK8NFBKZP.md"
+    },
+    {
+      "id": "01KHPTPPBVD1JCWQ7RZV0TRBEJ",
+      "short_id": "01KHPTPP",
+      "display_id": "TK-01KHPTPP",
+      "title": "Multi-repo portfolio view",
+      "state": "ready",
+      "priority": "p1",
+      "labels": [
+        "dashboard",
+        "phase-2"
+      ],
+      "path": ".tickets/tickets/01KHPTPPBVD1JCWQ7RZV0TRBEJ.md"
     },
     {
       "id": "01KHMG84AJMCWQCCE84328MF5G",
