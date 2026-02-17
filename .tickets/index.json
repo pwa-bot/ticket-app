@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-17T00:47:41.580Z",
+  "generated_at": "2026-02-17T05:22:06.016Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -139,7 +139,7 @@
       "short_id": "01KHMG85",
       "display_id": "TK-01KHMG85",
       "title": "Implement JSON envelope (--json flag)",
-      "state": "in_progress",
+      "state": "ready",
       "priority": "p1",
       "labels": [
         "refactor",
