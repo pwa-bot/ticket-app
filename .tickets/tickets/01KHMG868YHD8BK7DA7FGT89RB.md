@@ -1,7 +1,7 @@
 ---
 id: 01KHMG868YHD8BK7DA7FGT89RB
 title: Make ticket init idempotent
-state: in_progress
+state: done
 priority: p1
 labels:
   - refactor

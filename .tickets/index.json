@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-17T23:43:34.263Z",
+  "generated_at": "2026-02-17T23:46:19.867Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -161,19 +161,6 @@
       "path": ".tickets/tickets/01KHMG8JASDQ7VC5YZK8NFBKZP.md"
     },
     {
-      "id": "01KHMG868YHD8BK7DA7FGT89RB",
-      "short_id": "01KHMG86",
-      "display_id": "TK-01KHMG86",
-      "title": "Make ticket init idempotent",
-      "state": "in_progress",
-      "priority": "p1",
-      "labels": [
-        "refactor",
-        "contract-v1"
-      ],
-      "path": ".tickets/tickets/01KHMG868YHD8BK7DA7FGT89RB.md"
-    },
-    {
       "id": "01KHMG84AJMCWQCCE84328MF5G",
       "short_id": "01KHMG84",
       "display_id": "TK-01KHMG84",
@@ -198,6 +185,19 @@
         "contract-v1"
       ],
       "path": ".tickets/tickets/01KHMG85TGQZ1TDCBJ6JDYA10V.md"
+    },
+    {
+      "id": "01KHMG868YHD8BK7DA7FGT89RB",
+      "short_id": "01KHMG86",
+      "display_id": "TK-01KHMG86",
+      "title": "Make ticket init idempotent",
+      "state": "done",
+      "priority": "p1",
+      "labels": [
+        "refactor",
+        "contract-v1"
+      ],
+      "path": ".tickets/tickets/01KHMG868YHD8BK7DA7FGT89RB.md"
     },
     {
       "id": "01KHPTPPBVD1JCWQ7RZV0TRBEJ",
