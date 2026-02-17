@@ -77,7 +77,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: tokenData.error ?? "OAuth did not return an access token" }, { status: 400 });
   }
 
-  const response = NextResponse.redirect(new URL("/app", request.url));
+  const response = NextResponse.redirect(new URL("/space", request.url));
   response.cookies.set(cookieNames.session, encryptToken(tokenData.access_token), {
     httpOnly: true,
     sameSite: "lax",

@@ -74,7 +74,7 @@ export default function RepoPicker() {
         return (
           <a
             key={repo.id}
-            href={`/app/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`}
+            href={`/space/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`}
             className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow"
           >
             <p className="text-lg font-semibold">{repo.full_name}</p>
