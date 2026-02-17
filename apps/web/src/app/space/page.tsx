@@ -33,6 +33,12 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
   const resolvedSearchParams = await searchParams;
   const selectedRepos = parseRepoSelection(resolvedSearchParams.repos);
 
+  // Single repo selected → redirect to dedicated board view
+  if (selectedRepos.length === 1) {
+    const [owner, repo] = selectedRepos[0].split("/");
+    redirect(`/space/${owner}/${repo}`);
+  }
+
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
       <div className="mx-auto max-w-7xl">
