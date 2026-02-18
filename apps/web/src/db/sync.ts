@@ -1,147 +1,197 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, notInArray } from "drizzle-orm";
 import { db, schema } from "./client";
-import type { TicketIndex, TicketIndexEntry } from "@/lib/types";
 
-// Extended type with optional fields from index
-type TicketWithExtras = TicketIndexEntry & {
-  created?: string;
-  updated?: string;
-};
+// Helper for timestamps
+const now = () => new Date();
 
-interface SyncResult {
-  success: boolean;
-  changed: boolean;
-  ticketCount?: number;
-  indexSha?: string;
-  error?: string;
-}
+// ============================================================================
+// REPO MANAGEMENT
+// ============================================================================
 
-interface GitHubBlobInfo {
-  sha: string;
-  content: string;
+/**
+ * Upsert a repo record.
+ */
+export async function upsertRepo(
+  fullName: string,
+  userId: string,
+  owner: string,
+  repo: string,
+  defaultBranch: string
+) {
+  const id = crypto.randomUUID();
+
+  await db
+    .insert(schema.repos)
+    .values({
+      id,
+      userId,
+      owner,
+      repo,
+      fullName,
+      defaultBranch,
+      syncStatus: "idle",
+    })
+    .onConflictDoUpdate({
+      target: schema.repos.fullName,
+      set: {
+        userId,
+        defaultBranch,
+        updatedAt: now(),
+      },
+    });
 }
 
 /**
- * SHA-based incremental sync.
- * 
- * 1. Fetch index.json SHA from GitHub
- * 2. Compare with cached last_index_sha
- * 3. If unchanged, stop (no API calls wasted)
- * 4. If changed, parse index and update tickets table
- * 
- * Does NOT fetch ticket markdown files — that's lazy-loaded on detail view.
+ * Set sync error state.
  */
-export async function syncRepoFromIndex(
+export async function setSyncError(fullName: string, errorCode: string, errorMessage: string) {
+  await db
+    .update(schema.repos)
+    .set({
+      syncStatus: "error",
+      syncError: `${errorCode}: ${errorMessage}`,
+      updatedAt: now(),
+    })
+    .where(eq(schema.repos.fullName, fullName));
+}
+
+/**
+ * Get repo by full name.
+ */
+export async function getRepo(fullName: string) {
+  return db.query.repos.findFirst({
+    where: eq(schema.repos.fullName, fullName),
+  });
+}
+
+/**
+ * Check if a repo is connected.
+ */
+export async function isRepoConnected(fullName: string) {
+  const repo = await getRepo(fullName);
+  return !!repo;
+}
+
+// ============================================================================
+// BLOB CACHE
+// ============================================================================
+
+/**
+ * Upsert a raw blob into the cache.
+ */
+export async function upsertBlob(
   repoFullName: string,
-  indexContent: string,
-  indexSha: string
-): Promise<SyncResult> {
-  try {
-    // Check if SHA matches cached value
-    const repo = await db.query.repos.findFirst({
-      where: eq(schema.repos.fullName, repoFullName),
+  path: string,
+  sha: string,
+  contentText: string
+) {
+  await db
+    .insert(schema.repoBlobs)
+    .values({
+      repoFullName,
+      path,
+      sha,
+      contentText,
+      fetchedAt: now(),
+    })
+    .onConflictDoUpdate({
+      target: [schema.repoBlobs.repoFullName, schema.repoBlobs.path],
+      set: {
+        sha,
+        contentText,
+        fetchedAt: now(),
+      },
     });
+}
 
-    if (repo?.lastIndexSha === indexSha) {
-      // SHA unchanged — update last_synced_at but don't re-parse
-      await db
-        .update(schema.repos)
-        .set({ 
-          lastSyncedAt: new Date(),
-          syncStatus: "idle",
-        })
-        .where(eq(schema.repos.fullName, repoFullName));
+/**
+ * Get cached blob.
+ */
+export async function getCachedBlob(repoFullName: string, path: string) {
+  return db.query.repoBlobs.findFirst({
+    where: and(
+      eq(schema.repoBlobs.repoFullName, repoFullName),
+      eq(schema.repoBlobs.path, path)
+    ),
+  });
+}
 
-      return { 
-        success: true, 
-        changed: false, 
-        ticketCount: undefined,
-        indexSha,
-      };
-    }
+// ============================================================================
+// TICKETS
+// ============================================================================
 
-    // SHA changed — need to update
-    await db
-      .update(schema.repos)
-      .set({ syncStatus: "syncing" })
-      .where(eq(schema.repos.fullName, repoFullName));
+/**
+ * Upsert a ticket from an index.json entry.
+ */
+export async function upsertTicketFromIndexEntry(
+  repoFullName: string,
+  indexSha: string,
+  e: {
+    id: string;
+    short_id?: string;
+    display_id?: string;
+    title?: string;
+    state?: string;
+    priority?: string;
+    labels?: string[];
+    assignee?: string | null;
+    reviewer?: string | null;
+    path?: string;
+  }
+) {
+  const id = String(e.id).toUpperCase();
+  const shortId = String(e.short_id ?? id.slice(0, 8)).toUpperCase();
+  const displayId = String(e.display_id ?? `TK-${shortId}`).toUpperCase();
 
-    // Parse index.json
-    const index = JSON.parse(indexContent) as TicketIndex;
-
-    // Store raw blob
-    await db
-      .insert(schema.repoBlobs)
-      .values({
-        repoFullName,
-        path: ".tickets/index.json",
-        sha: indexSha,
-        contentText: indexContent,
-        fetchedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: [schema.repoBlobs.repoFullName, schema.repoBlobs.path],
-        set: {
-          sha: indexSha,
-          contentText: indexContent,
-          fetchedAt: new Date(),
-        },
-      });
-
-    // Delete existing tickets and insert fresh from index
-    await db.delete(schema.tickets).where(eq(schema.tickets.repoFullName, repoFullName));
-
-    if (index.tickets.length > 0) {
-      const ticketRows = index.tickets.map((t: TicketWithExtras) => ({
-        repoFullName,
-        id: t.id,
-        shortId: t.short_id || t.id.slice(0, 8),
-        displayId: t.display_id || `TK-${t.id.slice(0, 8)}`,
-        title: t.title,
-        state: t.state,
-        priority: t.priority,
-        labels: t.labels || [],
-        assignee: t.assignee,
-        reviewer: t.reviewer,
-        path: t.path,
-        ticketSha: null, // Will be populated when ticket detail is fetched
-        indexSha: indexSha,
-        cachedAt: new Date(),
-      }));
-
-      await db.insert(schema.tickets).values(ticketRows);
-    }
-
-    // Update repo metadata
-    await db
-      .update(schema.repos)
-      .set({
-        lastIndexSha: indexSha,
-        lastSyncedAt: new Date(),
-        syncStatus: "idle",
-        syncError: null,
-        updatedAt: new Date(),
-      })
-      .where(eq(schema.repos.fullName, repoFullName));
-
-    return { 
-      success: true, 
-      changed: true, 
-      ticketCount: index.tickets.length,
+  await db
+    .insert(schema.tickets)
+    .values({
+      repoFullName,
+      id,
+      shortId,
+      displayId,
+      title: String(e.title ?? ""),
+      state: String(e.state ?? "").toLowerCase(),
+      priority: String(e.priority ?? "").toLowerCase(),
+      labels: Array.isArray(e.labels) ? e.labels : [],
+      assignee: e.assignee ?? null,
+      reviewer: e.reviewer ?? null,
+      path: String(e.path ?? `.tickets/tickets/${id}.md`),
       indexSha,
-    };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+      cachedAt: now(),
+    })
+    .onConflictDoUpdate({
+      target: [schema.tickets.repoFullName, schema.tickets.id],
+      set: {
+        title: String(e.title ?? ""),
+        state: String(e.state ?? "").toLowerCase(),
+        priority: String(e.priority ?? "").toLowerCase(),
+        labels: Array.isArray(e.labels) ? e.labels : [],
+        assignee: e.assignee ?? null,
+        reviewer: e.reviewer ?? null,
+        path: String(e.path ?? `.tickets/tickets/${id}.md`),
+        indexSha,
+        cachedAt: now(),
+      },
+    });
+}
 
+/**
+ * Delete tickets no longer in the index.
+ */
+export async function deleteTicketsNotInIndex(repoFullName: string, ticketIds: string[]) {
+  if (ticketIds.length === 0) {
+    // Delete all tickets for this repo
+    await db.delete(schema.tickets).where(eq(schema.tickets.repoFullName, repoFullName));
+  } else {
     await db
-      .update(schema.repos)
-      .set({
-        syncStatus: "error",
-        syncError: message,
-      })
-      .where(eq(schema.repos.fullName, repoFullName));
-
-    return { success: false, changed: false, error: message };
+      .delete(schema.tickets)
+      .where(
+        and(
+          eq(schema.tickets.repoFullName, repoFullName),
+          notInArray(schema.tickets.id, ticketIds)
+        )
+      );
   }
 }
 
@@ -151,132 +201,212 @@ export async function syncRepoFromIndex(
 export async function getCachedTickets(repoFullName: string) {
   return db.query.tickets.findMany({
     where: eq(schema.tickets.repoFullName, repoFullName),
-    orderBy: (tickets, { asc }) => [asc(tickets.state), asc(tickets.priority), asc(tickets.id)],
+    orderBy: (t, { asc }) => [asc(t.state), asc(t.priority), asc(t.id)],
   });
 }
 
-/**
- * Get cached ticket markdown blob.
- * Returns null if not cached — caller should fetch from GitHub.
- */
-export async function getCachedTicketBlob(repoFullName: string, ticketPath: string) {
-  return db.query.repoBlobs.findFirst({
-    where: and(
-      eq(schema.repoBlobs.repoFullName, repoFullName),
-      eq(schema.repoBlobs.path, ticketPath)
-    ),
-  });
+// ============================================================================
+// SYNC JOB
+// ============================================================================
+
+interface SyncResult {
+  success: boolean;
+  changed: boolean;
+  ticketCount?: number;
+  indexSha?: string;
+  error?: string;
+  errorCode?: string;
+}
+
+interface IndexJson {
+  format_version: number;
+  tickets: Array<{
+    id: string;
+    short_id?: string;
+    display_id?: string;
+    title?: string;
+    state?: string;
+    priority?: string;
+    labels?: string[];
+    assignee?: string | null;
+    reviewer?: string | null;
+    path?: string;
+  }>;
 }
 
 /**
- * Cache a ticket markdown blob after fetching from GitHub.
+ * SHA-first incremental sync.
+ * 
+ * 1. Set sync_status=syncing
+ * 2. Fetch index.json from GitHub
+ * 3. Compare SHA - if unchanged, stop early
+ * 4. Parse and upsert tickets
+ * 5. Delete tickets no longer in index
+ * 6. Update sync metadata
  */
-export async function cacheTicketBlob(
-  repoFullName: string,
-  ticketPath: string,
-  sha: string,
-  content: string
-) {
+export async function syncRepo(
+  fullName: string,
+  token: string,
+  force = false
+): Promise<SyncResult> {
+  const [owner, repo] = fullName.split("/");
+
+  // 0) Set sync_status=syncing
   await db
-    .insert(schema.repoBlobs)
-    .values({
-      repoFullName,
-      path: ticketPath,
-      sha,
-      contentText: content,
-      fetchedAt: new Date(),
-    })
-    .onConflictDoUpdate({
-      target: [schema.repoBlobs.repoFullName, schema.repoBlobs.path],
-      set: {
-        sha,
-        contentText: content,
-        fetchedAt: new Date(),
+    .update(schema.repos)
+    .set({ syncStatus: "syncing", syncError: null, updatedAt: now() })
+    .where(eq(schema.repos.fullName, fullName));
+
+  try {
+    // 1) Fetch repo metadata (default branch)
+    const repoInfoRes = await fetch(`https://api.github.com/repos/${fullName}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
       },
     });
 
-  // Also update ticket's sha reference
-  await db
-    .update(schema.tickets)
-    .set({ ticketSha: sha })
-    .where(and(
-      eq(schema.tickets.repoFullName, repoFullName),
-      eq(schema.tickets.path, ticketPath)
-    ));
-}
+    if (!repoInfoRes.ok) {
+      await setSyncError(fullName, "repo_fetch_failed", `GitHub API error: ${repoInfoRes.status}`);
+      return { success: false, changed: false, error: "Failed to fetch repo info", errorCode: "repo_fetch_failed" };
+    }
 
-/**
- * Get repo sync metadata.
- */
-export async function getRepoSyncStatus(repoFullName: string) {
-  return db.query.repos.findFirst({
-    where: eq(schema.repos.fullName, repoFullName),
-    columns: {
-      lastIndexSha: true,
-      lastSyncedAt: true,
-      syncStatus: true,
-      syncError: true,
-    },
-  });
-}
+    const repoInfo = await repoInfoRes.json() as { default_branch: string };
+    const defaultBranch = repoInfo.default_branch;
 
-/**
- * Check if a repo is connected.
- */
-export async function isRepoConnected(repoFullName: string) {
-  const repo = await db.query.repos.findFirst({
-    where: eq(schema.repos.fullName, repoFullName),
-    columns: { fullName: true },
-  });
-  return !!repo;
-}
+    // Get user ID for upsert
+    const userRes = await fetch("https://api.github.com/user", {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" },
+    });
+    const user = userRes.ok ? await userRes.json() as { id: number } : { id: 0 };
 
-/**
- * Connect a repo (add to tracked repos).
- */
-export async function connectRepo(
-  repoFullName: string,
-  userId: string,
-  defaultBranch: string
-) {
-  const [owner, repo] = repoFullName.split("/");
-  const id = crypto.randomUUID(); // Simple ID for now
+    // Upsert repo row
+    await upsertRepo(fullName, String(user.id), owner, repo, defaultBranch);
 
-  await db
-    .insert(schema.repos)
-    .values({
-      id,
-      userId,
-      owner,
-      repo,
-      fullName: repoFullName,
-      defaultBranch,
-      syncStatus: "idle",
-    })
-    .onConflictDoUpdate({
-      target: schema.repos.fullName,
-      set: {
-        userId,
+    // 2) Get HEAD sha of default branch
+    const refRes = await fetch(
+      `https://api.github.com/repos/${fullName}/git/ref/heads/${defaultBranch}`,
+      {
+        headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" },
+      }
+    );
+    const headSha = refRes.ok
+      ? ((await refRes.json()) as { object: { sha: string } }).object.sha
+      : null;
+
+    // 3) Fetch .tickets/index.json
+    const indexRes = await fetch(
+      `https://api.github.com/repos/${fullName}/contents/.tickets/index.json?ref=${defaultBranch}`,
+      {
+        headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" },
+      }
+    );
+
+    if (!indexRes.ok) {
+      if (indexRes.status === 404) {
+        await setSyncError(fullName, "index_missing", "index.json missing. Run `ticket rebuild-index` and push.");
+        return { success: false, changed: false, error: "index.json missing", errorCode: "index_missing" };
+      }
+      await setSyncError(fullName, "index_fetch_failed", `GitHub API error: ${indexRes.status}`);
+      return { success: false, changed: false, error: `GitHub API error: ${indexRes.status}`, errorCode: "index_fetch_failed" };
+    }
+
+    const indexData = await indexRes.json() as { sha: string; content: string };
+    const indexSha = indexData.sha;
+    const rawIndex = Buffer.from(indexData.content, "base64").toString("utf-8");
+
+    // 4) If not forced and sha unchanged, stop early
+    const repoRow = await getRepo(fullName);
+    const lastIndexSha = repoRow?.lastIndexSha ?? null;
+
+    if (!force && lastIndexSha && lastIndexSha === indexSha) {
+      // Update sync metadata and stop
+      await db
+        .update(schema.repos)
+        .set({
+          defaultBranch,
+          lastSeenHeadSha: headSha,
+          lastIndexSha: indexSha,
+          lastSyncedAt: now(),
+          syncStatus: "idle",
+          updatedAt: now(),
+        })
+        .where(eq(schema.repos.fullName, fullName));
+
+      // Also update blob cache
+      await upsertBlob(fullName, ".tickets/index.json", indexSha, rawIndex);
+
+      return { success: true, changed: false, indexSha };
+    }
+
+    // 5) Parse index.json
+    let idx: IndexJson;
+    try {
+      idx = JSON.parse(rawIndex);
+    } catch {
+      await setSyncError(fullName, "index_invalid_format", "index.json invalid JSON. Run `ticket rebuild-index` and push.");
+      return { success: false, changed: false, error: "index.json invalid JSON", errorCode: "index_invalid_format" };
+    }
+
+    if (idx.format_version !== 1 || !Array.isArray(idx.tickets)) {
+      await setSyncError(fullName, "index_invalid_format", "index.json envelope invalid.");
+      return { success: false, changed: false, error: "index.json envelope invalid", errorCode: "index_invalid_format" };
+    }
+
+    // 6) Upsert raw blob cache
+    await upsertBlob(fullName, ".tickets/index.json", indexSha, rawIndex);
+
+    // 7) Upsert tickets table from index entries
+    const entries = idx.tickets;
+    const idsInIndex = entries.map((e) => String(e.id).toUpperCase());
+
+    for (const e of entries) {
+      await upsertTicketFromIndexEntry(fullName, indexSha, e);
+    }
+
+    // 8) Delete tickets no longer in index
+    await deleteTicketsNotInIndex(fullName, idsInIndex);
+
+    // 9) Update repo sync metadata
+    await db
+      .update(schema.repos)
+      .set({
         defaultBranch,
-        updatedAt: new Date(),
-      },
-    });
+        lastSeenHeadSha: headSha,
+        lastIndexSha: indexSha,
+        lastSyncedAt: now(),
+        syncStatus: "idle",
+        syncError: null,
+        updatedAt: now(),
+      })
+      .where(eq(schema.repos.fullName, fullName));
+
+    return { success: true, changed: true, ticketCount: entries.length, indexSha };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Sync failed";
+    await setSyncError(fullName, "sync_failed", message);
+    return { success: false, changed: false, error: message, errorCode: "sync_failed" };
+  }
 }
 
+// ============================================================================
+// PENDING CHANGES
+// ============================================================================
+
 /**
- * Get pending changes for tickets.
+ * Get pending changes for a repo (non-terminal statuses).
  */
-export async function getPendingChangesForRepo(repoFullName: string) {
+export async function getPendingChanges(repoFullName: string) {
   return db.query.pendingChanges.findMany({
     where: and(
       eq(schema.pendingChanges.repoFullName, repoFullName),
-      // Exclude merged/closed
+      notInArray(schema.pendingChanges.status, ["merged", "closed", "failed"])
     ),
   });
 }
 
 /**
- * Create a pending change record when PR is created.
+ * Create a pending change record.
  */
 export async function createPendingChange(data: {
   repoFullName: string;
@@ -284,16 +414,18 @@ export async function createPendingChange(data: {
   prNumber: number;
   prUrl: string;
   branch: string;
-  changeSummary?: string;
-  changePatch?: Record<string, unknown>;
-  status?: "creating_pr" | "pending_checks" | "waiting_review" | "mergeable";
+  status?: string;
 }) {
   const id = crypto.randomUUID();
-  
+
   await db.insert(schema.pendingChanges).values({
     id,
-    ...data,
-    status: data.status || "pending_checks",
+    repoFullName: data.repoFullName,
+    ticketId: data.ticketId,
+    prNumber: data.prNumber,
+    prUrl: data.prUrl,
+    branch: data.branch,
+    status: data.status ?? "pending_checks",
   });
 
   return id;
@@ -305,16 +437,74 @@ export async function createPendingChange(data: {
 export async function updatePendingChangeStatus(
   repoFullName: string,
   prNumber: number,
-  status: "merged" | "closed" | "conflict" | "failed" | "mergeable" | "pending_checks"
+  status: string,
+  errorCode?: string,
+  errorMessage?: string
 ) {
   await db
     .update(schema.pendingChanges)
-    .set({ 
+    .set({
       status,
-      updatedAt: new Date(),
+      errorCode: errorCode ?? null,
+      errorMessage: errorMessage ?? null,
+      updatedAt: now(),
     })
-    .where(and(
-      eq(schema.pendingChanges.repoFullName, repoFullName),
-      eq(schema.pendingChanges.prNumber, prNumber)
-    ));
+    .where(
+      and(
+        eq(schema.pendingChanges.repoFullName, repoFullName),
+        eq(schema.pendingChanges.prNumber, prNumber)
+      )
+    );
+}
+
+/**
+ * Reconcile pending changes by checking PR status.
+ */
+export async function reconcilePendingChanges(repoFullName: string, token: string) {
+  const [owner, repo] = repoFullName.split("/");
+  const pending = await getPendingChanges(repoFullName);
+
+  for (const p of pending) {
+    try {
+      const prRes = await fetch(
+        `https://api.github.com/repos/${repoFullName}/pulls/${p.prNumber}`,
+        {
+          headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" },
+        }
+      );
+
+      if (!prRes.ok) continue;
+
+      const pr = await prRes.json() as {
+        merged: boolean;
+        state: string;
+        mergeable_state: string | null;
+      };
+
+      if (pr.merged) {
+        await updatePendingChangeStatus(repoFullName, p.prNumber, "merged");
+        continue;
+      }
+
+      if (pr.state === "closed") {
+        await updatePendingChangeStatus(repoFullName, p.prNumber, "closed");
+        continue;
+      }
+
+      // Map mergeable_state to our status
+      const mergeableState = pr.mergeable_state ?? null;
+      const status =
+        mergeableState === "dirty"
+          ? "conflict"
+          : mergeableState === "blocked"
+          ? "waiting_review"
+          : mergeableState === "clean"
+          ? "mergeable"
+          : "pending_checks";
+
+      await updatePendingChangeStatus(repoFullName, p.prNumber, status);
+    } catch {
+      // Skip on error
+    }
+  }
 }
