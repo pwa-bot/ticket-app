@@ -1,0 +1,34 @@
+# Current Task: P1 Refactoring (Contract v1)
+
+## Tickets
+1. Formalize ticket schema parsing and rendering
+2. Deterministic ordering everywhere  
+3. index.json generation and recovery
+
+## Requirements
+
+### 1. Schema Parsing
+- Strict YAML frontmatter validation
+- Clear error messages for invalid tickets
+- Type-safe parsing with Zod or similar
+
+### 2. Deterministic Ordering
+- Tickets sorted by: priority (p0-p3), then created date, then ID
+- index.json always in deterministic order
+- `ticket list` output always consistent
+
+### 3. index.json Recovery
+- `ticket rebuild-index` regenerates from ticket files
+- `ticket validate --fix` auto-repairs index
+- Handle missing/corrupt index gracefully
+
+## Files
+- apps/cli/src/lib/parse.ts — schema parsing
+- apps/cli/src/lib/index-manager.ts — index operations
+- apps/cli/src/commands/*.ts — command implementations
+
+## Tests
+Run: `pnpm turbo test`
+Ensure all 25+ tests pass after changes.
+
+When complete, output DONE.

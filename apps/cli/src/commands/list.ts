@@ -1,5 +1,6 @@
-import { PRIORITY_ORDER, STATE_ORDER, type TicketState } from "../lib/constants.js";
+import { STATE_ORDER, type TicketState } from "../lib/constants.js";
 import { ERROR_CODE, EXIT_CODE, TicketError } from "../lib/errors.js";
+import { sortTicketsDeterministic } from "../lib/index.js";
 import { readIndex } from "../lib/io.js";
 import { successEnvelope, writeEnvelope } from "../lib/json.js";
 
@@ -27,14 +28,6 @@ function validateFormat(value: string): "table" | "kanban" {
     throw new TicketError(ERROR_CODE.VALIDATION_FAILED, "Invalid format. Allowed: table, kanban", EXIT_CODE.USAGE, { value });
   }
   return value;
-}
-
-function stateSortIndex(state: string): number {
-  return STATE_ORDER.indexOf(state as TicketState);
-}
-
-function prioritySortIndex(priority: string): number {
-  return PRIORITY_ORDER.indexOf(priority as (typeof PRIORITY_ORDER)[number]);
 }
 
 function pad(value: string, width: number): string {
@@ -91,18 +84,9 @@ export async function runList(cwd: string, options: ListCommandOptions): Promise
   const requestedLabel = options.label?.toLowerCase().trim();
   const format = validateFormat(options.format ?? "table");
 
-  const tickets = index.tickets
+  const tickets = sortTicketsDeterministic(index.tickets)
     .filter((ticket) => (requestedState ? ticket.state === requestedState : true))
-    .filter((ticket) => (requestedLabel ? ticket.labels.includes(requestedLabel) : true))
-    .sort((a, b) => {
-      const stateDiff = stateSortIndex(a.state) - stateSortIndex(b.state);
-      if (stateDiff !== 0) return stateDiff;
-
-      const priorityDiff = prioritySortIndex(a.priority) - prioritySortIndex(b.priority);
-      if (priorityDiff !== 0) return priorityDiff;
-
-      return a.id.localeCompare(b.id);
-    });
+    .filter((ticket) => (requestedLabel ? ticket.labels.includes(requestedLabel) : true));
 
   if (options.json) {
     writeEnvelope(successEnvelope({ tickets, count: tickets.length }));
