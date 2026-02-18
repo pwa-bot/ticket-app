@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T00:21:14.703Z",
+  "generated_at": "2026-02-18T00:21:23.568Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -193,7 +193,7 @@
       "short_id": "01KHQ0K8",
       "display_id": "TK-01KHQ0K8",
       "title": "Drag and drop state change creates ticket-change PR",
-      "state": "ready",
+      "state": "in_progress",
       "priority": "p1",
       "labels": [
         "frontend",
