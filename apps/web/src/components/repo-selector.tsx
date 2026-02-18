@@ -77,6 +77,14 @@ export default function RepoSelector() {
   }, []);
 
   const selectedSet = useMemo(() => new Set(selected), [selected]);
+  
+  // Check if a repo has GitHub App access (by matching owner to installation account)
+  // Must be before early returns to satisfy React hooks rules
+  const installationLogins = useMemo(
+    () => new Set(installations.map((i) => i.accountLogin.toLowerCase())),
+    [installations]
+  );
+  const hasAnyInstallation = installations.length > 0;
 
   function toggleRepo(fullName: string) {
     setSelected((current) => {
@@ -149,18 +157,10 @@ export default function RepoSelector() {
     );
   }
 
-  // Check if a repo has GitHub App access (by matching owner to installation account)
-  const installationLogins = useMemo(
-    () => new Set(installations.map((i) => i.accountLogin.toLowerCase())),
-    [installations]
-  );
-  
   function hasAppAccess(repoFullName: string): boolean {
     const owner = repoFullName.split("/")[0]?.toLowerCase();
     return owner ? installationLogins.has(owner) : false;
   }
-
-  const hasAnyInstallation = installations.length > 0;
 
   return (
     <div className="space-y-4">
