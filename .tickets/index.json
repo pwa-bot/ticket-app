@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T18:04:59.405Z",
+  "generated_at": "2026-02-18T18:05:37.873Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -133,7 +133,7 @@
       "short_id": "01KHMG8C",
       "display_id": "TK-01KHMG8C",
       "title": "Deterministic ordering everywhere",
-      "state": "backlog",
+      "state": "ready",
       "priority": "p1",
       "labels": [
         "refactor",

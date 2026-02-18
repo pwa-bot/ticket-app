@@ -1,7 +1,7 @@
 ---
 id: 01KHMG8CRR5CXBDBBKWBF5D2K0
 title: Deterministic ordering everywhere
-state: backlog
+state: ready
 priority: p1
 labels:
   - refactor
