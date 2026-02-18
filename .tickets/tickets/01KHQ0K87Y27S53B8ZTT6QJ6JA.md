@@ -1,7 +1,7 @@
 ---
 id: 01KHQ0K87Y27S53B8ZTT6QJ6JA
 title: Implement frontmatter patch algorithm with semantic preservation
-state: ready
+state: in_progress
 priority: p0
 labels:
   - core
