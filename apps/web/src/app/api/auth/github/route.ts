@@ -31,16 +31,20 @@ export async function GET(request: Request) {
     }
   }
 
-  // Case 1: Fresh login - redirect to app installation (which includes OAuth)
+  // Case 1: No OAuth code yet - start OAuth flow
+  // We go straight to OAuth (not install) because:
+  // - If app isn't installed, user can install later from a prompt
+  // - If app is installed, /installations/new redirects to settings (broken UX)
   if (!code && !installationId) {
     const generatedState = randomBytes(16).toString("hex");
     
-    // Use GitHub App installation flow for combined install + OAuth
-    const appSlug = process.env.GITHUB_APP_SLUG ?? "ticketdotapp";
-    const installUrl = new URL(`https://github.com/apps/${appSlug}/installations/new`);
-    installUrl.searchParams.set("state", generatedState);
+    const authorizeUrl = new URL("https://github.com/login/oauth/authorize");
+    authorizeUrl.searchParams.set("client_id", clientId);
+    authorizeUrl.searchParams.set("redirect_uri", redirectUri);
+    authorizeUrl.searchParams.set("state", generatedState);
+    authorizeUrl.searchParams.set("scope", "repo");
     
-    const response = NextResponse.redirect(installUrl);
+    const response = NextResponse.redirect(authorizeUrl);
     response.cookies.set(cookieNames.oauthState, generatedState, {
       httpOnly: true,
       sameSite: "lax",
