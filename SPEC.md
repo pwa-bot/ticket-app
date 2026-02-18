@@ -506,6 +506,43 @@ v1.1:
 
 No canonical DB. Cache is disposable.
 
+### Dashboard Write Actions (v1.1+)
+
+Dashboard writes are PR-based to maintain Git as source of truth.
+
+**Supported write actions:**
+- State transitions (drag-and-drop or dropdown)
+- Labels (add/remove)
+- Priority (p0–p3)
+- Assignee (`human:<slug>` or `agent:<slug>`)
+- Reviewer (`human:<slug>` or `agent:<slug>`)
+
+**How it works:**
+1. User triggers a write action (e.g., drags ticket to new column)
+2. Dashboard creates a PR that modifies:
+   - `.tickets/tickets/<ULID>.md` (frontmatter only)
+   - `.tickets/index.json` (patched entry, re-sorted)
+3. UI shows "pending" state with PR link
+4. When PR merges, canonical state updates
+5. If PR conflicts/fails, UI shows error with recovery steps
+
+**UX rules:**
+- Ticket stays in original column until PR merges (no optimistic updates)
+- Pending badge shows: `ready → in_progress (pending)`
+- Recovery message for index issues: "Run `ticket rebuild-index` and push, then retry"
+
+**Auto-merge policy:**
+- Enabled only when repo allows auto-merge AND no required reviews
+- Never bypasses branch protection
+- UI shows "Auto-merge enabled" or "Waiting for review"
+
+**Agent behavior:**
+- Agents treat default branch as truth (not PR branches)
+- Before selecting work: `git pull`, then `ticket list --state ready --json --ci`
+- Ignore `ticket-change/` branches unless explicitly asked
+
+Full spec: [docs/DASHBOARD-WRITES-SPEC.md](docs/DASHBOARD-WRITES-SPEC.md)
+
 ---
 
 ## 12. Monetization

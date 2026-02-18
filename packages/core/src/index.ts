@@ -78,3 +78,11 @@ export function isValidTransition(from: TicketState, to: TicketState): boolean {
 export function formatShortId(id: string, prefix: string = 'TK'): string {
   return `${prefix}-${id.slice(0, 8)}`;
 }
+
+// ---------------------------------------------------------------------------
+// Dashboard Writes (PR-based changes)
+// ---------------------------------------------------------------------------
+
+export * from './dashboard-writes.js';
+export { patchTicketFrontmatter, type PatchFrontmatterArgs } from './patch-frontmatter.js';
+export { patchIndexJson, type PatchIndexArgs } from './patch-index.js';

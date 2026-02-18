@@ -15,8 +15,8 @@ importers:
   apps/cli:
     dependencies:
       '@ticketdotapp/core':
-        specifier: workspace:*
-        version: link:../../packages/core
+        specifier: 0.1.0
+        version: 0.1.0
       chalk:
         specifier: ^5.3.0
         version: 5.6.2
@@ -48,6 +48,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@ticketdotapp/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
@@ -90,6 +93,10 @@ importers:
         version: 5.9.3
 
   packages/core:
+    dependencies:
+      yaml:
+        specifier: ^2.8.2
+        version: 2.8.2
     devDependencies:
       typescript:
         specifier: ^5.3.0
@@ -982,6 +989,9 @@ packages:
 
   '@tailwindcss/postcss@4.1.18':
     resolution: {integrity: sha512-Ce0GFnzAOuPyfV5SxjXGn0CubwGcuDB0zcdaPuCSzAa/2vII24JTkH+I6jcbXLb1ctjZMZZI6OjDaLPJQL1S0g==}
+
+  '@ticketdotapp/core@0.1.0':
+    resolution: {integrity: sha512-KRQryFxe1HbIQpew2NfRrdcnSyvYUhVswXoNJl00AgGBZTt1TjJGGbkvVaY+snbg/Y0+ZbHMz1MQOYzNPzi3gw==}
 
   '@tybys/wasm-util@0.10.1':
     resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
@@ -2960,6 +2970,11 @@ packages:
   yallist@3.1.1:
     resolution: {integrity: sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g==}
 
+  yaml@2.8.2:
+    resolution: {integrity: sha512-mplynKqc1C2hTVYxd0PU2xQAc22TI1vShAYGksCCfxbn/dFwnHTNi1bvYsBTkhdUNtGIf5xNOg938rrSSYvS9A==}
+    engines: {node: '>= 14.6'}
+    hasBin: true
+
   yocto-queue@0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
@@ -3634,6 +3649,8 @@ snapshots:
       '@tailwindcss/oxide': 4.1.18
       postcss: 8.5.6
       tailwindcss: 4.1.18
+
+  '@ticketdotapp/core@0.1.0': {}
 
   '@tybys/wasm-util@0.10.1':
     dependencies:
@@ -6142,6 +6159,8 @@ snapshots:
   word-wrap@1.2.5: {}
 
   yallist@3.1.1: {}
+
+  yaml@2.8.2: {}
 
   yocto-queue@0.1.0: {}
 
