@@ -3,10 +3,11 @@ import { cookieNames } from "@/lib/auth";
 
 /**
  * Clear stale session and redirect to GitHub OAuth.
- * Used when the GitHub token has expired.
+ * Used when the GitHub token has expired or needs refresh.
  */
 export async function GET(request: Request) {
-  const response = NextResponse.redirect(new URL("/api/auth/github", request.url));
+  // Use force=1 to bypass the "already logged in" check
+  const response = NextResponse.redirect(new URL("/api/auth/github?force=1", request.url));
 
   // Clear the stale session cookie
   response.cookies.delete(cookieNames.session);

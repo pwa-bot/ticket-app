@@ -30,8 +30,12 @@ export async function GET(request: Request) {
   const installationId = url.searchParams.get("installation_id");
   const redirectUri = `${getBaseUrl(request)}/api/auth/github`;
 
+  // Check for force re-auth (from reconnect flow)
+  const forceReauth = url.searchParams.get("force") === "1";
+  
   // If user already has a valid session and no OAuth params, redirect to space
-  if (!code && !installationId) {
+  // Unless force=1 which means we want to re-authenticate
+  if (!code && !installationId && !forceReauth) {
     const existingToken = await getAccessTokenFromCookies();
     if (existingToken) {
       return NextResponse.redirect(new URL("/space", request.url));
