@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T05:25:54.372Z",
+  "generated_at": "2026-02-18T05:26:03.063Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -230,6 +230,16 @@
       "priority": "p1",
       "labels": [],
       "path": ".tickets/tickets/01KHQKCJ1K4PNWXQ0NW1DKQ0H7.md"
+    },
+    {
+      "id": "01KHQKCTHCSF6REBDAGMHF9W9B",
+      "short_id": "01KHQKCT",
+      "display_id": "TK-01KHQKCT",
+      "title": "Persist pending changes across page refresh",
+      "state": "backlog",
+      "priority": "p1",
+      "labels": [],
+      "path": ".tickets/tickets/01KHQKCTHCSF6REBDAGMHF9W9B.md"
     },
     {
       "id": "01KHPT0CRPS33T28RHM1E3RH4N",
