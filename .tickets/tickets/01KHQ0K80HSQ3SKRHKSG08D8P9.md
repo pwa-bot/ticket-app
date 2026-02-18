@@ -1,7 +1,7 @@
 ---
 id: 01KHQ0K80HSQ3SKRHKSG08D8P9
 title: Drag and drop state change creates ticket-change PR
-state: in_progress
+state: done
 priority: p1
 labels:
   - frontend
