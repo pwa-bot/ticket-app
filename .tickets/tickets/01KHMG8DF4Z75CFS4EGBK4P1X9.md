@@ -1,7 +1,7 @@
 ---
 id: 01KHMG8DF4Z75CFS4EGBK4P1X9
 title: Integration test harness (Vitest)
-state: in_progress
+state: done
 priority: p2
 labels:
   - testing
