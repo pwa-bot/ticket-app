@@ -1,88 +1,90 @@
-// Ticket states
-export type TicketState = 'backlog' | 'ready' | 'in_progress' | 'done' | 'blocked';
+// Protocol types and validation
+import type { TicketState, TicketPriority, ActorRef } from "./protocol.js";
 
-// Priority levels
-export type Priority = 'p0' | 'p1' | 'p2' | 'p3';
+export {
+  type TicketState,
+  type TicketPriority,
+  type ActorType,
+  type ActorRef,
+  STATE_ORDER,
+  PRIORITY_ORDER,
+  normalizeState,
+  normalizePriority,
+  isValidTransition,
+  validateActorRef,
+  normalizeLabels,
+} from "./protocol.js";
 
-// Actor format: human:slug or agent:slug
-export type Actor = `human:${string}` | `agent:${string}`;
+// Error handling
+export { TicketError, err, type TicketErrorCode } from "./errors.js";
 
-// Ticket frontmatter (YAML header in .md files)
-// Note: created_at/updated_at are derived from git blame, not stored in frontmatter
-export interface TicketFrontmatter {
-  title: string;
-  state: TicketState;
-  priority: Priority;
-  labels: string[];
-  assignee?: Actor;
-  reviewer?: Actor;
+// API types
+export {
+  type ApiErrorCode,
+  type ApiError,
+  type ApiEnvelope,
+  type PendingChangeStatus,
+  type CiStatusSummary,
+  type CreateChangePrResponse,
+  type PrStatusResponse,
+  type PendingChangeType,
+  type MergeSignals,
+  type PendingChange,
+} from "./api-types.js";
+
+// Patch types
+export { type TicketChangePatch } from "./types.js";
+
+// Patch algorithms
+export { patchTicketFrontmatter } from "./patch-frontmatter.js";
+export { patchIndexJson } from "./patch-index.js";
+
+// Naming and utilities
+export { slugifyTitle } from "./slugify.js";
+export {
+  buildTicketChangeBranchName,
+  buildPrTitle,
+  buildPrBody,
+  buildCanonicalCodeBranchName,
+} from "./naming.js";
+export { summarizePatch } from "./summarize-patch.js";
+
+// Legacy types for backwards compatibility with existing code
+export type Actor = ActorRef;
+export type Priority = TicketPriority;
+
+// State transitions (legacy export)
+export const STATE_TRANSITIONS: Record<TicketState, TicketState[]> = {
+  backlog: ["ready", "blocked"],
+  ready: ["in_progress", "blocked"],
+  in_progress: ["done", "blocked", "ready"],
+  blocked: ["ready", "in_progress"],
+  done: [],
+};
+
+// Format short ID for display (first 8 chars of ULID)
+export function formatShortId(id: string, prefix: string = "TK"): string {
+  return `${prefix}-${id.slice(0, 8)}`;
 }
 
-// Full ticket (frontmatter + body)
-export interface Ticket extends TicketFrontmatter {
-  id: string; // ULID
-  body: string; // Markdown content after frontmatter
-}
-
-// Index entry (minimal data for list views)
+// Index types
 export interface TicketIndexEntry {
   id: string;
   short_id: string;
   display_id: string;
   title: string;
   state: TicketState;
-  priority: Priority;
+  priority: TicketPriority;
   labels: string[];
   path: string;
-  assignee?: Actor;
-  reviewer?: Actor;
-  // Extensibility hook - v1 ignores, v2+ can filter/group
+  assignee?: ActorRef;
+  reviewer?: ActorRef;
   extras?: Record<string, unknown>;
 }
 
-// Full index.json structure
 export interface TicketIndex {
   format_version: 1;
-  generated_at: string; // ISO 8601
-  workflow: 'simple-v1';
+  generated_at: string;
+  workflow: "simple-v1";
   tickets: TicketIndexEntry[];
 }
-
-// Config.yml structure (matches .tickets/config.yml)
-export interface TicketConfig {
-  format_version: 1;
-  id_prefix: string;
-  directory: string;
-  workflow: 'simple-v1';
-  linking?: {
-    branch_pattern: string;
-    pr_title_pattern: string;
-  };
-}
-
-// State transitions
-export const STATE_TRANSITIONS: Record<TicketState, TicketState[]> = {
-  backlog: ['ready', 'blocked'],
-  ready: ['in_progress', 'blocked'],
-  in_progress: ['done', 'blocked', 'ready'],
-  blocked: ['ready', 'in_progress'],
-  done: [], // Terminal state
-};
-
-// Check if a state transition is valid
-export function isValidTransition(from: TicketState, to: TicketState): boolean {
-  return STATE_TRANSITIONS[from].includes(to);
-}
-
-// Format short ID for display (first 8 chars of ULID)
-export function formatShortId(id: string, prefix: string = 'TK'): string {
-  return `${prefix}-${id.slice(0, 8)}`;
-}
-
-// ---------------------------------------------------------------------------
-// Dashboard Writes (PR-based changes)
-// ---------------------------------------------------------------------------
-
-export * from './dashboard-writes.js';
-export { patchTicketFrontmatter, type PatchFrontmatterArgs } from './patch-frontmatter.js';
-export { patchIndexJson, type PatchIndexArgs } from './patch-index.js';
