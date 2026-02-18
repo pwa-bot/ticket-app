@@ -1,7 +1,7 @@
 ---
 id: 01KHQ0K7S8KF3008MGBJP99AMX
 title: UI pending change model and PR status badges
-state: in_progress
+state: done
 priority: p0
 labels:
   - frontend

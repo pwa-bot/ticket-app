@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T00:19:19.595Z",
+  "generated_at": "2026-02-18T00:21:14.703Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -203,20 +203,6 @@
       "path": ".tickets/tickets/01KHQ0K80HSQ3SKRHKSG08D8P9.md"
     },
     {
-      "id": "01KHQ0K7S8KF3008MGBJP99AMX",
-      "short_id": "01KHQ0K7",
-      "display_id": "TK-01KHQ0K7",
-      "title": "UI pending change model and PR status badges",
-      "state": "in_progress",
-      "priority": "p0",
-      "labels": [
-        "frontend",
-        "ui",
-        "pending"
-      ],
-      "path": ".tickets/tickets/01KHQ0K7S8KF3008MGBJP99AMX.md"
-    },
-    {
       "id": "01KHQ0K7AG8W8MGND7R7TKB5MX",
       "short_id": "01KHQ0K7",
       "display_id": "TK-01KHQ0K7",
@@ -229,6 +215,20 @@
         "api"
       ],
       "path": ".tickets/tickets/01KHQ0K7AG8W8MGND7R7TKB5MX.md"
+    },
+    {
+      "id": "01KHQ0K7S8KF3008MGBJP99AMX",
+      "short_id": "01KHQ0K7",
+      "display_id": "TK-01KHQ0K7",
+      "title": "UI pending change model and PR status badges",
+      "state": "done",
+      "priority": "p0",
+      "labels": [
+        "frontend",
+        "ui",
+        "pending"
+      ],
+      "path": ".tickets/tickets/01KHQ0K7S8KF3008MGBJP99AMX.md"
     },
     {
       "id": "01KHQ0K87Y27S53B8ZTT6QJ6JA",
