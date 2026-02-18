@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T18:44:46.126Z",
+  "generated_at": "2026-02-18T18:44:46.367Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -47,7 +47,7 @@
       "short_id": "01KHMG8J",
       "display_id": "TK-01KHMG8J",
       "title": "Skill doc placement and install script",
-      "state": "ready",
+      "state": "in_progress",
       "priority": "p3",
       "labels": [
         "docs",
