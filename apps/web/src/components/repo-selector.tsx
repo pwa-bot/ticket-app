@@ -93,7 +93,20 @@ export default function RepoSelector() {
   }
 
   if (error) {
-    return <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">{error}</div>;
+    const isAuthError = error.includes("authentication") || error.includes("401") || error.includes("403");
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 p-6">
+        <p className="text-sm text-red-700">{error}</p>
+        {isAuthError && (
+          <a
+            href="/api/auth/logout"
+            className="mt-3 inline-block rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
+          >
+            Log out and re-authenticate
+          </a>
+        )}
+      </div>
+    );
   }
 
   if (repos.length === 0) {
