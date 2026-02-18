@@ -1,12 +1,22 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getAccessTokenFromCookies } from "@/lib/auth";
 import { listReposWithTickets } from "@/lib/github";
 
 export async function GET() {
+  // Debug: check if we have the session cookie at all
+  const store = await cookies();
+  const hasSessionCookie = store.has("ticket_app_session");
+  const hasSecret = !!process.env.NEXTAUTH_SECRET;
+  
   const token = await getAccessTokenFromCookies();
 
   if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    console.error("[/api/repos] Auth failed:", { hasSessionCookie, hasSecret });
+    return NextResponse.json({ 
+      error: "Unauthorized",
+      debug: { hasSessionCookie, hasSecret }
+    }, { status: 401 });
   }
 
   try {
