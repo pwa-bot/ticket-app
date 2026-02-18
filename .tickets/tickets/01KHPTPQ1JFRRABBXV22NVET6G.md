@@ -1,7 +1,7 @@
 ---
 id: 01KHPTPQ1JFRRABBXV22NVET6G
 title: Ticket detail modal with PR/activity info
-state: in_progress
+state: done
 priority: p2
 labels:
   - dashboard
