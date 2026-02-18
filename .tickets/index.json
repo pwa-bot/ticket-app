@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T18:52:38.303Z",
+  "generated_at": "2026-02-18T18:56:24.011Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -8,7 +8,7 @@
       "short_id": "01KHQ0K8",
       "display_id": "TK-01KHQ0K8",
       "title": "Optional auto-merge enablement when policy allows",
-      "state": "backlog",
+      "state": "ready",
       "priority": "p2",
       "labels": [
         "github",

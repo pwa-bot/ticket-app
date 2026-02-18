@@ -1,7 +1,7 @@
 ---
 id: 01KHQ0K8PK9TVGX26XBE13A2JA
 title: Optional auto-merge enablement when policy allows
-state: backlog
+state: ready
 priority: p2
 labels:
   - github
