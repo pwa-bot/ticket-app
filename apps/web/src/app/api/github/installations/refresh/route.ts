@@ -18,10 +18,34 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const githubLogin = session.githubLogin;
+  let githubLogin = session.githubLogin;
+  const token = await getAccessTokenFromCookies();
+  
+  // If githubLogin is unknown (legacy session), fetch it from GitHub
+  if (!githubLogin || githubLogin === "unknown") {
+    if (!token) {
+      return NextResponse.json({ error: "Cannot determine GitHub login" }, { status: 400 });
+    }
+    try {
+      const userResponse = await fetch("https://api.github.com/user", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/vnd.github+json",
+        },
+      });
+      if (userResponse.ok) {
+        const userData = await userResponse.json() as { login: string };
+        githubLogin = userData.login;
+      } else {
+        return NextResponse.json({ error: "Failed to fetch GitHub user info" }, { status: 502 });
+      }
+    } catch (e) {
+      console.error("[refresh installations] Failed to fetch user:", e);
+      return NextResponse.json({ error: "Failed to fetch GitHub user info" }, { status: 502 });
+    }
+  }
   
   // Also fetch user's orgs to match org installations
-  const token = await getAccessTokenFromCookies();
   let userOrgs: string[] = [];
   
   if (token) {
