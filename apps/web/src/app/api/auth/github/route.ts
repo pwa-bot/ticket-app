@@ -53,7 +53,7 @@ export async function GET(request: Request) {
     authorizeUrl.searchParams.set("client_id", clientId);
     authorizeUrl.searchParams.set("redirect_uri", redirectUri);
     authorizeUrl.searchParams.set("state", generatedState);
-    // No scope needed - GitHub App installation grants access
+    authorizeUrl.searchParams.set("scope", "repo"); // Need repo scope to list all user repos
     
     const response = NextResponse.redirect(authorizeUrl);
     response.cookies.set(cookieNames.oauthState, generatedState, {
