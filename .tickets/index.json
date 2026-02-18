@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T21:15:02.038Z",
+  "generated_at": "2026-02-18T21:15:02.275Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -15,6 +15,19 @@
         "pull-request"
       ],
       "path": ".tickets/tickets/01KHS9PF0AGVDSF6G0FER0W2R7.md"
+    },
+    {
+      "id": "01KHS9PF7Q5KP7EQDSVS8QQM6Q",
+      "short_id": "01KHS9PF",
+      "display_id": "TK-01KHS9PF",
+      "title": "Task F - Checks cache worker Phase C",
+      "state": "backlog",
+      "priority": "p1",
+      "labels": [
+        "worker",
+        "checks"
+      ],
+      "path": ".tickets/tickets/01KHS9PF7Q5KP7EQDSVS8QQM6Q.md"
     },
     {
       "id": "01KHS9NX93EJ2H4YQRY45FFXW8",
