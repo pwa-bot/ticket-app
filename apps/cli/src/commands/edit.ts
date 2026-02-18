@@ -7,6 +7,7 @@ import { autoCommit } from "../lib/git.js";
 import { rebuildIndex } from "../lib/index.js";
 import { readIndex } from "../lib/io.js";
 import { resolveTicket } from "../lib/resolve.js";
+import { now } from "../lib/ulid.js";
 
 export interface EditCommandOptions {
   title?: string;
@@ -174,7 +175,7 @@ export async function runEdit(cwd: string, id: string, options: EditCommandOptio
     throw new TicketError(ERROR_CODE.VALIDATION_FAILED, "No changes to apply", EXIT_CODE.VALIDATION_FAILED);
   }
 
-  parsed.data.updated = new Date().toISOString();
+  parsed.data.updated = now().toISOString();
   const output = matter.stringify(parsed.content, parsed.data);
   await fs.writeFile(ticketPath, output, "utf8");
 

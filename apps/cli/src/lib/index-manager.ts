@@ -3,7 +3,7 @@ import path from "node:path";
 import { INDEX_PATH, TICKETS_DIR, TICKETS_ROOT, PRIORITY_ORDER, STATE_ORDER, type TicketPriority, type TicketState } from "./constants.js";
 import { ERROR_CODE, EXIT_CODE, TicketError } from "./errors.js";
 import { parseTicketDocument } from "./parse.js";
-import { displayId, shortId } from "./ulid.js";
+import { displayId, now, shortId } from "./ulid.js";
 
 export interface TicketIndexEntry {
   id: string;
@@ -94,7 +94,7 @@ export async function generateIndex(cwd: string): Promise<TicketsIndex> {
 
   return {
     format_version: 1,
-    generated_at: new Date().toISOString(),
+    generated_at: now().toISOString(),
     workflow: "simple-v1",
     tickets: sortTicketsDeterministic(tickets)
   };
