@@ -17,7 +17,14 @@ export default function SettingsClient() {
   const [installUrl, setInstallUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    loadData();
+    loadData().then(() => {
+      // Auto-refresh if no installations found (user might have just installed)
+      // Small delay to let the page render first
+      setTimeout(() => {
+        refreshInstallations();
+      }, 500);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadData() {
@@ -166,7 +173,7 @@ export default function SettingsClient() {
                   disabled={refreshing}
                   className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                 >
-                  {refreshing ? "Checking..." : "I already installed it"}
+                  {refreshing ? "Checking..." : "Refresh"}
                 </button>
               </div>
               
