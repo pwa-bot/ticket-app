@@ -46,7 +46,7 @@ export async function GET(request: Request) {
     authorizeUrl.searchParams.set("client_id", clientId);
     authorizeUrl.searchParams.set("redirect_uri", redirectUri);
     authorizeUrl.searchParams.set("state", generatedState);
-    authorizeUrl.searchParams.set("scope", "read:user user:email"); // Identity only
+    authorizeUrl.searchParams.set("scope", "repo read:user user:email"); // repo for listing, identity for user record
     
     const response = NextResponse.redirect(authorizeUrl);
     response.cookies.set(cookieNames.oauthState, generatedState, {
@@ -60,25 +60,26 @@ export async function GET(request: Request) {
     return response;
   }
 
-  // Case 2: Returned from GitHub App install - redirect to OAuth
+  // Case 2: Returned from GitHub App install - just redirect to space
+  // The installation will be auto-detected on next login or we can refresh
   if (installationId && !code) {
+    // User already has a session, just go to space
+    const existingToken = await getAccessTokenFromCookies();
+    if (existingToken) {
+      return NextResponse.redirect(new URL("/space", request.url));
+    }
+    
+    // No session, need to log in first
     const generatedState = randomBytes(16).toString("hex");
     
     const authorizeUrl = new URL("https://github.com/login/oauth/authorize");
     authorizeUrl.searchParams.set("client_id", clientId);
     authorizeUrl.searchParams.set("redirect_uri", redirectUri);
     authorizeUrl.searchParams.set("state", generatedState);
-    authorizeUrl.searchParams.set("scope", "read:user user:email");
+    authorizeUrl.searchParams.set("scope", "repo read:user user:email");
     
     const response = NextResponse.redirect(authorizeUrl);
     response.cookies.set(cookieNames.oauthState, generatedState, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 60 * 10,
-    });
-    response.cookies.set("ticket_app_pending_installation", installationId, {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
@@ -175,21 +176,65 @@ export async function GET(request: Request) {
       .where(eq(schema.users.id, existingUser.id));
   }
 
-  // Check for pending installation from app install flow
-  const pendingInstallation = cookieHeader
-    .split(";")
-    .map((entry) => entry.trim())
-    .find((entry) => entry.startsWith("ticket_app_pending_installation="))
-    ?.split("=")[1];
+  // Auto-detect GitHub App installations for this user
+  try {
+    const installationsResponse = await fetch(
+      "https://api.github.com/user/installations",
+      {
+        headers: {
+          Authorization: `Bearer ${tokenData.access_token}`,
+          Accept: "application/vnd.github+json",
+        },
+      }
+    );
 
-  // Determine redirect destination
-  let redirectTo = "/space";
-  
-  // If there's a pending installation, user came from app install flow
-  // Redirect to onboarding to complete setup
-  if (pendingInstallation) {
-    redirectTo = `/space/onboarding?installation_id=${pendingInstallation}`;
+    if (installationsResponse.ok) {
+      const installationsData = (await installationsResponse.json()) as {
+        installations: Array<{
+          id: number;
+          account: { login: string; type: string };
+        }>;
+      };
+
+      // Register each installation
+      for (const inst of installationsData.installations) {
+        const existingInstallation = await db.query.installations.findFirst({
+          where: eq(schema.installations.githubInstallationId, inst.id),
+        });
+
+        let installationDbId: number;
+
+        if (existingInstallation) {
+          installationDbId = existingInstallation.id;
+        } else {
+          const [inserted] = await db
+            .insert(schema.installations)
+            .values({
+              githubInstallationId: inst.id,
+              githubAccountLogin: inst.account.login,
+              githubAccountType: inst.account.type,
+            })
+            .returning({ id: schema.installations.id });
+          installationDbId = inserted.id;
+        }
+
+        // Link user to installation
+        await db
+          .insert(schema.userInstallations)
+          .values({
+            userId,
+            installationId: installationDbId,
+          })
+          .onConflictDoNothing();
+      }
+    }
+  } catch (error) {
+    console.error("[auth] Failed to auto-detect installations:", error);
+    // Non-fatal, continue with login
   }
+
+  // Always go to /space - repos work with or without app installed
+  const redirectTo = "/space";
 
   // Create session with both token and user ID
   const sessionData = JSON.stringify({
@@ -207,7 +252,6 @@ export async function GET(request: Request) {
     maxAge: 60 * 60 * 24 * 7,
   });
   response.cookies.set(cookieNames.oauthState, "", { maxAge: 0, path: "/" });
-  response.cookies.set("ticket_app_pending_installation", "", { maxAge: 0, path: "/" });
 
   return response;
 }
