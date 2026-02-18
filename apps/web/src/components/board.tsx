@@ -470,13 +470,13 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
 
   function openTicket(id: string) {
     setSelectedTicketId(id);
-    // Use replace + scroll:false to update URL without triggering refetch or scroll
-    router.replace(`/space/${owner}/${repo}/${id}${getSearchQuery()}`, { scroll: false });
+    // Update URL for sharing without triggering navigation
+    window.history.replaceState(null, "", `/space/${owner}/${repo}/${id}${getSearchQuery()}`);
   }
 
   function closeTicket() {
     setSelectedTicketId(null);
-    router.replace(`/space/${owner}/${repo}${getSearchQuery()}`, { scroll: false });
+    window.history.replaceState(null, "", `/space/${owner}/${repo}${getSearchQuery()}`);
   }
 
   const stateFilter = searchParams.get("state");
