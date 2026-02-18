@@ -67,6 +67,8 @@ function TicketCard({
   const pendingChange = getPendingChange(ticket.id);
 
   const handleDragStart = (e: React.DragEvent) => {
+    console.log("[drag] started:", ticket.id, ticket.state);
+    e.dataTransfer.setData("text/plain", ticket.id); // Some browsers need text/plain
     e.dataTransfer.setData("ticketId", ticket.id);
     e.dataTransfer.setData("fromState", ticket.state);
     e.dataTransfer.effectAllowed = "move";
@@ -135,11 +137,9 @@ function Column({
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    const fromState = e.dataTransfer.types.includes("fromstate")
-      ? e.dataTransfer.getData("fromState")
-      : null;
-
-    // Only allow drop if transition is valid (we'll validate again on drop)
+    if (!isDragOver) {
+      console.log("[drag] over column:", state);
+    }
     setIsDragOver(true);
     e.dataTransfer.dropEffect = "move";
   };
@@ -154,6 +154,7 @@ function Column({
 
     const ticketId = e.dataTransfer.getData("ticketId");
     const fromState = e.dataTransfer.getData("fromState");
+    console.log("[drag] dropped:", ticketId, fromState, "→", state);
 
     if (!ticketId || !fromState) return;
     if (fromState === state) return; // Same column, no-op
