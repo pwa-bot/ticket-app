@@ -1,21 +1,8 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T18:56:24.253Z",
+  "generated_at": "2026-02-18T18:56:24.493Z",
   "workflow": "simple-v1",
   "tickets": [
-    {
-      "id": "01KHQ0K8PK9TVGX26XBE13A2JA",
-      "short_id": "01KHQ0K8",
-      "display_id": "TK-01KHQ0K8",
-      "title": "Optional auto-merge enablement when policy allows",
-      "state": "in_progress",
-      "priority": "p2",
-      "labels": [
-        "github",
-        "automerge"
-      ],
-      "path": ".tickets/tickets/01KHQ0K8PK9TVGX26XBE13A2JA.md"
-    },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
       "short_id": "01KHQ0K0",
@@ -333,6 +320,19 @@
         "phase-2"
       ],
       "path": ".tickets/tickets/01KHPTPQ8PNKT4NWNAMPV8WZX2.md"
+    },
+    {
+      "id": "01KHQ0K8PK9TVGX26XBE13A2JA",
+      "short_id": "01KHQ0K8",
+      "display_id": "TK-01KHQ0K8",
+      "title": "Optional auto-merge enablement when policy allows",
+      "state": "done",
+      "priority": "p2",
+      "labels": [
+        "github",
+        "automerge"
+      ],
+      "path": ".tickets/tickets/01KHQ0K8PK9TVGX26XBE13A2JA.md"
     },
     {
       "id": "01KHMG861RFP1FWRX8BXP68D9P",
