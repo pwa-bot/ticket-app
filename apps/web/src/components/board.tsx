@@ -6,8 +6,11 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import AttentionTable from "@/components/attention-table";
 import TicketDetailModal from "@/components/ticket-detail-modal";
 import ViewToggle from "@/components/view-toggle";
+import PendingBadge from "@/components/pending-badge";
 import { getCreatedTimestamp, priorityRank, type AttentionRow, type CiStatus } from "@/lib/attention";
 import { BOARD_LABELS, BOARD_STATES, PRIORITY_STYLES, groupTicketsForBoard } from "@/lib/utils";
+import { PendingChangesProvider, usePendingChanges } from "@/lib/pending-changes";
+import { isValidTransition } from "@ticketdotapp/core";
 import type { LinkedPrSummary } from "@/components/pr-status-badge";
 
 interface BoardProps {
@@ -49,30 +52,62 @@ function getDisplayId(ticket: BoardTicket): string {
   return ticket.display_id ?? `TK-${ticket.id.slice(0, 8)}`;
 }
 
-function TicketCard({ ticket, onOpen }: { ticket: BoardTicket; onOpen: (id: string) => void }) {
+function TicketCard({
+  ticket,
+  onOpen,
+  owner,
+  repo,
+}: {
+  ticket: BoardTicket;
+  onOpen: (id: string) => void;
+  owner: string;
+  repo: string;
+}) {
+  const { getPendingChange, dismissChange } = usePendingChanges();
+  const pendingChange = getPendingChange(ticket.id);
+
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData("ticketId", ticket.id);
+    e.dataTransfer.setData("fromState", ticket.state);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
   return (
-    <button
-      type="button"
-      onClick={() => onOpen(ticket.id)}
-      className="w-full rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-slate-300 hover:shadow"
+    <div
+      draggable={!pendingChange}
+      onDragStart={handleDragStart}
+      className={`w-full rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-slate-300 hover:shadow ${
+        pendingChange ? "opacity-75" : "cursor-grab active:cursor-grabbing"
+      }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-sm font-semibold text-slate-900">{getDisplayId(ticket)}</p>
-        <span className={`rounded border px-2 py-0.5 text-xs font-medium uppercase ${PRIORITY_STYLES[ticket.priority]}`}>
-          {ticket.priority}
-        </span>
-      </div>
-      <p className="mt-2 text-sm text-slate-800">{ticket.title}</p>
-      {ticket.labels.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-1">
-          {ticket.labels.map((label) => (
-            <span key={label} className="rounded bg-slate-100 px-2 py-1 text-xs text-slate-700">
-              {label}
-            </span>
-          ))}
+      <button
+        type="button"
+        onClick={() => onOpen(ticket.id)}
+        className="w-full text-left"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-sm font-semibold text-slate-900">{getDisplayId(ticket)}</p>
+          <span className={`rounded border px-2 py-0.5 text-xs font-medium uppercase ${PRIORITY_STYLES[ticket.priority]}`}>
+            {ticket.priority}
+          </span>
+        </div>
+        <p className="mt-2 text-sm text-slate-800">{ticket.title}</p>
+        {ticket.labels.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1">
+            {ticket.labels.map((label) => (
+              <span key={label} className="rounded bg-slate-100 px-2 py-1 text-xs text-slate-700">
+                {label}
+              </span>
+            ))}
+          </div>
+        )}
+      </button>
+      {pendingChange && (
+        <div className="mt-3">
+          <PendingBadge change={pendingChange} onDismiss={() => dismissChange(ticket.id)} />
         </div>
       )}
-    </button>
+    </div>
   );
 }
 
@@ -80,20 +115,70 @@ function Column({
   state,
   tickets,
   onOpen,
+  owner,
+  repo,
+  onStateChange,
 }: {
   state: TicketState;
   tickets: BoardTicket[];
   onOpen: (id: string) => void;
+  owner: string;
+  repo: string;
+  onStateChange: (ticketId: string, fromState: string, toState: TicketState) => void;
 }) {
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    const fromState = e.dataTransfer.types.includes("fromstate")
+      ? e.dataTransfer.getData("fromState")
+      : null;
+
+    // Only allow drop if transition is valid (we'll validate again on drop)
+    setIsDragOver(true);
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+
+    const ticketId = e.dataTransfer.getData("ticketId");
+    const fromState = e.dataTransfer.getData("fromState");
+
+    if (!ticketId || !fromState) return;
+    if (fromState === state) return; // Same column, no-op
+
+    // Validate transition
+    if (!isValidTransition(fromState as TicketState, state)) {
+      // Could show a toast here
+      console.warn(`Invalid transition: ${fromState} → ${state}`);
+      return;
+    }
+
+    onStateChange(ticketId, fromState, state);
+  };
+
   return (
-    <section className="flex min-h-[240px] flex-col rounded-xl border border-slate-200 bg-slate-50">
+    <section
+      className={`flex min-h-[240px] flex-col rounded-xl border ${
+        isDragOver ? "border-blue-400 bg-blue-50" : "border-slate-200 bg-slate-50"
+      } transition-colors`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <header className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
         <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-700">{BOARD_LABELS[state]}</h3>
         <span className="rounded bg-white px-2 py-0.5 text-xs text-slate-600">{tickets.length}</span>
       </header>
       <div className="flex max-h-[calc(100vh-200px)] flex-1 flex-col gap-3 overflow-y-auto p-3">
         {tickets.map((ticket) => (
-          <TicketCard key={ticket.id} ticket={ticket} onOpen={onOpen} />
+          <TicketCard key={ticket.id} ticket={ticket} onOpen={onOpen} owner={owner} repo={repo} />
         ))}
         {tickets.length === 0 && <p className="p-2 text-xs text-slate-500">No tickets</p>}
       </div>
@@ -111,6 +196,51 @@ function getViewFromQuery(value: string | null): "board" | "table" | null {
 
 function getPrKey(repoName: string, ticketId: string): string {
   return `${repoName}:${ticketId}`;
+}
+
+// Inner component that uses pending changes context
+function BoardView({
+  owner,
+  repo,
+  grouped,
+  openTicket,
+  loadTickets,
+}: {
+  owner: string;
+  repo: string;
+  grouped: Record<TicketState, BoardTicket[]>;
+  openTicket: (id: string) => void;
+  loadTickets: (opts?: { forceRefresh?: boolean }) => Promise<void>;
+}) {
+  const { createChange } = usePendingChanges();
+
+  const handleStateChange = async (ticketId: string, fromState: string, toState: TicketState) => {
+    await createChange({
+      owner,
+      repo,
+      ticketId,
+      patch: { state: toState },
+      currentState: fromState,
+    });
+  };
+
+  return (
+    <PendingChangesProvider onMerged={() => void loadTickets({ forceRefresh: true })}>
+      <div className="grid gap-4 lg:grid-cols-5">
+        {BOARD_STATES.map((state) => (
+          <Column
+            key={state}
+            state={state}
+            tickets={grouped[state]}
+            onOpen={openTicket}
+            owner={owner}
+            repo={repo}
+            onStateChange={handleStateChange}
+          />
+        ))}
+      </div>
+    </PendingChangesProvider>
+  );
 }
 
 export default function Board({ owner, repo, ticketId }: BoardProps) {
@@ -425,11 +555,13 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
             Showing {filteredTickets.length} of {allTickets.length} tickets
           </div>
           {view === "board" ? (
-            <div className="grid gap-4 lg:grid-cols-5">
-              {BOARD_STATES.map((state) => (
-                <Column key={state} state={state} tickets={grouped[state]} onOpen={openTicket} />
-              ))}
-            </div>
+            <BoardView
+              owner={owner}
+              repo={repo}
+              grouped={grouped}
+              openTicket={openTicket}
+              loadTickets={loadTickets}
+            />
           ) : (
             <AttentionTable rows={attentionRows} multiRepo={false} onOpenTicket={(_repoName, id) => openTicket(id)} prMap={prMap} ciMap={ciMap} />
           )}
