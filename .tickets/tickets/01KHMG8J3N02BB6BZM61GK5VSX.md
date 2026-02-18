@@ -1,7 +1,7 @@
 ---
 id: 01KHMG8J3N02BB6BZM61GK5VSX
 title: Skill doc placement and install script
-state: in_progress
+state: done
 priority: p3
 labels:
   - docs

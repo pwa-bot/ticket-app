@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T18:44:46.367Z",
+  "generated_at": "2026-02-18T18:44:46.608Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -41,19 +41,6 @@
         "automerge"
       ],
       "path": ".tickets/tickets/01KHQ0K8PK9TVGX26XBE13A2JA.md"
-    },
-    {
-      "id": "01KHMG8J3N02BB6BZM61GK5VSX",
-      "short_id": "01KHMG8J",
-      "display_id": "TK-01KHMG8J",
-      "title": "Skill doc placement and install script",
-      "state": "in_progress",
-      "priority": "p3",
-      "labels": [
-        "docs",
-        "contract-v1"
-      ],
-      "path": ".tickets/tickets/01KHMG8J3N02BB6BZM61GK5VSX.md"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
@@ -359,6 +346,19 @@
         "contract-v1"
       ],
       "path": ".tickets/tickets/01KHMG861RFP1FWRX8BXP68D9P.md"
+    },
+    {
+      "id": "01KHMG8J3N02BB6BZM61GK5VSX",
+      "short_id": "01KHMG8J",
+      "display_id": "TK-01KHMG8J",
+      "title": "Skill doc placement and install script",
+      "state": "done",
+      "priority": "p3",
+      "labels": [
+        "docs",
+        "contract-v1"
+      ],
+      "path": ".tickets/tickets/01KHMG8J3N02BB6BZM61GK5VSX.md"
     },
     {
       "id": "01KHMG8JASDQ7VC5YZK8NFBKZP",
