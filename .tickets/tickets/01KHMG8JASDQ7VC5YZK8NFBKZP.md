@@ -1,7 +1,7 @@
 ---
 id: 01KHMG8JASDQ7VC5YZK8NFBKZP
 title: Add --no-commit flag for dev/testing
-state: backlog
+state: ready
 priority: p3
 labels:
   - refactor
