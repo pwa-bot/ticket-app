@@ -1,7 +1,7 @@
 ---
 id: 01KHMG8D05HYTQ1D1RYTQXYYE0
 title: index.json generation and recovery
-state: in_progress
+state: done
 priority: p1
 labels:
   - refactor

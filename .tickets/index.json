@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T18:11:32.957Z",
+  "generated_at": "2026-02-18T18:11:33.190Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -134,19 +134,6 @@
         "testing"
       ],
       "path": ".tickets/tickets/01KHMG8JASDQ7VC5YZK8NFBKZP.md"
-    },
-    {
-      "id": "01KHMG8D05HYTQ1D1RYTQXYYE0",
-      "short_id": "01KHMG8D",
-      "display_id": "TK-01KHMG8D",
-      "title": "index.json generation and recovery",
-      "state": "in_progress",
-      "priority": "p1",
-      "labels": [
-        "refactor",
-        "contract-v1"
-      ],
-      "path": ".tickets/tickets/01KHMG8D05HYTQ1D1RYTQXYYE0.md"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
@@ -285,6 +272,19 @@
         "contract-v1"
       ],
       "path": ".tickets/tickets/01KHMG8CRR5CXBDBBKWBF5D2K0.md"
+    },
+    {
+      "id": "01KHMG8D05HYTQ1D1RYTQXYYE0",
+      "short_id": "01KHMG8D",
+      "display_id": "TK-01KHMG8D",
+      "title": "index.json generation and recovery",
+      "state": "done",
+      "priority": "p1",
+      "labels": [
+        "refactor",
+        "contract-v1"
+      ],
+      "path": ".tickets/tickets/01KHMG8D05HYTQ1D1RYTQXYYE0.md"
     },
     {
       "id": "01KHPTPPBVD1JCWQ7RZV0TRBEJ",
