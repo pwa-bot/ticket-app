@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T05:31:22.073Z",
+  "generated_at": "2026-02-18T05:35:08.438Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -236,7 +236,7 @@
       "short_id": "01KHQKCT",
       "display_id": "TK-01KHQKCT",
       "title": "Persist pending changes across page refresh",
-      "state": "in_progress",
+      "state": "done",
       "priority": "p1",
       "labels": [],
       "path": ".tickets/tickets/01KHQKCTHCSF6REBDAGMHF9W9B.md"
