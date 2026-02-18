@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
-import { cookieNames, encryptToken } from "@/lib/auth";
+import { cookieNames, encryptToken, getAccessTokenFromCookies } from "@/lib/auth";
 
 function getBaseUrl(request: Request): string {
   const url = new URL(request.url);
@@ -22,6 +22,14 @@ export async function GET(request: Request) {
   const installationId = url.searchParams.get("installation_id");
   const setupAction = url.searchParams.get("setup_action");
   const redirectUri = `${getBaseUrl(request)}/api/auth/github`;
+
+  // If user already has a valid session and no OAuth params, just redirect to space
+  if (!code && !installationId) {
+    const existingToken = await getAccessTokenFromCookies();
+    if (existingToken) {
+      return NextResponse.redirect(new URL("/space", request.url));
+    }
+  }
 
   // Case 1: Fresh login - redirect to app installation (which includes OAuth)
   if (!code && !installationId) {
