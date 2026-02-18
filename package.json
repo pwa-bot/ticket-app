@@ -1,7 +1,7 @@
 {
   "name": "ticket-app",
   "private": true,
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "pnpm@10.29.3",
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
@@ -12,5 +12,5 @@
   "devDependencies": {
     "turbo": "^2"
   },
-  "packageManager": "pnpm@9.0.0"
+  "packageManager": "pnpm@10.29.3"
 }
