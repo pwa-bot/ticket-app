@@ -131,7 +131,7 @@ export default function TicketDetailModal({ repo, ticketId, onClose }: TicketDet
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/50" onClick={onClose}>
       {/* Side panel - slides in from right */}
       <div
-        className="h-full w-full max-w-2xl overflow-y-auto bg-white shadow-2xl"
+        className="h-full w-full max-w-2xl overflow-y-auto overscroll-contain bg-white shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
         {/* Header */}

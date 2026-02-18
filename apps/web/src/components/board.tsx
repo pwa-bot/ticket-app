@@ -448,12 +448,13 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
 
   function openTicket(id: string) {
     setSelectedTicketId(id);
-    router.push(`/space/${owner}/${repo}/${id}${getSearchQuery()}`);
+    // Use replace + scroll:false to update URL without triggering refetch or scroll
+    router.replace(`/space/${owner}/${repo}/${id}${getSearchQuery()}`, { scroll: false });
   }
 
   function closeTicket() {
     setSelectedTicketId(null);
-    router.push(`/space/${owner}/${repo}${getSearchQuery()}`);
+    router.replace(`/space/${owner}/${repo}${getSearchQuery()}`, { scroll: false });
   }
 
   const stateFilter = searchParams.get("state");
