@@ -1,5 +1,7 @@
 # ticket.app Caching Architecture v1.1 (Derived Cache, Git-Authoritative)
 
+> **Core Promise:** Git is authoritative. Everything else is derived and disposable.
+
 ## Goal
 
 Make dashboard reads fast and reliable at scale without hitting GitHub rate limits, while keeping Git as the source of truth.
@@ -249,3 +251,190 @@ If index.json missing/out of sync:
 5. UI shows pending until PR merges.
 6. PR merge triggers sync (webhook or manual), canonical state updates.
 7. Cache always disposable; deleting Postgres still allows rebuild from GitHub.
+
+---
+
+## Ethos Guardrails (Non-Negotiables)
+
+### Purpose
+
+Postgres exists to make the dashboard fast and reliable. It must never become a second source of truth. Ticket's core promise is: **Git is authoritative. Everything else is derived and disposable.**
+
+These guardrails are requirements.
+
+---
+
+### 1) Git is the only canonical source of truth
+
+* The canonical ticket state is the content of:
+  * `.tickets/tickets/*.md` and `.tickets/index.json` in the repo
+* Postgres is a **derived cache** only.
+* If Postgres and Git disagree, **Git wins**.
+
+Implementation requirements:
+* Any view that depends on cached data must include `last_synced_at` and display a freshness indicator.
+* The system must support a "rebuild from GitHub" path that repopulates Postgres.
+
+---
+
+### 2) All writes must go through GitHub (PRs or GitHub primitives)
+
+* Dashboard write actions MUST create a PR that edits ticket files (and index.json).
+* The dashboard MUST NOT update canonical ticket state by writing directly to Postgres.
+* The dashboard MUST NOT write directly to main branch by default.
+
+Allowed write mechanisms:
+* PRs that modify `.tickets/tickets/*.md` and `.tickets/index.json`
+* GitHub PR reviews, CODEOWNERS, branch protection, checks
+* PR comments that agents can respond to
+
+Forbidden:
+* Any DB-only workflow state changes
+* Any DB-only approvals or comments that are not mirrored in GitHub/Git
+
+---
+
+### 3) Pending UI is allowed, but must be explicit
+
+* The dashboard MAY show "pending changes" immediately after creating a PR.
+* Pending changes MUST be clearly labeled as pending and MUST link to the PR.
+* The ticket must not appear in the new canonical state/column until the PR merges and sync confirms it.
+
+Implementation requirements:
+* `pending_changes` table is allowed as UI state only.
+* When PR merges, sync must update canonical cached state from index.json.
+
+---
+
+### 4) Cache must be disposable and reconstructable
+
+* If the database is deleted, the system must recover by re-syncing from GitHub.
+* Therefore, Postgres must store only:
+  * derived index and ticket metadata
+  * derived raw blobs (index.json, ticket markdown) for speed
+  * pending PR UI state
+
+Forbidden:
+* Storing business-critical data that cannot be rebuilt from GitHub (unless explicitly scoped to a future paid product like Intake).
+
+---
+
+### 5) Cache invalidation must be SHA-based
+
+* Sync must use `.tickets/index.json` SHA to detect change.
+* Sync must not re-fetch all ticket files on every refresh.
+* Ticket markdown should be fetched lazily on ticket detail open.
+
+This ensures:
+* predictable GitHub API usage
+* correctness tied to Git state
+
+---
+
+### 6) Protocol-first compatibility must remain intact
+
+* Any changes made by dashboard PRs must preserve:
+  * unknown frontmatter keys
+  * `x_ticket` namespace semantically
+* Dashboard must remain protocol compliant:
+  * it edits the same files the CLI edits
+  * it does not invent a proprietary state model
+
+---
+
+### 7) Pricing must align with ethos
+
+* Protocol and CLI remain free.
+* Paid features are coordination and reliability:
+  * multi-repo portfolio
+  * saved views
+  * webhooks/realtime refresh
+  * Slack routing
+  * governance checks
+  * write actions convenience
+* We must never charge for "owning the data," since users keep their data in Git.
+
+---
+
+### Litmus test for every feature
+
+Ask: **If Postgres is wiped, can we reconstruct this from GitHub and the repo?**
+
+* If yes: allowed.
+* If no: either redesign or explicitly label it as a separate hosted product area (example: future Intake inbox with PII).
+
+---
+
+## Engineering Review Checklist
+
+Use this checklist on every PR touching: dashboard data fetching, caching/sync, write actions, GitHub integration, rules/notifications.
+
+### A) Canonical truth and data flow
+
+- [ ] Does this change keep Git authoritative for canonical ticket state?
+- [ ] If DB and Git disagree, does the code explicitly choose Git?
+- [ ] Can this feature recover if Postgres is wiped (re-sync from GitHub)?
+- [ ] Does the UI show freshness (`last_synced_at`) and sync status?
+
+### B) Writes and "pending" behavior
+
+- [ ] Are all write actions implemented as PR-based changes to ticket files (and index.json)?
+- [ ] Are we avoiding direct writes to the default branch by the dashboard?
+- [ ] Are we avoiding DB-only canonical state changes?
+- [ ] Does the UI show a clear "pending" state until PR merge is confirmed?
+- [ ] Does the pending UI always link to the PR in GitHub?
+- [ ] On PR merge, do we refresh from index.json and only then update canonical UI state?
+
+### C) Protocol compliance and forward compatibility
+
+- [ ] Does the ticket patch logic preserve unknown frontmatter keys semantically?
+- [ ] Does it preserve `x_ticket` semantically?
+- [ ] Are we using exact `---` delimiters at file start when rewriting?
+- [ ] Are we maintaining required fields (`id`, `title`, `state`, `priority`, `labels`)?
+- [ ] Are state transitions validated against protocol rules before PR creation?
+- [ ] Are labels normalized on write and stored in index.json deterministically?
+
+### D) Cache correctness (derived-only)
+
+- [ ] Are we storing raw blobs (`index.json`, ticket markdown) as derived cache only?
+- [ ] Is the cache invalidation SHA-based (index.json sha)?
+- [ ] Does sync fetch index.json first and short-circuit when unchanged?
+- [ ] Are ticket markdown files fetched lazily on detail open (not bulk during sync)?
+- [ ] Are error messages actionable when index is missing/out of sync (`ticket rebuild-index`)?
+
+### E) GitHub integration safety
+
+- [ ] Are GitHub OAuth tokens stored encrypted and never logged?
+- [ ] Are repo access scopes least-privilege and repo allowlist enforced?
+- [ ] If using webhooks: signatures verified, delivery deduped, retries safe?
+- [ ] Are GitHub API calls rate-limit aware, with backoff and stale-cache fallback?
+- [ ] Do we avoid creating noisy PRs (one PR per action, or batch safely)?
+
+### F) Observability and debugging
+
+- [ ] Do we log correlation IDs for sync jobs and PR creation flows?
+- [ ] Do we emit structured errors with stable error codes to the frontend?
+- [ ] Can a human see why something is pending/failed/conflicted?
+- [ ] Are sync errors persisted in `repos.sync_error` and shown in UI?
+
+### G) Product/UX integrity
+
+- [ ] Does the UX avoid "lying" (showing canonical state changed before merge)?
+- [ ] Are pending states visually distinct from canonical states?
+- [ ] Is there a clear recovery path for failures (open PR, retry, rebuild index)?
+
+### H) Pricing/ethos alignment (sanity check)
+
+- [ ] Does this feature introduce a DB-only value that would create lock-in?
+- [ ] If yes, is it explicitly scoped as a separate hosted product (example: future Intake)?
+- [ ] Otherwise, does it fit the "pay for coordination, not storage" model?
+
+---
+
+### "Stop the line" conditions (must fix before merge)
+
+* Any canonical ticket state change written to Postgres without a PR/merge
+* Any write path that bypasses GitHub branch protection
+* Dropping unknown frontmatter keys or `x_ticket`
+* Sync that requires DB state to be correct (not reconstructable)
+* UI showing final state before PR merge is confirmed
