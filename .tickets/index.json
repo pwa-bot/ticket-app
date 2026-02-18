@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T05:35:08.438Z",
+  "generated_at": "2026-02-18T18:04:59.405Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -120,7 +120,7 @@
       "short_id": "01KHMG8C",
       "display_id": "TK-01KHMG8C",
       "title": "Formalize ticket schema parsing and rendering",
-      "state": "backlog",
+      "state": "done",
       "priority": "p1",
       "labels": [
         "refactor",
