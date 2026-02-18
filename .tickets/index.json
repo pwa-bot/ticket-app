@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T18:19:10.346Z",
+  "generated_at": "2026-02-18T18:19:10.612Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -87,7 +87,7 @@
       "short_id": "01KHMG86",
       "display_id": "TK-01KHMG86",
       "title": "Implement --quiet flag",
-      "state": "ready",
+      "state": "in_progress",
       "priority": "p3",
       "labels": [
         "refactor",

@@ -1,7 +1,7 @@
 ---
 id: 01KHMG861RFP1FWRX8BXP68D9P
 title: Implement --quiet flag
-state: ready
+state: in_progress
 priority: p3
 labels:
   - refactor
