@@ -29,12 +29,33 @@ function keyFor(repo: string, ticketId: string): string {
 // State order and styling for section headers
 const STATE_ORDER = ["in_progress", "ready", "blocked", "backlog", "done"] as const;
 const STATE_SECTION_STYLES: Record<string, { bg: string; border: string; text: string; icon: string }> = {
-  in_progress: { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-800", icon: "🔨" },
-  ready: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-800", icon: "📋" },
-  blocked: { bg: "bg-red-50", border: "border-red-200", text: "text-red-800", icon: "🚫" },
-  backlog: { bg: "bg-slate-50", border: "border-slate-200", text: "text-slate-700", icon: "📥" },
-  done: { bg: "bg-green-50", border: "border-green-200", text: "text-green-800", icon: "✅" },
+  in_progress: { bg: "bg-gradient-to-r from-amber-50 to-amber-100/50", border: "border-amber-300", text: "text-amber-900", icon: "🔨" },
+  ready: { bg: "bg-gradient-to-r from-blue-50 to-blue-100/50", border: "border-blue-300", text: "text-blue-900", icon: "📋" },
+  blocked: { bg: "bg-gradient-to-r from-red-50 to-red-100/50", border: "border-red-300", text: "text-red-900", icon: "🚫" },
+  backlog: { bg: "bg-gradient-to-r from-slate-100 to-slate-50", border: "border-slate-300", text: "text-slate-800", icon: "📥" },
+  done: { bg: "bg-gradient-to-r from-green-50 to-green-100/50", border: "border-green-300", text: "text-green-900", icon: "✅" },
 };
+
+// Generate consistent color for repo name
+function getRepoColor(repo: string): string {
+  const colors = [
+    "bg-violet-100 text-violet-700 border-violet-200",
+    "bg-sky-100 text-sky-700 border-sky-200",
+    "bg-emerald-100 text-emerald-700 border-emerald-200",
+    "bg-rose-100 text-rose-700 border-rose-200",
+    "bg-amber-100 text-amber-700 border-amber-200",
+    "bg-indigo-100 text-indigo-700 border-indigo-200",
+    "bg-teal-100 text-teal-700 border-teal-200",
+    "bg-pink-100 text-pink-700 border-pink-200",
+  ];
+  // Simple hash to pick consistent color
+  let hash = 0;
+  for (let i = 0; i < repo.length; i++) {
+    hash = ((hash << 5) - hash) + repo.charCodeAt(i);
+    hash = hash & hash;
+  }
+  return colors[Math.abs(hash) % colors.length];
+}
 
 export default function AttentionTable({ rows, multiRepo, onOpenTicket, prMap, ciMap }: AttentionTableProps) {
   // Group rows by state
@@ -111,10 +132,21 @@ export default function AttentionTable({ rows, multiRepo, onOpenTicket, prMap, c
                           {getDisplayId(row.ticket)}
                         </button>
                       </td>
-                      <td className="max-w-[360px] px-3 py-2 text-slate-800" title={row.ticket.title}>
-                        {truncateTitle(row.ticket.title, 60)}
+                      <td className="max-w-[360px] px-3 py-2">
+                        <span 
+                          className="block truncate text-slate-800 cursor-default" 
+                          title={row.ticket.title}
+                        >
+                          {row.ticket.title}
+                        </span>
                       </td>
-                      {multiRepo ? <td className="px-3 py-2 text-slate-700">{row.repo}</td> : null}
+                      {multiRepo ? (
+                        <td className="px-3 py-2">
+                          <span className={`inline-block truncate max-w-[120px] rounded-full border px-2 py-0.5 text-xs font-medium ${getRepoColor(row.repo)}`} title={row.repo}>
+                            {row.repo.split("/")[1] || row.repo}
+                          </span>
+                        </td>
+                      ) : null}
                       <td className="px-3 py-2">
                         <span className="rounded border border-slate-300 px-2 py-0.5 text-xs text-slate-700">
                           {BOARD_LABELS[row.ticket.state]}
