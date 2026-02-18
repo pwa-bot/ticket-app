@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T18:52:37.820Z",
+  "generated_at": "2026-02-18T18:52:38.062Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -21,7 +21,7 @@
       "short_id": "01KHPTPQ",
       "display_id": "TK-01KHPTPQ",
       "title": "Ticket detail modal with PR/activity info",
-      "state": "ready",
+      "state": "in_progress",
       "priority": "p2",
       "labels": [
         "dashboard",
