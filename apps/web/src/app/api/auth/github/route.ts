@@ -19,17 +19,20 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
+  const installationId = url.searchParams.get("installation_id");
+  const setupAction = url.searchParams.get("setup_action");
   const redirectUri = `${getBaseUrl(request)}/api/auth/github`;
 
-  if (!code) {
+  // Case 1: Fresh login - redirect to app installation (which includes OAuth)
+  if (!code && !installationId) {
     const generatedState = randomBytes(16).toString("hex");
-    const authorizeUrl = new URL("https://github.com/login/oauth/authorize");
-    authorizeUrl.searchParams.set("client_id", clientId);
-    authorizeUrl.searchParams.set("scope", "repo");
-    authorizeUrl.searchParams.set("redirect_uri", redirectUri);
-    authorizeUrl.searchParams.set("state", generatedState);
-
-    const response = NextResponse.redirect(authorizeUrl);
+    
+    // Use GitHub App installation flow for combined install + OAuth
+    const appSlug = process.env.GITHUB_APP_SLUG ?? "ticketdotapp";
+    const installUrl = new URL(`https://github.com/apps/${appSlug}/installations/new`);
+    installUrl.searchParams.set("state", generatedState);
+    
+    const response = NextResponse.redirect(installUrl);
     response.cookies.set(cookieNames.oauthState, generatedState, {
       httpOnly: true,
       sameSite: "lax",
@@ -39,6 +42,42 @@ export async function GET(request: Request) {
     });
 
     return response;
+  }
+
+  // Case 2: Returned from installation without OAuth code - redirect to OAuth
+  if (installationId && !code) {
+    const generatedState = randomBytes(16).toString("hex");
+    
+    // Store installation_id for later
+    const authorizeUrl = new URL("https://github.com/login/oauth/authorize");
+    authorizeUrl.searchParams.set("client_id", clientId);
+    authorizeUrl.searchParams.set("redirect_uri", redirectUri);
+    authorizeUrl.searchParams.set("state", generatedState);
+    // No scope needed - GitHub App installation grants access
+    
+    const response = NextResponse.redirect(authorizeUrl);
+    response.cookies.set(cookieNames.oauthState, generatedState, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 10,
+    });
+    // Store installation_id to record after OAuth
+    response.cookies.set("ticket_app_installation_id", installationId, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 10,
+    });
+
+    return response;
+  }
+
+  // Case 3: No code yet (shouldn't happen, but handle gracefully)
+  if (!code) {
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
   const cookieHeader = request.headers.get("cookie") ?? "";
