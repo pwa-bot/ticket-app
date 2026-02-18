@@ -3,7 +3,6 @@
 interface RateLimitErrorProps {
   error: string;
   onRetry?: () => void;
-  appInstallUrl?: string;
 }
 
 export function isRateLimitError(error: string): boolean {
@@ -17,7 +16,7 @@ export function isRateLimitError(error: string): boolean {
   );
 }
 
-export function RateLimitError({ error, onRetry, appInstallUrl }: RateLimitErrorProps) {
+export function RateLimitError({ error, onRetry }: RateLimitErrorProps) {
   const isRateLimit = isRateLimitError(error);
 
   if (!isRateLimit) {
@@ -58,23 +57,17 @@ export function RateLimitError({ error, onRetry, appInstallUrl }: RateLimitError
               </button>
             )}
             
-            {appInstallUrl && (
-              <a
-                href={appInstallUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+            <a
+                href="/space/settings"
                 className="rounded-md bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-700"
               >
                 Install GitHub App for faster sync →
               </a>
-            )}
           </div>
 
-          {appInstallUrl && (
-            <p className="mt-3 text-xs text-amber-600">
-              Installing our GitHub App gives you real-time updates without rate limits.
-            </p>
-          )}
+          <p className="mt-3 text-xs text-amber-600">
+            Installing our GitHub App gives you real-time updates without rate limits.
+          </p>
         </div>
       </div>
     </div>
@@ -85,12 +78,10 @@ export function SyncError({
   errorCode, 
   errorMessage,
   onRetry,
-  appInstallUrl,
 }: { 
   errorCode?: string | null;
   errorMessage?: string | null;
   onRetry?: () => void;
-  appInstallUrl?: string;
 }) {
   if (!errorCode && !errorMessage) return null;
 
@@ -158,11 +149,9 @@ export function SyncError({
               </button>
             )}
             
-            {isRateLimit && appInstallUrl && (
+            {isRateLimit && (
               <a
-                href={appInstallUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/space/settings"
                 className="rounded-md bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-700"
               >
                 Install GitHub App →

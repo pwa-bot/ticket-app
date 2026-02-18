@@ -101,7 +101,7 @@ export default function RepoSelector() {
         <RateLimitError
           error={error}
           onRetry={() => window.location.reload()}
-          appInstallUrl="https://github.com/apps/ticketdotapp"
+          
         />
       );
     }

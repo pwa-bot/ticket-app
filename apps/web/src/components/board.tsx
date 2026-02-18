@@ -692,7 +692,7 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
         <RateLimitError 
           error={error} 
           onRetry={() => loadTickets({ forceRefresh: true })}
-          appInstallUrl="https://github.com/apps/ticketdotapp"
+          
         />
       )}
 
