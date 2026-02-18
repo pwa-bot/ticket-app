@@ -1,7 +1,7 @@
 ---
 id: 01KHQKCTHCSF6REBDAGMHF9W9B
 title: Persist pending changes across page refresh
-state: backlog
+state: ready
 priority: p1
 labels: []
 ---
