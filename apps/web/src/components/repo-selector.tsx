@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { RateLimitError, isRateLimitError } from "@/components/rate-limit-error";
 
 interface RepoSummary {
   id: number;
@@ -93,7 +94,18 @@ export default function RepoSelector() {
   }
 
   if (error) {
-    const isAuthError = error.includes("authentication") || error.includes("expired") || error.includes("401") || error.includes("403");
+    const isAuthError = error.includes("authentication") || error.includes("expired") || error.includes("401");
+    
+    if (isRateLimitError(error)) {
+      return (
+        <RateLimitError
+          error={error}
+          onRetry={() => window.location.reload()}
+          appInstallUrl="https://github.com/apps/ticketdotapp"
+        />
+      );
+    }
+    
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
         <p className="text-sm font-medium text-amber-800">
