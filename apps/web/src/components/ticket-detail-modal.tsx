@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
-import { usePendingChangesSafe } from "@/lib/pending-changes";
+import { usePendingChanges } from "@/lib/pending-changes";
 import PendingBadge from "@/components/pending-badge";
+import { EditableSelect, EditableText } from "@/components/editable-field";
 import type { TicketState } from "@/lib/types";
+import type { TicketChangePatch } from "@ticketdotapp/core";
 
 interface TicketDetail {
   id: string;
@@ -97,11 +99,22 @@ export default function TicketDetailModal({ repo, ticketId, onClose, initialData
   const [loadingBody, setLoadingBody] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const pendingChangesContext = usePendingChangesSafe();
+  const { createChange, getPendingChange } = usePendingChanges();
+  const [owner, repoName] = repo.split("/");
 
-  const pendingChange = ticket && pendingChangesContext 
-    ? pendingChangesContext.getPendingChange(ticket.id) 
-    : null;
+  const pendingChange = ticket ? getPendingChange(ticket.id) : null;
+
+  // Save a field change
+  const saveChange = useCallback(async (patch: TicketChangePatch) => {
+    if (!ticket) return;
+    await createChange({
+      owner,
+      repo: repoName,
+      ticketId: ticket.id,
+      patch,
+      currentState: ticket.frontmatter.state,
+    });
+  }, [ticket, owner, repoName, createChange]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -185,12 +198,33 @@ export default function TicketDetailModal({ repo, ticketId, onClose, initialData
               )}
               {fm && (
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATE_COLORS[fm.state] || "bg-slate-100"}`}>
-                    {fm.state.replace("_", " ")}
-                  </span>
-                  <span className={`rounded border px-2 py-0.5 text-xs font-medium ${PRIORITY_COLORS[fm.priority] || "bg-slate-100"}`}>
-                    {fm.priority.toUpperCase()}
-                  </span>
+                  <EditableSelect
+                    value={fm.state}
+                    options={[
+                      { value: "backlog", label: "Backlog" },
+                      { value: "ready", label: "Ready" },
+                      { value: "in_progress", label: "In Progress" },
+                      { value: "blocked", label: "Blocked" },
+                      { value: "done", label: "Done" },
+                    ]}
+                    onSave={async (value) => saveChange({ state: value as TicketState })}
+                    disabled={!!pendingChange}
+                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATE_COLORS[fm.state] || "bg-slate-100"}`}
+                    renderValue={(v) => v.replace("_", " ")}
+                  />
+                  <EditableSelect
+                    value={fm.priority}
+                    options={[
+                      { value: "p0", label: "P0", className: "text-red-700 font-bold" },
+                      { value: "p1", label: "P1", className: "text-orange-700 font-semibold" },
+                      { value: "p2", label: "P2", className: "text-yellow-700" },
+                      { value: "p3", label: "P3", className: "text-slate-600" },
+                    ]}
+                    onSave={async (value) => saveChange({ priority: value as "p0" | "p1" | "p2" | "p3" })}
+                    disabled={!!pendingChange}
+                    className={`rounded border px-2 py-0.5 text-xs font-medium uppercase ${PRIORITY_COLORS[fm.priority] || "bg-slate-100"}`}
+                    renderValue={(v) => v.toUpperCase()}
+                  />
                   {fm.labels?.map((label) => (
                     <span key={label} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
                       {label}
@@ -308,18 +342,24 @@ export default function TicketDetailModal({ repo, ticketId, onClose, initialData
               <section>
                 <h4 className="mb-2 text-sm font-semibold text-slate-700">Details</h4>
                 <dl className="grid grid-cols-2 gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm">
-                  {fm?.assignee && (
-                    <>
-                      <dt className="text-slate-500">Assignee</dt>
-                      <dd className="font-medium text-slate-900">{fm.assignee}</dd>
-                    </>
-                  )}
-                  {fm?.reviewer && (
-                    <>
-                      <dt className="text-slate-500">Reviewer</dt>
-                      <dd className="font-medium text-slate-900">{fm.reviewer}</dd>
-                    </>
-                  )}
+                  <dt className="text-slate-500">Assignee</dt>
+                  <dd className="font-medium text-slate-900">
+                    <EditableText
+                      value={fm?.assignee}
+                      placeholder="Unassigned"
+                      onSave={async (value) => saveChange({ assignee: value ? `human:${value}` as const : null })}
+                      disabled={!!pendingChange}
+                    />
+                  </dd>
+                  <dt className="text-slate-500">Reviewer</dt>
+                  <dd className="font-medium text-slate-900">
+                    <EditableText
+                      value={fm?.reviewer}
+                      placeholder="No reviewer"
+                      onSave={async (value) => saveChange({ reviewer: value ? `human:${value}` as const : null })}
+                      disabled={!!pendingChange}
+                    />
+                  </dd>
                   <dt className="text-slate-500">File</dt>
                   <dd className="truncate font-mono text-xs text-slate-600">{ticket.path}</dd>
                 </dl>
