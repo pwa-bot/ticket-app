@@ -185,57 +185,6 @@ export default function RepoSelector() {
 
   return (
     <div className="space-y-4">
-      {/* Mismatch banner - app installed but on wrong account */}
-      {hasMismatch && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-          <p className="text-sm font-medium text-amber-900">
-            GitHub App not installed on: {ownersNeedingInstall.join(", ")}
-          </p>
-          <p className="mt-1 text-sm text-amber-700">
-            Your repos are owned by {ownersNeedingInstall.length === 1 ? "an account" : "accounts"} where the app isn't installed yet.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {ownersNeedingInstall.map((owner) => (
-              <a
-                key={owner}
-                href={`https://github.com/apps/ticketdotapp/installations/new/permissions?target_id=${owner}`}
-                className="rounded-md bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-700"
-              >
-                Install on {owner}
-              </a>
-            ))}
-            <a
-              href="/space/settings"
-              className="rounded-md border border-amber-300 px-3 py-1.5 text-sm font-medium text-amber-800 hover:bg-amber-100"
-            >
-              View installations
-            </a>
-          </div>
-        </div>
-      )}
-      
-      {/* No app installed at all */}
-      {!hasAnyInstallation && (
-        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-          <p className="text-sm font-medium text-blue-900">
-            Install GitHub App for real-time sync
-          </p>
-          <p className="mt-1 text-sm text-blue-700">
-            Your repos are owned by: {Array.from(repoOwners.keys()).join(", ")}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {Array.from(repoOwners.keys()).map((owner) => (
-              <a
-                key={owner}
-                href="https://github.com/apps/ticketdotapp/installations/new"
-                className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
-              >
-                Install on {owner}
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
       <div className="rounded-xl border border-slate-200 bg-white">
         <ul className="divide-y divide-slate-200">
           {repos.map((repo) => {
@@ -253,11 +202,6 @@ export default function RepoSelector() {
                   <span className="flex items-center gap-2">
                     <span className="font-medium text-slate-900">{repo.full_name}</span>
                     <span className="text-xs text-slate-500">{repo.private ? "Private" : "Public"}</span>
-                    {!hasApp && (
-                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">
-                        needs app
-                      </span>
-                    )}
                   </span>
                 </label>
                 {(() => {
