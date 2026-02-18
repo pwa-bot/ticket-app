@@ -78,13 +78,34 @@ export default function RepoSelector() {
 
   const selectedSet = useMemo(() => new Set(selected), [selected]);
   
-  // Check if a repo has GitHub App access (by matching owner to installation account)
-  // Must be before early returns to satisfy React hooks rules
+  // All useMemo hooks MUST be before early returns (React hooks rules)
   const installationLogins = useMemo(
     () => new Set(installations.map((i) => i.accountLogin.toLowerCase())),
     [installations]
   );
+  
+  const repoOwners = useMemo(() => {
+    const owners = new Map<string, { count: number; hasApp: boolean }>();
+    for (const repo of repos) {
+      const owner = repo.full_name.split("/")[0];
+      if (!owner) continue;
+      const existing = owners.get(owner) || { count: 0, hasApp: false };
+      existing.count++;
+      existing.hasApp = installationLogins.has(owner.toLowerCase());
+      owners.set(owner, existing);
+    }
+    return owners;
+  }, [repos, installationLogins]);
+
+  const ownersNeedingInstall = useMemo(() => 
+    Array.from(repoOwners.entries())
+      .filter(([_, info]) => !info.hasApp)
+      .map(([owner]) => owner),
+    [repoOwners]
+  );
+
   const hasAnyInstallation = installations.length > 0;
+  const hasMismatch = hasAnyInstallation && ownersNeedingInstall.length > 0;
 
   function toggleRepo(fullName: string) {
     setSelected((current) => {
@@ -159,32 +180,8 @@ export default function RepoSelector() {
 
   function hasAppAccess(repoFullName: string): boolean {
     const owner = repoFullName.split("/")[0]?.toLowerCase();
-    const hasAccess = owner ? installationLogins.has(owner) : false;
-    return hasAccess;
+    return owner ? installationLogins.has(owner) : false;
   }
-
-  // Compute which owners need installation
-  const repoOwners = useMemo(() => {
-    const owners = new Map<string, { count: number; hasApp: boolean }>();
-    for (const repo of repos) {
-      const owner = repo.full_name.split("/")[0];
-      if (!owner) continue;
-      const existing = owners.get(owner) || { count: 0, hasApp: false };
-      existing.count++;
-      existing.hasApp = installationLogins.has(owner.toLowerCase());
-      owners.set(owner, existing);
-    }
-    return owners;
-  }, [repos, installationLogins]);
-
-  const ownersNeedingInstall = useMemo(() => 
-    Array.from(repoOwners.entries())
-      .filter(([_, info]) => !info.hasApp)
-      .map(([owner]) => owner),
-    [repoOwners]
-  );
-
-  const hasMismatch = hasAnyInstallation && ownersNeedingInstall.length > 0;
 
   return (
     <div className="space-y-4">
