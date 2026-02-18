@@ -23,7 +23,7 @@ interface TicketDetail {
     reviewer?: string;
     [key: string]: unknown;
   };
-  body: string;
+  body: string | null;
   linked_prs: Array<{
     id: number;
     number: number;
@@ -36,10 +36,24 @@ interface TicketDetail {
   }>;
 }
 
+interface InitialTicketData {
+  id: string;
+  short_id?: string;
+  display_id?: string;
+  title: string;
+  state: string;
+  priority: string;
+  labels?: string[];
+  assignee?: string | null;
+  reviewer?: string | null;
+  path?: string;
+}
+
 interface TicketDetailModalProps {
   repo: string;
   ticketId: string;
   onClose: () => void;
+  initialData?: InitialTicketData;
 }
 
 const STATE_COLORS: Record<string, string> = {
@@ -57,10 +71,30 @@ const PRIORITY_COLORS: Record<string, string> = {
   p3: "bg-slate-100 text-slate-600 border-slate-200",
 };
 
-export default function TicketDetailModal({ repo, ticketId, onClose }: TicketDetailModalProps) {
+export default function TicketDetailModal({ repo, ticketId, onClose, initialData }: TicketDetailModalProps) {
   const router = useRouter();
-  const [ticket, setTicket] = useState<TicketDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Initialize with data from board index if available
+  const [ticket, setTicket] = useState<TicketDetail | null>(
+    initialData ? {
+      id: initialData.id,
+      display_id: initialData.display_id || `TK-${(initialData.short_id || initialData.id.slice(0, 8)).toUpperCase()}`,
+      repo,
+      path: initialData.path || `.tickets/tickets/${initialData.id}.md`,
+      html_url: null,
+      frontmatter: {
+        id: initialData.id,
+        title: initialData.title,
+        state: initialData.state as TicketState,
+        priority: initialData.priority,
+        labels: initialData.labels || [],
+        assignee: initialData.assignee ?? undefined,
+        reviewer: initialData.reviewer ?? undefined,
+      },
+      body: null, // Will be loaded
+      linked_prs: [],
+    } : null
+  );
+  const [loadingBody, setLoadingBody] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const pendingChangesContext = usePendingChangesSafe();
@@ -72,8 +106,8 @@ export default function TicketDetailModal({ repo, ticketId, onClose }: TicketDet
   useEffect(() => {
     const controller = new AbortController();
 
-    async function loadTicket() {
-      setLoading(true);
+    async function loadTicketBody() {
+      setLoadingBody(true);
       setError(null);
 
       try {
@@ -95,12 +129,12 @@ export default function TicketDetailModal({ repo, ticketId, onClose }: TicketDet
         }
       } finally {
         if (!controller.signal.aborted) {
-          setLoading(false);
+          setLoadingBody(false);
         }
       }
     }
 
-    void loadTicket();
+    void loadTicketBody();
 
     return () => controller.abort();
   }, [repo, ticketId]);
@@ -218,7 +252,6 @@ export default function TicketDetailModal({ repo, ticketId, onClose }: TicketDet
 
         {/* Content */}
         <div className="p-6">
-          {loading && <div className="text-sm text-slate-600">Loading ticket...</div>}
           {error && (
             <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
               {error}
@@ -228,7 +261,7 @@ export default function TicketDetailModal({ repo, ticketId, onClose }: TicketDet
             </div>
           )}
 
-          {!loading && !error && ticket && (
+          {!error && ticket && (
             <div className="space-y-6">
               {/* Linked PRs */}
               {ticket.linked_prs.length > 0 && (
@@ -261,7 +294,9 @@ export default function TicketDetailModal({ repo, ticketId, onClose }: TicketDet
               <section>
                 <h4 className="mb-2 text-sm font-semibold text-slate-700">Description</h4>
                 <article className="prose prose-sm max-w-none rounded-lg border border-slate-200 bg-slate-50 p-4 prose-slate prose-headings:text-slate-900 prose-a:text-blue-600">
-                  {ticket.body ? (
+                  {loadingBody && !ticket.body ? (
+                    <p className="text-slate-500">Loading...</p>
+                  ) : ticket.body ? (
                     <ReactMarkdown>{ticket.body}</ReactMarkdown>
                   ) : (
                     <p className="italic text-slate-500">No description provided.</p>

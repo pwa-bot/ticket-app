@@ -671,7 +671,14 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
         </>
       )}
 
-      {selectedTicketId && <TicketDetailModal repo={fullRepo} ticketId={selectedTicketId} onClose={closeTicket} />}
+      {selectedTicketId && (
+        <TicketDetailModal 
+          repo={fullRepo} 
+          ticketId={selectedTicketId} 
+          onClose={closeTicket}
+          initialData={index?.tickets.find(t => t.id === selectedTicketId || t.short_id === selectedTicketId)}
+        />
+      )}
     </div>
   );
 }
