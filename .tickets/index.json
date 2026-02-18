@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T21:14:56.494Z",
+  "generated_at": "2026-02-18T21:15:01.334Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -29,6 +29,19 @@
         "auth"
       ],
       "path": ".tickets/tickets/01KHS9P9K2VG9WY9KWKY3T13X1.md"
+    },
+    {
+      "id": "01KHS9PEAA0N73R7B5RDV35EVQ",
+      "short_id": "01KHS9PE",
+      "display_id": "TK-01KHS9PE",
+      "title": "Task B - Webhook handler with signature verification and dedupe",
+      "state": "ready",
+      "priority": "p0",
+      "labels": [
+        "webhooks",
+        "security"
+      ],
+      "path": ".tickets/tickets/01KHS9PEAA0N73R7B5RDV35EVQ.md"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
