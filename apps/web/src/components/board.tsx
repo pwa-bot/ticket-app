@@ -68,7 +68,7 @@ function TicketCard({
 
   const handleDragStart = (e: React.DragEvent) => {
     console.log("[drag] started:", ticket.id, ticket.state);
-    e.dataTransfer.setData("text/plain", ticket.id); // Some browsers need text/plain
+    e.dataTransfer.setData("text/plain", ticket.id);
     e.dataTransfer.setData("ticketId", ticket.id);
     e.dataTransfer.setData("fromState", ticket.state);
     e.dataTransfer.effectAllowed = "move";
@@ -76,22 +76,29 @@ function TicketCard({
 
   return (
     <div
-      draggable={!pendingChange}
-      onDragStart={handleDragStart}
-      onClick={() => onOpen(ticket.id)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onOpen(ticket.id);
-        }
-      }}
-      role="button"
-      tabIndex={0}
-      className={`w-full rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-slate-300 hover:shadow ${
-        pendingChange ? "opacity-75" : "cursor-grab active:cursor-grabbing"
+      className={`w-full rounded-lg border border-slate-200 bg-white shadow-sm transition hover:border-slate-300 hover:shadow ${
+        pendingChange ? "opacity-75" : ""
       }`}
     >
-      <div className="w-full text-left">
+      {/* Drag handle */}
+      <div
+        draggable={!pendingChange}
+        onDragStart={handleDragStart}
+        className={`flex items-center justify-center border-b border-slate-100 py-1 text-slate-400 ${
+          pendingChange ? "" : "cursor-grab hover:bg-slate-50 hover:text-slate-600 active:cursor-grabbing"
+        }`}
+        title="Drag to move"
+      >
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+        </svg>
+      </div>
+      {/* Clickable content */}
+      <button
+        type="button"
+        onClick={() => onOpen(ticket.id)}
+        className="w-full p-4 text-left"
+      >
         <div className="flex items-start justify-between gap-3">
           <p className="text-sm font-semibold text-slate-900">{getDisplayId(ticket)}</p>
           <span className={`rounded border px-2 py-0.5 text-xs font-medium uppercase ${PRIORITY_STYLES[ticket.priority]}`}>
@@ -108,9 +115,9 @@ function TicketCard({
             ))}
           </div>
         )}
-      </div>
+      </button>
       {pendingChange && (
-        <div className="mt-3">
+        <div className="px-4 pb-4">
           <PendingBadge change={pendingChange} onDismiss={() => dismissChange(ticket.id)} />
         </div>
       )}
