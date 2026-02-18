@@ -1,0 +1,257 @@
+"use client";
+
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import type {
+  PendingChange,
+  PendingChangeStatus,
+  TicketChangePatch,
+  CreateChangePrResponse,
+  PrStatusResponse,
+  ApiEnvelope,
+} from "@ticketdotapp/core";
+
+// Poll interval for checking PR status
+const POLL_INTERVAL_MS = 15_000;
+
+type PendingChangesState = {
+  /** Map of ticketId -> pending change */
+  changes: Map<string, PendingChange>;
+  /** Create a new pending change (calls API) */
+  createChange: (args: CreateChangeArgs) => Promise<void>;
+  /** Get pending change for a ticket */
+  getPendingChange: (ticketId: string) => PendingChange | undefined;
+  /** Dismiss a pending change (remove from UI without affecting Git) */
+  dismissChange: (ticketId: string) => void;
+  /** Refresh index.json callback (called when PR merges) */
+  onMerged?: () => void;
+};
+
+type CreateChangeArgs = {
+  owner: string;
+  repo: string;
+  ticketId: string;
+  patch: TicketChangePatch;
+  currentState?: string;
+};
+
+const PendingChangesContext = createContext<PendingChangesState | null>(null);
+
+export function PendingChangesProvider({
+  children,
+  onMerged,
+}: {
+  children: ReactNode;
+  onMerged?: () => void;
+}) {
+  const [changes, setChanges] = useState<Map<string, PendingChange>>(new Map());
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Create a new pending change
+  const createChange = useCallback(async (args: CreateChangeArgs) => {
+    const { owner, repo, ticketId, patch, currentState } = args;
+
+    // Set initial "creating" state
+    const initialChange: PendingChange = {
+      type: patch.state ? "state_change" : "metadata_change",
+      summary: buildSummary(patch, currentState),
+      prUrl: "",
+      prNumber: 0,
+      status: "creating_pr",
+      createdAt: new Date().toISOString(),
+    };
+
+    setChanges((prev) => new Map(prev).set(ticketId, initialChange));
+
+    try {
+      // Call API to create PR
+      const response = await fetch(
+        `/api/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/tickets/${encodeURIComponent(ticketId)}/changes`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ changes: patch }),
+        }
+      );
+
+      const result: ApiEnvelope<CreateChangePrResponse> = await response.json();
+
+      if (!result.ok) {
+        // Update with error
+        setChanges((prev) => {
+          const updated = new Map(prev);
+          const existing = updated.get(ticketId);
+          if (existing) {
+            updated.set(ticketId, {
+              ...existing,
+              status: "failed",
+              error: { code: result.error.code, message: result.error.message },
+            });
+          }
+          return updated;
+        });
+        return;
+      }
+
+      // Update with PR info
+      setChanges((prev) => {
+        const updated = new Map(prev);
+        const existing = updated.get(ticketId);
+        if (existing) {
+          updated.set(ticketId, {
+            ...existing,
+            prUrl: result.data.pr_url,
+            prNumber: result.data.pr_number,
+            status: result.data.status,
+          });
+        }
+        return updated;
+      });
+    } catch (e) {
+      // Network error
+      setChanges((prev) => {
+        const updated = new Map(prev);
+        const existing = updated.get(ticketId);
+        if (existing) {
+          updated.set(ticketId, {
+            ...existing,
+            status: "failed",
+            error: { code: "unknown", message: e instanceof Error ? e.message : "Network error" },
+          });
+        }
+        return updated;
+      });
+    }
+  }, []);
+
+  // Get pending change for a ticket
+  const getPendingChange = useCallback(
+    (ticketId: string) => changes.get(ticketId),
+    [changes]
+  );
+
+  // Dismiss a pending change
+  const dismissChange = useCallback((ticketId: string) => {
+    setChanges((prev) => {
+      const updated = new Map(prev);
+      updated.delete(ticketId);
+      return updated;
+    });
+  }, []);
+
+  // Poll for PR status updates
+  useEffect(() => {
+    const pollStatus = async () => {
+      const pendingPrs = Array.from(changes.entries()).filter(
+        ([, change]) =>
+          change.prNumber > 0 &&
+          !["merged", "failed"].includes(change.status)
+      );
+
+      if (pendingPrs.length === 0) return;
+
+      for (const [ticketId, change] of pendingPrs) {
+        try {
+          // Extract owner/repo from prUrl
+          const urlMatch = change.prUrl.match(/github\.com\/([^/]+)\/([^/]+)\/pull/);
+          if (!urlMatch) continue;
+
+          const [, owner, repo] = urlMatch;
+          const response = await fetch(
+            `/api/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/prs/${change.prNumber}/status`
+          );
+
+          const result: ApiEnvelope<PrStatusResponse> = await response.json();
+          if (!result.ok) continue;
+
+          const newStatus = mapPrStatusToChangeStatus(result.data);
+
+          setChanges((prev) => {
+            const updated = new Map(prev);
+            const existing = updated.get(ticketId);
+            if (existing && existing.status !== newStatus) {
+              updated.set(ticketId, {
+                ...existing,
+                status: newStatus,
+                mergeSignals: {
+                  ciStatus: result.data.checks.state,
+                  reviewRequired: result.data.reviews.required,
+                  requiredReviewers: result.data.reviews.required_reviewers,
+                  approvalsCount: result.data.reviews.approvals_count,
+                },
+              });
+
+              // If merged, trigger refresh
+              if (newStatus === "merged" && onMerged) {
+                setTimeout(onMerged, 500);
+              }
+            }
+            return updated;
+          });
+        } catch {
+          // Ignore poll errors
+        }
+      }
+    };
+
+    // Start polling
+    pollIntervalRef.current = setInterval(pollStatus, POLL_INTERVAL_MS);
+
+    // Initial poll
+    pollStatus();
+
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, [changes, onMerged]);
+
+  return (
+    <PendingChangesContext.Provider
+      value={{ changes, createChange, getPendingChange, dismissChange, onMerged }}
+    >
+      {children}
+    </PendingChangesContext.Provider>
+  );
+}
+
+export function usePendingChanges() {
+  const context = useContext(PendingChangesContext);
+  if (!context) {
+    throw new Error("usePendingChanges must be used within PendingChangesProvider");
+  }
+  return context;
+}
+
+// Helper functions
+
+function buildSummary(patch: TicketChangePatch, currentState?: string): string {
+  if (patch.state && currentState) {
+    return `${currentState} → ${patch.state}`;
+  }
+  if (patch.state) {
+    return `state → ${patch.state}`;
+  }
+  if (patch.priority) {
+    return `priority → ${patch.priority}`;
+  }
+  if (patch.labels_add?.length || patch.labels_remove?.length || patch.labels_replace?.length) {
+    return "labels updated";
+  }
+  if (patch.assignee !== undefined) {
+    return "assignee updated";
+  }
+  if (patch.reviewer !== undefined) {
+    return "reviewer updated";
+  }
+  return "metadata updated";
+}
+
+function mapPrStatusToChangeStatus(pr: PrStatusResponse): PendingChangeStatus {
+  if (pr.merged) return "merged";
+  if (pr.mergeable === false) return "conflict";
+  if (pr.checks.state === "fail") return "pending_checks";
+  if (pr.reviews.required && (pr.reviews.approvals_count ?? 0) < 1) return "waiting_review";
+  if (pr.mergeable === true && pr.checks.state === "pass") return "mergeable";
+  return "pending_checks";
+}
