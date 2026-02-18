@@ -1,22 +1,8 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T18:20:51.833Z",
+  "generated_at": "2026-02-18T18:44:45.408Z",
   "workflow": "simple-v1",
   "tickets": [
-    {
-      "id": "01KHPT0CRPS33T28RHM1E3RH4N",
-      "short_id": "01KHPT0C",
-      "display_id": "TK-01KHPT0C",
-      "title": "Dogfooding feedback collection",
-      "state": "backlog",
-      "priority": "p2",
-      "labels": [
-        "dogfood",
-        "meta"
-      ],
-      "created": "2026-02-17T22:01:00.000Z",
-      "path": ".tickets/tickets/01KHPT0CRPS33T28RHM1E3RH4N.md"
-    },
     {
       "id": "01KHPTPQ1JFRRABBXV22NVET6G",
       "short_id": "01KHPTPQ",
@@ -68,6 +54,20 @@
         "contract-v1"
       ],
       "path": ".tickets/tickets/01KHMG8J3N02BB6BZM61GK5VSX.md"
+    },
+    {
+      "id": "01KHPT0CRPS33T28RHM1E3RH4N",
+      "short_id": "01KHPT0C",
+      "display_id": "TK-01KHPT0C",
+      "title": "Dogfooding feedback collection",
+      "state": "ready",
+      "priority": "p2",
+      "labels": [
+        "dogfood",
+        "meta"
+      ],
+      "created": "2026-02-17T22:01:00.000Z",
+      "path": ".tickets/tickets/01KHPT0CRPS33T28RHM1E3RH4N.md"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",

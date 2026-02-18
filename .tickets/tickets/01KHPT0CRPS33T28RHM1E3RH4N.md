@@ -1,9 +1,11 @@
 ---
 id: 01KHPT0CRPS33T28RHM1E3RH4N
-title: "Dogfooding feedback collection"
-state: backlog
+title: Dogfooding feedback collection
+state: ready
 priority: p2
-labels: [dogfood, meta]
+labels:
+  - dogfood
+  - meta
 created: 2026-02-17T22:01:00.000Z
 updated: 2026-02-17T22:01:00.000Z
 ---
