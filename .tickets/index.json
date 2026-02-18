@@ -1,21 +1,8 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T03:41:41.343Z",
+  "generated_at": "2026-02-18T05:15:18.342Z",
   "workflow": "simple-v1",
   "tickets": [
-    {
-      "id": "01KHMG8CHHZ5875CGTFYQHD9XP",
-      "short_id": "01KHMG8C",
-      "display_id": "TK-01KHMG8C",
-      "title": "Formalize ticket schema parsing and rendering",
-      "state": "backlog",
-      "priority": "p1",
-      "labels": [
-        "refactor",
-        "contract-v1"
-      ],
-      "path": ".tickets/tickets/01KHMG8CHHZ5875CGTFYQHD9XP.md"
-    },
     {
       "id": "01KHMG8CRR5CXBDBBKWBF5D2K0",
       "short_id": "01KHMG8C",
@@ -172,6 +159,19 @@
         "testing"
       ],
       "path": ".tickets/tickets/01KHMG8JASDQ7VC5YZK8NFBKZP.md"
+    },
+    {
+      "id": "01KHMG8CHHZ5875CGTFYQHD9XP",
+      "short_id": "01KHMG8C",
+      "display_id": "TK-01KHMG8C",
+      "title": "Formalize ticket schema parsing and rendering",
+      "state": "ready",
+      "priority": "p1",
+      "labels": [
+        "refactor",
+        "contract-v1"
+      ],
+      "path": ".tickets/tickets/01KHMG8CHHZ5875CGTFYQHD9XP.md"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
