@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T18:16:38.355Z",
+  "generated_at": "2026-02-18T18:16:38.602Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -107,20 +107,6 @@
         "testing"
       ],
       "path": ".tickets/tickets/01KHMG8JASDQ7VC5YZK8NFBKZP.md"
-    },
-    {
-      "id": "01KHMG8D7XQXNCPTTVPMG5V72V",
-      "short_id": "01KHMG8D",
-      "display_id": "TK-01KHMG8D",
-      "title": "Determinism hooks for tests (ULID, SOURCE_DATE_EPOCH)",
-      "state": "in_progress",
-      "priority": "p2",
-      "labels": [
-        "refactor",
-        "contract-v1",
-        "testing"
-      ],
-      "path": ".tickets/tickets/01KHMG8D7XQXNCPTTVPMG5V72V.md"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
@@ -372,6 +358,20 @@
         "contract-v1"
       ],
       "path": ".tickets/tickets/01KHMG86G7ZPTKKE8PWBTVYRYZ.md"
+    },
+    {
+      "id": "01KHMG8D7XQXNCPTTVPMG5V72V",
+      "short_id": "01KHMG8D",
+      "display_id": "TK-01KHMG8D",
+      "title": "Determinism hooks for tests (ULID, SOURCE_DATE_EPOCH)",
+      "state": "done",
+      "priority": "p2",
+      "labels": [
+        "refactor",
+        "contract-v1",
+        "testing"
+      ],
+      "path": ".tickets/tickets/01KHMG8D7XQXNCPTTVPMG5V72V.md"
     }
   ]
 }

@@ -1,7 +1,7 @@
 ---
 id: 01KHMG8D7XQXNCPTTVPMG5V72V
 title: 'Determinism hooks for tests (ULID, SOURCE_DATE_EPOCH)'
-state: in_progress
+state: done
 priority: p2
 labels:
   - refactor
