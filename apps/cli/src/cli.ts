@@ -132,8 +132,9 @@ async function main(): Promise<void> {
     .option("--title <title>", "Replace ticket title")
     .option("--priority <priority>", "Change priority (p0-p3)")
     .option("--labels <labels>", "Label update or replacement", collectEditLabels, [])
+    .option("--clear-labels", "Remove all labels from the ticket")
     .option("--ci", "Enable CI mode (exact id matching only)")
-    .action(async (id: string, options: { title?: string; priority?: string; labels?: string[]; ci?: boolean }) => {
+    .action(async (id: string, options: { title?: string; priority?: string; labels?: string[]; clearLabels?: boolean; ci?: boolean }) => {
       await runEdit(process.cwd(), id, options);
     });
 

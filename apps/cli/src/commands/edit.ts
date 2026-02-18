@@ -12,6 +12,7 @@ export interface EditCommandOptions {
   title?: string;
   priority?: string;
   labels?: string[];
+  clearLabels?: boolean;
   ci?: boolean;
 }
 
@@ -153,7 +154,13 @@ export async function runEdit(cwd: string, id: string, options: EditCommandOptio
     }
   }
 
-  if ((options.labels ?? []).length > 0) {
+  if (options.clearLabels) {
+    const currentLabels = toLabelArray(parsed.data.labels);
+    if (currentLabels.length > 0) {
+      parsed.data.labels = [];
+      changes.push("labels");
+    }
+  } else if ((options.labels ?? []).length > 0) {
     const labelChanges = parseLabelValues(options.labels ?? []);
     const currentLabels = toLabelArray(parsed.data.labels);
     const next = applyLabelChanges(currentLabels, labelChanges);

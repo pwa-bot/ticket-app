@@ -95,4 +95,19 @@ describe("edit command", () => {
 
     await expect(runEdit(cwd, id, { ci: true })).rejects.toThrow("No changes to apply");
   });
+
+  it("clears all labels with --clear-labels", async () => {
+    const cwd = await mkTempRepo();
+    const id = "01ARZ3NDEKTSV4RRFFQ69G5CLR";
+    await writeTicket(cwd, id);
+    await rebuildIndex(cwd);
+
+    const before = await readTicket(cwd, id);
+    expect(before.data.labels).toEqual(["backend"]);
+
+    await runEdit(cwd, id, { clearLabels: true, ci: true });
+
+    const after = await readTicket(cwd, id);
+    expect(after.data.labels).toEqual([]);
+  });
 });
