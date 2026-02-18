@@ -1,15 +1,36 @@
+import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { cookieNames } from "@/lib/auth";
 
+function getBaseUrl(request: Request): string {
+  const url = new URL(request.url);
+  return `${url.protocol}//${url.host}`;
+}
+
 /**
- * Clear stale session and redirect to GitHub OAuth.
+ * Clear stale session and redirect directly to GitHub OAuth.
  * Used when the GitHub token has expired or needs refresh.
  */
 export async function GET(request: Request) {
-  // Use force=1 to bypass the "already logged in" check
-  const response = NextResponse.redirect(new URL("/api/auth/github?force=1", request.url));
+  const clientId = process.env.GITHUB_CLIENT_ID;
+  
+  if (!clientId) {
+    return NextResponse.json({ error: "Missing GITHUB_CLIENT_ID" }, { status: 500 });
+  }
 
-  // Clear the stale session cookie
+  const state = randomBytes(16).toString("hex");
+  const redirectUri = `${getBaseUrl(request)}/api/auth/github`;
+  
+  // Go directly to GitHub, bypassing our auth endpoint
+  const authorizeUrl = new URL("https://github.com/login/oauth/authorize");
+  authorizeUrl.searchParams.set("client_id", clientId);
+  authorizeUrl.searchParams.set("redirect_uri", redirectUri);
+  authorizeUrl.searchParams.set("state", state);
+  authorizeUrl.searchParams.set("scope", "repo read:user user:email");
+
+  const response = NextResponse.redirect(authorizeUrl);
+
+  // Clear old session
   response.cookies.delete(cookieNames.session);
   response.cookies.set(cookieNames.session, "", {
     httpOnly: true,
@@ -17,7 +38,15 @@ export async function GET(request: Request) {
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 0,
-    expires: new Date(0),
+  });
+  
+  // Set OAuth state for validation
+  response.cookies.set(cookieNames.oauthState, state, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 10,
   });
 
   return response;
