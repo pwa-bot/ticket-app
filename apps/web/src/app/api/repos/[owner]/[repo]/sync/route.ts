@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAccessTokenFromCookies } from "@/lib/auth";
-import { getTicketIndex } from "@/lib/github";
-import { syncRepoTickets, connectRepo, getSyncStatus } from "@/db/sync";
+import { syncRepoFromIndex, connectRepo, getRepoSyncStatus } from "@/db/sync";
 
 interface RouteParams {
   params: Promise<{ owner: string; repo: string }>;
@@ -10,8 +9,8 @@ interface RouteParams {
 /**
  * POST /api/repos/:owner/:repo/sync
  * 
- * Sync a repo's tickets from GitHub to the local cache.
- * Called when user first opens a repo or manually refreshes.
+ * Manually trigger a sync from GitHub.
+ * Uses SHA-based incremental sync — only updates if index.json changed.
  */
 export async function POST(req: NextRequest, { params }: RouteParams) {
   try {
@@ -23,7 +22,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     const { owner, repo } = await params;
     const repoFullName = `${owner}/${repo}`;
 
-    // Get user ID from GitHub (we could cache this)
+    // Get user ID
     const userResponse = await fetch("https://api.github.com/user", {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -35,8 +34,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Failed to get user info" }, { status: 500 });
     }
     
-    const user = await userResponse.json() as { id: number; login: string };
-    const userId = String(user.id);
+    const user = await userResponse.json() as { id: number };
 
     // Get repo info
     const repoResponse = await fetch(`https://api.github.com/repos/${repoFullName}`, {
@@ -50,20 +48,52 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Failed to get repo info" }, { status: 500 });
     }
 
-    const repoInfo = await repoResponse.json() as { default_branch: string; private: boolean };
+    const repoInfo = await repoResponse.json() as { default_branch: string };
 
-    // Connect/update repo in database
-    await connectRepo(repoFullName, userId, repoInfo.default_branch, repoInfo.private);
+    // Ensure repo is connected
+    await connectRepo(repoFullName, String(user.id), repoInfo.default_branch);
 
-    // Fetch ticket index from GitHub
-    const index = await getTicketIndex(token, repoFullName);
-
-    // Sync to database
-    const result = await syncRepoTickets(
-      repoFullName,
-      index,
-      index.generated_at
+    // Fetch index.json metadata (for SHA)
+    const metaRes = await fetch(
+      `https://api.github.com/repos/${repoFullName}/contents/.tickets/index.json?ref=${repoInfo.default_branch}`,
+      {
+        headers: { 
+          Authorization: `Bearer ${token}`, 
+          Accept: "application/vnd.github+json",
+        },
+      }
     );
+
+    if (!metaRes.ok) {
+      if (metaRes.status === 404) {
+        return NextResponse.json({ 
+          error: "index.json not found. Run `ticket rebuild-index` and push." 
+        }, { status: 404 });
+      }
+      return NextResponse.json({ error: `GitHub API error: ${metaRes.status}` }, { status: 500 });
+    }
+
+    const meta = await metaRes.json() as { sha: string; download_url: string };
+
+    // Fetch raw content
+    const contentRes = await fetch(
+      `https://api.github.com/repos/${repoFullName}/contents/.tickets/index.json?ref=${repoInfo.default_branch}`,
+      {
+        headers: { 
+          Authorization: `Bearer ${token}`, 
+          Accept: "application/vnd.github.raw+json",
+        },
+      }
+    );
+
+    if (!contentRes.ok) {
+      return NextResponse.json({ error: "Failed to fetch index.json content" }, { status: 500 });
+    }
+
+    const indexContent = await contentRes.text();
+
+    // Sync using SHA-based comparison
+    const result = await syncRepoFromIndex(repoFullName, indexContent, meta.sha);
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 500 });
@@ -71,7 +101,9 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({
       success: true,
+      changed: result.changed,
       ticketCount: result.ticketCount,
+      indexSha: result.indexSha,
       syncedAt: new Date().toISOString(),
     });
   } catch (error) {
@@ -93,7 +125,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     const { owner, repo } = await params;
     const repoFullName = `${owner}/${repo}`;
 
-    const status = await getSyncStatus(repoFullName);
+    const status = await getRepoSyncStatus(repoFullName);
 
     if (!status) {
       return NextResponse.json({ 
@@ -104,11 +136,10 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({
       synced: true,
-      status: status.status,
-      lastSuccessAt: status.lastSuccessAt?.toISOString(),
-      ticketCount: status.ticketCount,
-      indexGeneratedAt: status.indexGeneratedAt?.toISOString(),
-      errorMessage: status.errorMessage,
+      syncStatus: status.syncStatus,
+      lastSyncedAt: status.lastSyncedAt?.toISOString(),
+      lastIndexSha: status.lastIndexSha,
+      syncError: status.syncError,
     });
   } catch (error) {
     console.error("[sync] Error:", error);

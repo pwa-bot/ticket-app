@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
-import { syncRepoTickets, isRepoConnected } from "@/db/sync";
-import { getTicketIndex } from "@/lib/github";
+import { isRepoConnected } from "@/db/sync";
 
 const WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET;
 
@@ -16,6 +15,9 @@ interface PushPayload {
     modified: string[];
     removed: string[];
   }>;
+  head_commit?: {
+    id: string;
+  };
 }
 
 function verifySignature(payload: string, signature: string | null): boolean {
@@ -38,11 +40,24 @@ function affectsTickets(commits: PushPayload["commits"]): boolean {
   });
 }
 
+/**
+ * POST /api/webhooks/github
+ * 
+ * Receives push events from GitHub.
+ * When .tickets/ files change, marks repo for sync.
+ * 
+ * Note: We can't actually sync here without a stored token.
+ * For now, we just acknowledge the webhook. The next user request
+ * will trigger sync due to stale cache.
+ * 
+ * TODO: With GitHub App, we can use installation tokens for background sync.
+ */
 export async function POST(req: NextRequest) {
   try {
     const payload = await req.text();
     const signature = req.headers.get("x-hub-signature-256");
     const event = req.headers.get("x-github-event");
+    const deliveryId = req.headers.get("x-github-delivery");
 
     // Verify webhook signature
     if (WEBHOOK_SECRET && !verifySignature(payload, signature)) {
@@ -75,15 +90,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "No ticket changes" });
     }
 
-    console.log(`[webhook] Syncing ${repoFullName} after push`);
+    console.log(`[webhook] Push to ${repoFullName} affects .tickets/ (delivery: ${deliveryId})`);
 
-    // We need a token to fetch from GitHub - use a service token or stored user token
-    // For now, we'll rely on the user's next request to trigger sync
-    // TODO: Store and use repo owner's token for background syncs
-    
+    // We've detected a change. Options:
+    // 1. With GitHub App: use installation token to sync now
+    // 2. With OAuth: can't sync without user token, mark for refresh
+    // 
+    // For now, we just log it. The next user request will see stale cache
+    // and trigger a sync. When we add GitHub App support, we can sync here.
+
     return NextResponse.json({ 
-      message: "Sync queued",
+      message: "Webhook received",
       repo: repoFullName,
+      headCommit: data.head_commit?.id,
+      ticketsAffected: true,
     });
   } catch (error) {
     console.error("[webhook] Error:", error);

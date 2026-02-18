@@ -1,47 +1,98 @@
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db, schema } from "./client";
 import type { TicketIndex, TicketIndexEntry } from "@/lib/types";
 
-// Extended type with optional timestamp fields
-type TicketWithTimestamps = TicketIndexEntry & {
+// Extended type with optional fields from index
+type TicketWithExtras = TicketIndexEntry & {
   created?: string;
   updated?: string;
 };
 
 interface SyncResult {
   success: boolean;
+  changed: boolean;
   ticketCount?: number;
+  indexSha?: string;
   error?: string;
 }
 
+interface GitHubBlobInfo {
+  sha: string;
+  content: string;
+}
+
 /**
- * Sync a repo's tickets from GitHub to the database.
- * Called on initial connect and when webhooks notify us of changes.
+ * SHA-based incremental sync.
+ * 
+ * 1. Fetch index.json SHA from GitHub
+ * 2. Compare with cached last_index_sha
+ * 3. If unchanged, stop (no API calls wasted)
+ * 4. If changed, parse index and update tickets table
+ * 
+ * Does NOT fetch ticket markdown files — that's lazy-loaded on detail view.
  */
-export async function syncRepoTickets(
+export async function syncRepoFromIndex(
   repoFullName: string,
-  index: TicketIndex,
-  indexGeneratedAt?: string
+  indexContent: string,
+  indexSha: string
 ): Promise<SyncResult> {
   try {
-    // Update sync status to syncing
+    // Check if SHA matches cached value
+    const repo = await db.query.repos.findFirst({
+      where: eq(schema.repos.fullName, repoFullName),
+    });
+
+    if (repo?.lastIndexSha === indexSha) {
+      // SHA unchanged — update last_synced_at but don't re-parse
+      await db
+        .update(schema.repos)
+        .set({ 
+          lastSyncedAt: new Date(),
+          syncStatus: "idle",
+        })
+        .where(eq(schema.repos.fullName, repoFullName));
+
+      return { 
+        success: true, 
+        changed: false, 
+        ticketCount: undefined,
+        indexSha,
+      };
+    }
+
+    // SHA changed — need to update
     await db
-      .insert(schema.syncStatus)
+      .update(schema.repos)
+      .set({ syncStatus: "syncing" })
+      .where(eq(schema.repos.fullName, repoFullName));
+
+    // Parse index.json
+    const index = JSON.parse(indexContent) as TicketIndex;
+
+    // Store raw blob
+    await db
+      .insert(schema.repoBlobs)
       .values({
         repoFullName,
-        status: "syncing",
+        path: ".tickets/index.json",
+        sha: indexSha,
+        contentText: indexContent,
+        fetchedAt: new Date(),
       })
       .onConflictDoUpdate({
-        target: schema.syncStatus.repoFullName,
-        set: { status: "syncing" },
+        target: [schema.repoBlobs.repoFullName, schema.repoBlobs.path],
+        set: {
+          sha: indexSha,
+          contentText: indexContent,
+          fetchedAt: new Date(),
+        },
       });
 
-    // Delete existing tickets for this repo
+    // Delete existing tickets and insert fresh from index
     await db.delete(schema.tickets).where(eq(schema.tickets.repoFullName, repoFullName));
 
-    // Insert new tickets
     if (index.tickets.length > 0) {
-      const ticketRows = index.tickets.map((t: TicketWithTimestamps) => ({
+      const ticketRows = index.tickets.map((t: TicketWithExtras) => ({
         repoFullName,
         id: t.id,
         shortId: t.short_id || t.id.slice(0, 8),
@@ -53,45 +104,49 @@ export async function syncRepoTickets(
         assignee: t.assignee,
         reviewer: t.reviewer,
         path: t.path,
-        created: t.created ? new Date(t.created) : null,
-        updated: t.updated ? new Date(t.updated) : null,
+        ticketSha: null, // Will be populated when ticket detail is fetched
+        indexSha: indexSha,
         cachedAt: new Date(),
       }));
 
       await db.insert(schema.tickets).values(ticketRows);
     }
 
-    // Update sync status to idle
+    // Update repo metadata
     await db
-      .update(schema.syncStatus)
+      .update(schema.repos)
       .set({
-        status: "idle",
-        lastSuccessAt: new Date(),
-        ticketCount: index.tickets.length,
-        indexGeneratedAt: indexGeneratedAt ? new Date(indexGeneratedAt) : null,
-        errorMessage: null,
+        lastIndexSha: indexSha,
+        lastSyncedAt: new Date(),
+        syncStatus: "idle",
+        syncError: null,
+        updatedAt: new Date(),
       })
-      .where(eq(schema.syncStatus.repoFullName, repoFullName));
+      .where(eq(schema.repos.fullName, repoFullName));
 
-    return { success: true, ticketCount: index.tickets.length };
+    return { 
+      success: true, 
+      changed: true, 
+      ticketCount: index.tickets.length,
+      indexSha,
+    };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
 
-    // Update sync status to error
     await db
-      .update(schema.syncStatus)
+      .update(schema.repos)
       .set({
-        status: "error",
-        errorMessage: message,
+        syncStatus: "error",
+        syncError: message,
       })
-      .where(eq(schema.syncStatus.repoFullName, repoFullName));
+      .where(eq(schema.repos.fullName, repoFullName));
 
-    return { success: false, error: message };
+    return { success: false, changed: false, error: message };
   }
 }
 
 /**
- * Get cached tickets for a repo
+ * Get cached tickets for a repo.
  */
 export async function getCachedTickets(repoFullName: string) {
   return db.query.tickets.findMany({
@@ -101,57 +156,165 @@ export async function getCachedTickets(repoFullName: string) {
 }
 
 /**
- * Get sync status for a repo
+ * Get cached ticket markdown blob.
+ * Returns null if not cached — caller should fetch from GitHub.
  */
-export async function getSyncStatus(repoFullName: string) {
-  return db.query.syncStatus.findFirst({
-    where: eq(schema.syncStatus.repoFullName, repoFullName),
+export async function getCachedTicketBlob(repoFullName: string, ticketPath: string) {
+  return db.query.repoBlobs.findFirst({
+    where: and(
+      eq(schema.repoBlobs.repoFullName, repoFullName),
+      eq(schema.repoBlobs.path, ticketPath)
+    ),
   });
 }
 
 /**
- * Check if a repo is connected
+ * Cache a ticket markdown blob after fetching from GitHub.
+ */
+export async function cacheTicketBlob(
+  repoFullName: string,
+  ticketPath: string,
+  sha: string,
+  content: string
+) {
+  await db
+    .insert(schema.repoBlobs)
+    .values({
+      repoFullName,
+      path: ticketPath,
+      sha,
+      contentText: content,
+      fetchedAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: [schema.repoBlobs.repoFullName, schema.repoBlobs.path],
+      set: {
+        sha,
+        contentText: content,
+        fetchedAt: new Date(),
+      },
+    });
+
+  // Also update ticket's sha reference
+  await db
+    .update(schema.tickets)
+    .set({ ticketSha: sha })
+    .where(and(
+      eq(schema.tickets.repoFullName, repoFullName),
+      eq(schema.tickets.path, ticketPath)
+    ));
+}
+
+/**
+ * Get repo sync metadata.
+ */
+export async function getRepoSyncStatus(repoFullName: string) {
+  return db.query.repos.findFirst({
+    where: eq(schema.repos.fullName, repoFullName),
+    columns: {
+      lastIndexSha: true,
+      lastSyncedAt: true,
+      syncStatus: true,
+      syncError: true,
+    },
+  });
+}
+
+/**
+ * Check if a repo is connected.
  */
 export async function isRepoConnected(repoFullName: string) {
   const repo = await db.query.repos.findFirst({
     where: eq(schema.repos.fullName, repoFullName),
+    columns: { fullName: true },
   });
   return !!repo;
 }
 
 /**
- * Connect a repo (add to tracked repos)
+ * Connect a repo (add to tracked repos).
  */
 export async function connectRepo(
   repoFullName: string,
   userId: string,
-  defaultBranch: string,
-  isPrivate: boolean
+  defaultBranch: string
 ) {
+  const [owner, repo] = repoFullName.split("/");
+  const id = crypto.randomUUID(); // Simple ID for now
+
   await db
     .insert(schema.repos)
     .values({
-      fullName: repoFullName,
+      id,
       userId,
+      owner,
+      repo,
+      fullName: repoFullName,
       defaultBranch,
-      isPrivate,
+      syncStatus: "idle",
     })
     .onConflictDoUpdate({
       target: schema.repos.fullName,
       set: {
         userId,
         defaultBranch,
-        isPrivate,
         updatedAt: new Date(),
       },
     });
+}
 
-  // Initialize sync status
+/**
+ * Get pending changes for tickets.
+ */
+export async function getPendingChangesForRepo(repoFullName: string) {
+  return db.query.pendingChanges.findMany({
+    where: and(
+      eq(schema.pendingChanges.repoFullName, repoFullName),
+      // Exclude merged/closed
+    ),
+  });
+}
+
+/**
+ * Create a pending change record when PR is created.
+ */
+export async function createPendingChange(data: {
+  repoFullName: string;
+  ticketId: string;
+  prNumber: number;
+  prUrl: string;
+  branch: string;
+  changeSummary?: string;
+  changePatch?: Record<string, unknown>;
+  status?: "creating_pr" | "pending_checks" | "waiting_review" | "mergeable";
+}) {
+  const id = crypto.randomUUID();
+  
+  await db.insert(schema.pendingChanges).values({
+    id,
+    ...data,
+    status: data.status || "pending_checks",
+  });
+
+  return id;
+}
+
+/**
+ * Update pending change status.
+ */
+export async function updatePendingChangeStatus(
+  repoFullName: string,
+  prNumber: number,
+  status: "merged" | "closed" | "conflict" | "failed" | "mergeable" | "pending_checks"
+) {
   await db
-    .insert(schema.syncStatus)
-    .values({
-      repoFullName,
-      status: "idle",
+    .update(schema.pendingChanges)
+    .set({ 
+      status,
+      updatedAt: new Date(),
     })
-    .onConflictDoNothing();
+    .where(and(
+      eq(schema.pendingChanges.repoFullName, repoFullName),
+      eq(schema.pendingChanges.prNumber, prNumber)
+    ));
 }
