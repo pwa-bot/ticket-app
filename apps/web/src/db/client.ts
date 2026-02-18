@@ -21,6 +21,7 @@ export const db = {
   get query() {
     return getDb().query;
   },
+  select: (...args: Parameters<NeonHttpDatabase<typeof schema>["select"]>) => getDb().select(...args),
   insert: (...args: Parameters<NeonHttpDatabase<typeof schema>["insert"]>) => getDb().insert(...args),
   update: (...args: Parameters<NeonHttpDatabase<typeof schema>["update"]>) => getDb().update(...args),
   delete: (...args: Parameters<NeonHttpDatabase<typeof schema>["delete"]>) => getDb().delete(...args),
