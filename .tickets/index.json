@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T00:19:13.320Z",
+  "generated_at": "2026-02-18T00:19:13.550Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -217,20 +217,6 @@
       "path": ".tickets/tickets/01KHQ0K80HSQ3SKRHKSG08D8P9.md"
     },
     {
-      "id": "01KHQ0K7HVXXBNSFGT0PEGHE5T",
-      "short_id": "01KHQ0K7",
-      "display_id": "TK-01KHQ0K7",
-      "title": "API endpoint to fetch PR status for pending changes",
-      "state": "in_progress",
-      "priority": "p1",
-      "labels": [
-        "backend",
-        "github",
-        "polling"
-      ],
-      "path": ".tickets/tickets/01KHQ0K7HVXXBNSFGT0PEGHE5T.md"
-    },
-    {
       "id": "01KHQ0K7AG8W8MGND7R7TKB5MX",
       "short_id": "01KHQ0K7",
       "display_id": "TK-01KHQ0K7",
@@ -349,6 +335,20 @@
         "phase-2"
       ],
       "path": ".tickets/tickets/01KHPTPPTCQABJH5VA0HZGYAQ9.md"
+    },
+    {
+      "id": "01KHQ0K7HVXXBNSFGT0PEGHE5T",
+      "short_id": "01KHQ0K7",
+      "display_id": "TK-01KHQ0K7",
+      "title": "API endpoint to fetch PR status for pending changes",
+      "state": "done",
+      "priority": "p1",
+      "labels": [
+        "backend",
+        "github",
+        "polling"
+      ],
+      "path": ".tickets/tickets/01KHQ0K7HVXXBNSFGT0PEGHE5T.md"
     }
   ]
 }
