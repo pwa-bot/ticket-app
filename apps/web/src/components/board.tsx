@@ -9,6 +9,7 @@ import ViewToggle from "@/components/view-toggle";
 import PendingBadge from "@/components/pending-badge";
 import { SavedViewsDropdown } from "@/components/saved-views";
 import { AutoMergeToggle } from "@/components/auto-merge-toggle";
+import { RateLimitError } from "@/components/rate-limit-error";
 import { getCreatedTimestamp, priorityRank, type AttentionRow, type CiStatus } from "@/lib/attention";
 import { BOARD_LABELS, BOARD_STATES, PRIORITY_STYLES, groupTicketsForBoard } from "@/lib/utils";
 import { PendingChangesProvider, usePendingChanges } from "@/lib/pending-changes";
@@ -687,7 +688,13 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
       </header>
 
       {loading && <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">Loading board...</div>}
-      {error && <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+      {error && (
+        <RateLimitError 
+          error={error} 
+          onRetry={() => loadTickets({ forceRefresh: true })}
+          appInstallUrl="https://github.com/apps/ticketdotapp"
+        />
+      )}
 
       {!loading && !error && index && (
         <>
