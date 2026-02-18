@@ -39,6 +39,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     // Parse request body
     const body = await req.json();
     const patch: TicketChangePatch = body?.changes ?? {};
+    const autoMerge: boolean = body?.autoMerge ?? true;
 
     // Validate we have something to do
     if (Object.keys(patch).length === 0) {
@@ -59,6 +60,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       repo,
       ticketId,
       patch,
+      autoMerge,
     });
 
     const resp: ApiEnvelope<CreateChangePrResponse> = {

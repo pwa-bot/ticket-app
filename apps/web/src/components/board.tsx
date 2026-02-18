@@ -8,6 +8,7 @@ import TicketDetailModal from "@/components/ticket-detail-modal";
 import ViewToggle from "@/components/view-toggle";
 import PendingBadge from "@/components/pending-badge";
 import { SavedViewsDropdown } from "@/components/saved-views";
+import { AutoMergeToggle } from "@/components/auto-merge-toggle";
 import { getCreatedTimestamp, priorityRank, type AttentionRow, type CiStatus } from "@/lib/attention";
 import { BOARD_LABELS, BOARD_STATES, PRIORITY_STYLES, groupTicketsForBoard } from "@/lib/utils";
 import { PendingChangesProvider, usePendingChanges } from "@/lib/pending-changes";
@@ -534,6 +535,7 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <SavedViewsDropdown repo={fullRepo} basePath={`/space/${owner}/${repo}`} />
+          <AutoMergeToggle repo={fullRepo} />
           <ViewToggle view={view} onChange={onViewChange} />
           <button
             type="button"

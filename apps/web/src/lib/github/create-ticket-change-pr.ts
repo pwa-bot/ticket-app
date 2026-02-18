@@ -17,6 +17,7 @@ export type CreateTicketChangePrArgs = {
   repo: string;
   ticketId: string; // Full ULID, short id, or display id
   patch: TicketChangePatch;
+  autoMerge?: boolean; // Whether to attempt auto-merge (default: true)
 };
 
 type ResolvedTicket = {
@@ -30,7 +31,7 @@ type ResolvedTicket = {
  * Creates a PR that modifies a ticket's frontmatter and index.json
  */
 export async function createTicketChangePr(args: CreateTicketChangePrArgs): Promise<CreateChangePrResponse> {
-  const { octokit, owner, repo, ticketId, patch } = args;
+  const { octokit, owner, repo, ticketId, patch, autoMerge = true } = args;
 
   // 1. Get default branch and base SHA
   const repoInfo = await octokit.rest.repos.get({ owner, repo });
@@ -186,24 +187,35 @@ export async function createTicketChangePr(args: CreateTicketChangePrArgs): Prom
     body: prBodyText,
   });
 
-  // 11. Attempt auto-merge via squash
-  try {
-    await octokit.rest.pulls.merge({
-      owner,
-      repo,
-      pull_number: pr.data.number,
-      merge_method: "squash",
-    });
+  // 11. Attempt auto-merge via squash (if enabled)
+  if (autoMerge) {
+    try {
+      await octokit.rest.pulls.merge({
+        owner,
+        repo,
+        pull_number: pr.data.number,
+        merge_method: "squash",
+      });
+      return {
+        pr_url: pr.data.html_url,
+        pr_number: pr.data.number,
+        branch,
+        status: "merged",
+      };
+    } catch {
+      // Fall back if merge fails (required checks, reviews, conflicts, etc.)
+    }
+  } else {
+    // Auto-merge disabled, return PR as mergeable (awaiting manual merge)
     return {
       pr_url: pr.data.html_url,
       pr_number: pr.data.number,
       branch,
-      status: "merged",
+      status: "mergeable",
     };
-  } catch {
-    // Fall back if merge fails (required checks, reviews, conflicts, etc.)
   }
 
+  // Fall back if auto-merge was attempted but failed (required checks, reviews, conflicts, etc.)
   return {
     pr_url: pr.data.html_url,
     pr_number: pr.data.number,

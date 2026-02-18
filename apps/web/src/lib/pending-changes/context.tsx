@@ -9,6 +9,7 @@ import type {
   PrStatusResponse,
   ApiEnvelope,
 } from "@ticketdotapp/core";
+import { shouldAutoMerge } from "@/lib/auto-merge-settings";
 
 // Poll interval for checking PR status
 const POLL_INTERVAL_MS = 15_000;
@@ -70,12 +71,15 @@ export function PendingChangesProvider({
 
     try {
       // Call API to create PR
+      const fullRepo = `${owner}/${repo}`;
+      const autoMerge = shouldAutoMerge(fullRepo);
+      
       const response = await fetch(
         `/api/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/tickets/${encodeURIComponent(ticketId)}/changes`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ changes: patch }),
+          body: JSON.stringify({ changes: patch, autoMerge }),
         }
       );
 
