@@ -1,5 +1,0 @@
-{
-  "installCommand": "npm i -g pnpm@10 && pnpm install",
-  "framework": "nextjs",
-  "buildCommand": "pnpm turbo build --filter=web"
-}
