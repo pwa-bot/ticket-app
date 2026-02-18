@@ -7,6 +7,7 @@ import AttentionTable from "@/components/attention-table";
 import TicketDetailModal from "@/components/ticket-detail-modal";
 import ViewToggle from "@/components/view-toggle";
 import PendingBadge from "@/components/pending-badge";
+import { SavedViewsDropdown } from "@/components/saved-views";
 import { getCreatedTimestamp, priorityRank, type AttentionRow, type CiStatus } from "@/lib/attention";
 import { BOARD_LABELS, BOARD_STATES, PRIORITY_STYLES, groupTicketsForBoard } from "@/lib/utils";
 import { PendingChangesProvider, usePendingChanges } from "@/lib/pending-changes";
@@ -532,6 +533,7 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
           <p className="mt-1 text-sm text-slate-600">Dashboard</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <SavedViewsDropdown repo={fullRepo} basePath={`/space/${owner}/${repo}`} />
           <ViewToggle view={view} onChange={onViewChange} />
           <button
             type="button"
