@@ -74,20 +74,31 @@ async function githubFetch<T>(path: string, token: string, init?: RequestInit): 
 }
 
 async function repoHasTickets(token: string, fullName: string): Promise<boolean> {
-  const response = await fetch(`${GITHUB_API_BASE}/repos/${fullName}/contents/.tickets/index.json`, {
-    headers: {
-      Accept: "application/vnd.github+json",
-      Authorization: `Bearer ${token}`,
-      "X-GitHub-Api-Version": "2022-11-28",
-    },
-    cache: "no-store",
-  });
+  try {
+    const response = await fetch(`${GITHUB_API_BASE}/repos/${fullName}/contents/.tickets/index.json`, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${token}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+      cache: "no-store",
+    });
 
-  return response.ok;
+    if (!response.ok && response.status !== 404) {
+      console.log(`[repoHasTickets] ${fullName}: ${response.status} ${response.statusText}`);
+    }
+
+    return response.ok;
+  } catch (error) {
+    console.error(`[repoHasTickets] ${fullName}: error`, error);
+    return false;
+  }
 }
 
 export async function listReposWithTickets(token: string): Promise<RepoSummary[]> {
   const repos = await githubFetch<GithubRepoApi[]>("/user/repos?sort=updated&per_page=100", token);
+  
+  console.log(`[listReposWithTickets] Found ${repos.length} repos, checking for .tickets/`);
   
   // Check repos in batches of 10 to avoid GitHub secondary rate limits
   const results: { repo: GithubRepoApi; hasTickets: boolean }[] = [];
@@ -104,9 +115,10 @@ export async function listReposWithTickets(token: string): Promise<RepoSummary[]
     results.push(...batchResults);
   }
 
-  return results
-    .filter((entry) => entry.hasTickets)
-    .map(({ repo }) => ({
+  const withTickets = results.filter((entry) => entry.hasTickets);
+  console.log(`[listReposWithTickets] Repos with .tickets/: ${withTickets.map(e => e.repo.full_name).join(', ')}`);
+  
+  return withTickets.map(({ repo }) => ({
       id: repo.id,
       name: repo.name,
       full_name: repo.full_name,
