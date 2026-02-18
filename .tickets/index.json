@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T05:28:25.451Z",
+  "generated_at": "2026-02-18T05:28:25.683Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -226,7 +226,7 @@
       "short_id": "01KHQKCJ",
       "display_id": "TK-01KHQKCJ",
       "title": "Auto-merge PRs for ticket state changes",
-      "state": "ready",
+      "state": "in_progress",
       "priority": "p1",
       "labels": [],
       "path": ".tickets/tickets/01KHQKCJ1K4PNWXQ0NW1DKQ0H7.md"
