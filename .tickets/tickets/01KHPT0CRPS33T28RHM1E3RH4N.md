@@ -1,7 +1,7 @@
 ---
 id: 01KHPT0CRPS33T28RHM1E3RH4N
 title: Dogfooding feedback collection
-state: ready
+state: in_progress
 priority: p2
 labels:
   - dogfood
