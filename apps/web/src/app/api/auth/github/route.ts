@@ -8,9 +8,10 @@ function getBaseUrl(request: Request): string {
 }
 
 export async function GET(request: Request) {
-  // Prefer GitHub App credentials, fall back to standalone OAuth App
-  const clientId = process.env.GITHUB_APP_CLIENT_ID ?? process.env.GITHUB_CLIENT_ID;
-  const clientSecret = process.env.GITHUB_APP_CLIENT_SECRET ?? process.env.GITHUB_CLIENT_SECRET;
+  // Use standalone OAuth App for user auth (sees all user repos)
+  // GitHub App OAuth only sees repos where app is installed
+  const clientId = process.env.GITHUB_CLIENT_ID;
+  const clientSecret = process.env.GITHUB_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
     return NextResponse.json({ error: "Missing GitHub OAuth environment variables" }, { status: 500 });
