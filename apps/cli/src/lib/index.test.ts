@@ -26,21 +26,39 @@ async function writeTicket(cwd: string, id: string, title: string, state: string
 }
 
 describe("rebuildIndex", () => {
-  it("sorts by priority, then created date, then id", async () => {
+  it("sorts by state, then priority, then id (deterministic ordering)", async () => {
     const cwd = await mkTempRepo();
 
-    await writeTicket(cwd, "01ARZ3NDEKTSV4RRFFQ69G5FAB", "B", "backlog", "p2", "2026-02-16T00:00:00.000Z");
-    await writeTicket(cwd, "01ARZ3NDEKTSV4RRFFQ69G5FAC", "C", "backlog", "p1", "2026-02-17T00:00:00.000Z");
-    await writeTicket(cwd, "01ARZ3NDEKTSV4RRFFQ69G5FAA", "A", "done", "p1", "2026-02-16T00:00:00.000Z");
-    await writeTicket(cwd, "01ARZ3NDEKTSV4RRFFQ69G5FAD", "D", "ready", "p3", "2026-02-15T00:00:00.000Z");
+    // Create tickets with different states and priorities
+    await writeTicket(cwd, "01ARZ3NDEKTSV4RRFFQ69G5FAB", "B-backlog-p2", "backlog", "p2");
+    await writeTicket(cwd, "01ARZ3NDEKTSV4RRFFQ69G5FAC", "C-backlog-p1", "backlog", "p1");
+    await writeTicket(cwd, "01ARZ3NDEKTSV4RRFFQ69G5FAA", "A-done-p1", "done", "p1");
+    await writeTicket(cwd, "01ARZ3NDEKTSV4RRFFQ69G5FAD", "D-ready-p3", "ready", "p3");
+    await writeTicket(cwd, "01ARZ3NDEKTSV4RRFFQ69G5FAE", "E-ready-p1", "ready", "p1");
 
     const index = await rebuildIndex(cwd);
 
+    // Expected order: state (backlog < ready < done), then priority (p1 < p2 < p3), then ID
     expect(index.tickets.map((ticket) => ticket.id)).toEqual([
-      "01ARZ3NDEKTSV4RRFFQ69G5FAA",
-      "01ARZ3NDEKTSV4RRFFQ69G5FAC",
-      "01ARZ3NDEKTSV4RRFFQ69G5FAB",
-      "01ARZ3NDEKTSV4RRFFQ69G5FAD"
+      "01ARZ3NDEKTSV4RRFFQ69G5FAC", // backlog, p1
+      "01ARZ3NDEKTSV4RRFFQ69G5FAB", // backlog, p2
+      "01ARZ3NDEKTSV4RRFFQ69G5FAE", // ready, p1
+      "01ARZ3NDEKTSV4RRFFQ69G5FAD", // ready, p3
+      "01ARZ3NDEKTSV4RRFFQ69G5FAA"  // done, p1
     ]);
+  });
+
+  it("produces stable output across multiple runs", async () => {
+    const cwd = await mkTempRepo();
+
+    await writeTicket(cwd, "01ARZ3NDEKTSV4RRFFQ69G5FA1", "T1", "backlog", "p1");
+    await writeTicket(cwd, "01ARZ3NDEKTSV4RRFFQ69G5FA2", "T2", "backlog", "p1");
+    await writeTicket(cwd, "01ARZ3NDEKTSV4RRFFQ69G5FA3", "T3", "ready", "p0");
+
+    const index1 = await rebuildIndex(cwd);
+    const index2 = await rebuildIndex(cwd);
+
+    // Order should be identical across runs (ignoring generated_at timestamp)
+    expect(index1.tickets.map((t) => t.id)).toEqual(index2.tickets.map((t) => t.id));
   });
 });

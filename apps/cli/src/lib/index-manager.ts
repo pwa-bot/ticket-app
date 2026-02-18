@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { INDEX_PATH, TICKETS_DIR, TICKETS_ROOT, PRIORITY_ORDER, type TicketPriority, type TicketState } from "./constants.js";
+import { INDEX_PATH, TICKETS_DIR, TICKETS_ROOT, PRIORITY_ORDER, STATE_ORDER, type TicketPriority, type TicketState } from "./constants.js";
 import { ERROR_CODE, EXIT_CODE, TicketError } from "./errors.js";
 import { parseTicketDocument } from "./parse.js";
 import { displayId, shortId } from "./ulid.js";
@@ -26,38 +26,36 @@ export interface TicketsIndex {
   tickets: TicketIndexEntry[];
 }
 
+function stateRank(state: TicketState): number {
+  return STATE_ORDER.indexOf(state);
+}
+
 function priorityRank(priority: TicketPriority): number {
   return PRIORITY_ORDER.indexOf(priority);
 }
 
-function isValidIsoDate(value: unknown): value is string {
-  return typeof value === "string" && !Number.isNaN(Date.parse(value));
-}
+/**
+ * Deterministic comparison for tickets.
+ * Order: state (backlog → done), then priority (p0 → p3), then ID lexicographic.
+ * This ensures stable, diff-friendly output across runs.
+ */
+export function compareTicketsDeterministic(
+  a: Pick<TicketIndexEntry, "state" | "priority" | "id">,
+  b: Pick<TicketIndexEntry, "state" | "priority" | "id">
+): number {
+  // 1. State order: backlog, ready, in_progress, blocked, done
+  const stateDiff = stateRank(a.state) - stateRank(b.state);
+  if (stateDiff !== 0) return stateDiff;
 
-function createdValue(ticket: Pick<TicketIndexEntry, "created" | "id">): string {
-  if (isValidIsoDate(ticket.created)) {
-    return new Date(ticket.created).toISOString();
-  }
-  return "";
-}
-
-export function compareTicketsDeterministic(a: Pick<TicketIndexEntry, "priority" | "created" | "id">, b: Pick<TicketIndexEntry, "priority" | "created" | "id">): number {
+  // 2. Priority order: p0, p1, p2, p3
   const priorityDiff = priorityRank(a.priority) - priorityRank(b.priority);
   if (priorityDiff !== 0) return priorityDiff;
 
-  const aCreated = createdValue(a);
-  const bCreated = createdValue(b);
-  if (aCreated && bCreated) {
-    const createdDiff = aCreated.localeCompare(bCreated);
-    if (createdDiff !== 0) return createdDiff;
-  } else if (aCreated || bCreated) {
-    return aCreated ? -1 : 1;
-  }
-
+  // 3. ID lexicographic (ULIDs sort chronologically)
   return a.id.localeCompare(b.id);
 }
 
-export function sortTicketsDeterministic<T extends Pick<TicketIndexEntry, "priority" | "created" | "id">>(tickets: T[]): T[] {
+export function sortTicketsDeterministic<T extends Pick<TicketIndexEntry, "state" | "priority" | "id">>(tickets: T[]): T[] {
   return [...tickets].sort(compareTicketsDeterministic);
 }
 
