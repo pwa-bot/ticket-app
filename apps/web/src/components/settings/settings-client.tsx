@@ -13,6 +13,7 @@ export default function SettingsClient() {
   const [loading, setLoading] = useState(true);
   const [installations, setInstallations] = useState<Installation[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
   const [installUrl, setInstallUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -38,12 +39,22 @@ export default function SettingsClient() {
 
   async function refreshInstallations() {
     setRefreshing(true);
+    setRefreshError(null);
     try {
       const res = await fetch("/api/github/installations/refresh", { method: "POST" });
       const json = await res.json();
+      console.log("[Settings] Refresh response:", json);
       if (json.ok) {
         setInstallations(json.installations ?? []);
+        if (json.installations?.length === 0) {
+          setRefreshError("No installations found. Make sure you've installed the GitHub App on your account.");
+        }
+      } else {
+        setRefreshError(json.error ?? "Failed to refresh. Try logging out and back in.");
       }
+    } catch (err) {
+      console.error("[Settings] Refresh error:", err);
+      setRefreshError("Network error. Please try again.");
     } finally {
       setRefreshing(false);
     }
@@ -133,15 +144,15 @@ export default function SettingsClient() {
               </div>
               
               <p className="text-sm text-slate-600">
-                Without the GitHub App, Ticket works but with limitations:
+                Install the GitHub App to unlock:
               </p>
               <ul className="text-sm text-slate-600 list-disc list-inside space-y-1">
-                <li>Lower API rate limits (may see "rate limit exceeded" errors)</li>
-                <li>No real-time sync (must refresh manually)</li>
-                <li>No webhook notifications</li>
+                <li><strong>Real-time sync</strong> — changes appear instantly via webhooks</li>
+                <li><strong>Higher API limits</strong> — no more rate limit errors</li>
+                <li><strong>Background updates</strong> — board stays fresh automatically</li>
               </ul>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 {installUrl && (
                   <a
                     href={installUrl}
@@ -158,6 +169,20 @@ export default function SettingsClient() {
                   {refreshing ? "Checking..." : "I already installed it"}
                 </button>
               </div>
+              
+              {refreshError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {refreshError}
+                  <div className="mt-2">
+                    <a
+                      href="/api/auth/reconnect"
+                      className="text-sm font-medium text-red-800 underline hover:text-red-900"
+                    >
+                      Reconnect GitHub account →
+                    </a>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
