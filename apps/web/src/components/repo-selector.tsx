@@ -159,8 +159,17 @@ export default function RepoSelector() {
 
   function hasAppAccess(repoFullName: string): boolean {
     const owner = repoFullName.split("/")[0]?.toLowerCase();
-    return owner ? installationLogins.has(owner) : false;
+    const hasAccess = owner ? installationLogins.has(owner) : false;
+    return hasAccess;
   }
+
+  // Debug: log what we're checking
+  console.log("[RepoSelector]", { 
+    installationLogins: Array.from(installationLogins),
+    hasAnyInstallation,
+    sampleRepo: repos[0]?.full_name,
+    sampleOwner: repos[0]?.full_name?.split("/")[0]?.toLowerCase(),
+  });
 
   return (
     <div className="space-y-4">
@@ -194,19 +203,19 @@ export default function RepoSelector() {
                     <span className="text-xs text-slate-500">{repo.private ? "Private" : "Public"}</span>
                     {hasApp ? (
                       <span 
-                        title="Real-time sync via GitHub App"
-                        className="cursor-help text-sm"
+                        title="GitHub App — real-time webhooks"
+                        className="text-sm"
                       >
                         ⚡
                       </span>
-                    ) : hasAnyInstallation ? (
+                    ) : (
                       <span 
-                        title="No app access — add this repo in GitHub App settings for real-time sync"
-                        className="cursor-help text-sm text-slate-400"
+                        title="OAuth — may hit rate limits"
+                        className="text-sm opacity-50"
                       >
                         🔄
                       </span>
-                    ) : null}
+                    )}
                   </span>
                 </label>
                 {(() => {
