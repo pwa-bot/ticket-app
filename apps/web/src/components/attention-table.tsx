@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment, useMemo } from "react";
 import CiStatusIcon from "@/components/ci-status-icon";
 import PrStatusBadge, { type LinkedPrSummary } from "@/components/pr-status-badge";
 import { BOARD_LABELS, PRIORITY_STYLES } from "@/lib/utils";
@@ -25,7 +26,35 @@ function keyFor(repo: string, ticketId: string): string {
   return `${repo}:${ticketId}`;
 }
 
+// State order and styling for section headers
+const STATE_ORDER = ["in_progress", "ready", "blocked", "backlog", "done"] as const;
+const STATE_SECTION_STYLES: Record<string, { bg: string; border: string; text: string; icon: string }> = {
+  in_progress: { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-800", icon: "🔨" },
+  ready: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-800", icon: "📋" },
+  blocked: { bg: "bg-red-50", border: "border-red-200", text: "text-red-800", icon: "🚫" },
+  backlog: { bg: "bg-slate-50", border: "border-slate-200", text: "text-slate-700", icon: "📥" },
+  done: { bg: "bg-green-50", border: "border-green-200", text: "text-green-800", icon: "✅" },
+};
+
 export default function AttentionTable({ rows, multiRepo, onOpenTicket, prMap, ciMap }: AttentionTableProps) {
+  // Group rows by state
+  const groupedRows = useMemo(() => {
+    const groups: Record<string, AttentionRow[]> = {};
+    for (const row of rows) {
+      const state = row.ticket.state;
+      if (!groups[state]) groups[state] = [];
+      groups[state].push(row);
+    }
+    return groups;
+  }, [rows]);
+
+  // Get ordered states that have tickets
+  const orderedStates = useMemo(() => {
+    return STATE_ORDER.filter(state => groupedRows[state]?.length > 0);
+  }, [groupedRows]);
+
+  const colCount = multiRepo ? 11 : 10;
+
   if (rows.length === 0) {
     return <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600">No tickets found.</div>;
   }
@@ -49,43 +78,63 @@ export default function AttentionTable({ rows, multiRepo, onOpenTicket, prMap, c
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => {
-            const ticketKey = keyFor(row.repo, row.ticket.id);
-            const prs = prMap[ticketKey] ?? [];
-            const ci = ciMap[ticketKey] ?? "unknown";
+          {orderedStates.map((state, stateIndex) => {
+            const stateRows = groupedRows[state] || [];
+            const styles = STATE_SECTION_STYLES[state] || STATE_SECTION_STYLES.backlog;
+            const count = stateRows.length;
 
             return (
-              <tr key={ticketKey} className="border-t border-slate-100 align-top">
-                <td className="px-3 py-2">
-                  <button
-                    type="button"
-                    onClick={() => onOpenTicket(row.repo, row.ticket.id)}
-                    className="font-medium text-slate-900 underline"
-                  >
-                    {getDisplayId(row.ticket)}
-                  </button>
-                </td>
-                <td className="max-w-[360px] px-3 py-2 text-slate-800" title={row.ticket.title}>
-                  {truncateTitle(row.ticket.title, 60)}
-                </td>
-                {multiRepo ? <td className="px-3 py-2 text-slate-700">{row.repo}</td> : null}
-                <td className="px-3 py-2">
-                  <span className="rounded border border-slate-300 px-2 py-0.5 text-xs text-slate-700">
-                    {BOARD_LABELS[row.ticket.state]}
-                  </span>
-                </td>
-                <td className="px-3 py-2">
-                  <span className={`rounded border px-2 py-0.5 text-xs font-medium uppercase ${PRIORITY_STYLES[row.ticket.priority]}`}>
-                    {row.ticket.priority}
-                  </span>
-                </td>
-                <td className="px-3 py-2 text-slate-700">{getActorDisplay(row.ticket.assignee)}</td>
-                <td className="px-3 py-2 text-slate-700">{getActorDisplay(row.ticket.reviewer)}</td>
-                <td className="px-3 py-2"><PrStatusBadge prs={prs} /></td>
-                <td className="px-3 py-2"><CiStatusIcon status={ci} /></td>
-                <td className="px-3 py-2 text-slate-700">{getAgeShort(row)}</td>
-                <td className="px-3 py-2 text-slate-700">{getUpdatedLabel(row)}</td>
-              </tr>
+              <Fragment key={state}>
+                {/* Section header row */}
+                <tr className={`${styles.bg} ${stateIndex > 0 ? "border-t-4" : "border-t"} ${styles.border}`}>
+                  <td colSpan={colCount} className={`px-3 py-2 font-semibold ${styles.text}`}>
+                    <span className="mr-2">{styles.icon}</span>
+                    {BOARD_LABELS[state] || state}
+                    <span className="ml-2 font-normal text-slate-500">({count})</span>
+                  </td>
+                </tr>
+
+                {/* Ticket rows */}
+                {stateRows.map((row) => {
+                  const ticketKey = keyFor(row.repo, row.ticket.id);
+                  const prs = prMap[ticketKey] ?? [];
+                  const ci = ciMap[ticketKey] ?? "unknown";
+
+                  return (
+                    <tr key={ticketKey} className="border-t border-slate-100 align-top hover:bg-slate-50">
+                      <td className="px-3 py-2">
+                        <button
+                          type="button"
+                          onClick={() => onOpenTicket(row.repo, row.ticket.id)}
+                          className="font-medium text-slate-900 hover:text-blue-600 hover:underline"
+                        >
+                          {getDisplayId(row.ticket)}
+                        </button>
+                      </td>
+                      <td className="max-w-[360px] px-3 py-2 text-slate-800" title={row.ticket.title}>
+                        {truncateTitle(row.ticket.title, 60)}
+                      </td>
+                      {multiRepo ? <td className="px-3 py-2 text-slate-700">{row.repo}</td> : null}
+                      <td className="px-3 py-2">
+                        <span className="rounded border border-slate-300 px-2 py-0.5 text-xs text-slate-700">
+                          {BOARD_LABELS[row.ticket.state]}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <span className={`rounded border px-2 py-0.5 text-xs font-medium uppercase ${PRIORITY_STYLES[row.ticket.priority]}`}>
+                          {row.ticket.priority}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-slate-700">{getActorDisplay(row.ticket.assignee)}</td>
+                      <td className="px-3 py-2 text-slate-700">{getActorDisplay(row.ticket.reviewer)}</td>
+                      <td className="px-3 py-2"><PrStatusBadge prs={prs} /></td>
+                      <td className="px-3 py-2"><CiStatusIcon status={ci} /></td>
+                      <td className="px-3 py-2 text-slate-700">{getAgeShort(row)}</td>
+                      <td className="px-3 py-2 text-slate-700">{getUpdatedLabel(row)}</td>
+                    </tr>
+                  );
+                })}
+              </Fragment>
             );
           })}
         </tbody>
