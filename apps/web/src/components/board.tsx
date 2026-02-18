@@ -15,6 +15,18 @@ import { PendingChangesProvider, usePendingChanges } from "@/lib/pending-changes
 import { isValidTransition } from "@ticketdotapp/core";
 import type { LinkedPrSummary } from "@/components/pr-status-badge";
 
+// Format a date as "X ago" (e.g., "2m ago", "1h ago")
+function formatTimeAgo(date: Date): string {
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
 interface BoardProps {
   owner: string;
   repo: string;
@@ -313,6 +325,13 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [syncMeta, setSyncMeta] = useState<{
+    source?: string;
+    lastSyncedAt?: string;
+    syncStatus?: string;
+    syncError?: string;
+    warning?: string;
+  } | null>(null);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(ticketId ?? null);
   const [view, setView] = useState<"board" | "table">("board");
   const [prMap, setPrMap] = useState<Record<string, LinkedPrSummary[]>>({});
@@ -367,8 +386,11 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
           throw new Error("Failed to load tickets");
         }
 
-        const data = (await response.json()) as BoardIndex;
+        const data = (await response.json()) as BoardIndex & { _meta?: typeof syncMeta };
         setIndex(data);
+        if (data._meta) {
+          setSyncMeta(data._meta);
+        }
         if (forceRefresh) {
           setPrMap({});
           setCiMap({});
@@ -532,7 +554,24 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
       <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">{fullRepo}</h1>
-          <p className="mt-1 text-sm text-slate-600">Dashboard</p>
+          <p className="mt-1 text-sm text-slate-600">
+            {syncMeta?.lastSyncedAt ? (
+              <>
+                Updated{" "}
+                {formatTimeAgo(new Date(syncMeta.lastSyncedAt))}
+                {syncMeta.source === "stale_cache" && (
+                  <span className="ml-2 text-amber-600">(using cached data)</span>
+                )}
+                {syncMeta.syncError && (
+                  <span className="ml-2 text-red-600">• {syncMeta.syncError}</span>
+                )}
+              </>
+            ) : loading ? (
+              "Loading..."
+            ) : (
+              "Dashboard"
+            )}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <SavedViewsDropdown repo={fullRepo} basePath={`/space/${owner}/${repo}`} />

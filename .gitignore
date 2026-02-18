@@ -6,3 +6,5 @@ dist/
 # Turborepo
 .turbo/cache/
 .turbo/daemon/
+# next-agents-md
+.next-docs/
