@@ -93,16 +93,24 @@ export default function RepoSelector() {
   }
 
   if (error) {
-    const isAuthError = error.includes("authentication") || error.includes("401") || error.includes("403");
+    const isAuthError = error.includes("authentication") || error.includes("expired") || error.includes("401") || error.includes("403");
     return (
-      <div className="rounded-xl border border-red-200 bg-red-50 p-6">
-        <p className="text-sm text-red-700">{error}</p>
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
+        <p className="text-sm font-medium text-amber-800">
+          {isAuthError ? "GitHub connection expired" : "Failed to load repositories"}
+        </p>
+        <p className="mt-1 text-sm text-amber-700">
+          {isAuthError 
+            ? "Your GitHub authorization has expired. Click below to reconnect."
+            : error
+          }
+        </p>
         {isAuthError && (
           <a
-            href="/api/auth/logout"
-            className="mt-3 inline-block rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
+            href="/api/auth/reconnect"
+            className="mt-4 inline-block rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
           >
-            Log out and re-authenticate
+            Reconnect GitHub
           </a>
         )}
       </div>
