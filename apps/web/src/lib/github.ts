@@ -84,11 +84,9 @@ async function repoHasTickets(token: string, fullName: string): Promise<boolean>
       cache: "no-store",
     });
 
-    if (!response.ok && response.status !== 404) {
-      console.log(`[repoHasTickets] ${fullName}: ${response.status} ${response.statusText}`);
-    }
-
-    return response.ok;
+    const hasTickets = response.ok;
+    console.log(`[repoHasTickets] ${fullName}: ${response.status} -> ${hasTickets}`);
+    return hasTickets;
   } catch (error) {
     console.error(`[repoHasTickets] ${fullName}: error`, error);
     return false;
@@ -98,7 +96,7 @@ async function repoHasTickets(token: string, fullName: string): Promise<boolean>
 export async function listReposWithTickets(token: string): Promise<RepoSummary[]> {
   const repos = await githubFetch<GithubRepoApi[]>("/user/repos?sort=updated&per_page=100", token);
   
-  console.log(`[listReposWithTickets] Found ${repos.length} repos, checking for .tickets/`);
+  console.log(`[listReposWithTickets] Found ${repos.length} repos: ${repos.map(r => r.full_name).join(', ')}`);
   
   // Check repos in batches of 10 to avoid GitHub secondary rate limits
   const results: { repo: GithubRepoApi; hasTickets: boolean }[] = [];
