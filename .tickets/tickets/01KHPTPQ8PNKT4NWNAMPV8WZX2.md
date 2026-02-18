@@ -1,7 +1,7 @@
 ---
 id: 01KHPTPQ8PNKT4NWNAMPV8WZX2
 title: Saved views and filters
-state: in_progress
+state: done
 priority: p2
 labels:
   - dashboard
