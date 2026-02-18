@@ -14,9 +14,11 @@ import { runValidate } from "./commands/validate.js";
 import { runInstallHooks } from "./commands/install-hooks.js";
 import { EXIT_CODE, TicketError } from "./lib/errors.js";
 import { failureEnvelope, writeEnvelope } from "./lib/json.js";
+import { setQuietMode } from "./lib/output.js";
 
 interface GlobalCliOptions {
   json?: boolean;
+  quiet?: boolean;
 }
 
 function getGlobalOptions(command: Command): GlobalCliOptions {
@@ -30,7 +32,12 @@ async function main(): Promise<void> {
     .name("ticket")
     .description("Git-native issue tracking CLI")
     .version("0.1.0")
-    .option("--json", "Emit a JSON envelope");
+    .option("--json", "Emit a JSON envelope")
+    .option("-q, --quiet", "Suppress success output")
+    .hook("preAction", (thisCommand) => {
+      const opts = thisCommand.optsWithGlobals<GlobalCliOptions>();
+      setQuietMode(opts.quiet ?? false);
+    });
 
   program
     .command("init")

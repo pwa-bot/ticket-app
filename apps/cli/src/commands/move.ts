@@ -5,6 +5,7 @@ import { INDEX_PATH } from "../lib/constants.js";
 import { autoCommit } from "../lib/git.js";
 import { rebuildIndex } from "../lib/index.js";
 import { readIndex } from "../lib/io.js";
+import { success } from "../lib/output.js";
 import { resolveTicket } from "../lib/resolve.js";
 import { displayId } from "../lib/ulid.js";
 import { assertTransition, normalizeState } from "../lib/workflow.js";
@@ -29,7 +30,7 @@ export async function runMove(cwd: string, id: string, stateValue: string, optio
   assertTransition(ticket.state, state);
 
   if (ticket.state === state) {
-    console.log(`No change for ${ticket.display_id}; state is already ${state}.`);
+    success(`No change for ${ticket.display_id}; state is already ${state}.`);
     return;
   }
 
@@ -50,7 +51,7 @@ export async function runMove(cwd: string, id: string, stateValue: string, optio
     console.warn(`Warning: git auto-commit failed: ${message}`);
   }
 
-  console.log(`Moved ${displayId(ticket.id)} to ${state}`);
+  success(`Moved ${displayId(ticket.id)} to ${state}`);
 }
 
 export async function runStart(cwd: string, id: string, options: MoveCommandOptions): Promise<void> {

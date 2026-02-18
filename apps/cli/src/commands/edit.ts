@@ -6,6 +6,7 @@ import { ERROR_CODE, EXIT_CODE, TicketError } from "../lib/errors.js";
 import { autoCommit } from "../lib/git.js";
 import { rebuildIndex } from "../lib/index.js";
 import { readIndex } from "../lib/io.js";
+import { success } from "../lib/output.js";
 import { resolveTicket } from "../lib/resolve.js";
 import { now } from "../lib/ulid.js";
 
@@ -189,5 +190,5 @@ export async function runEdit(cwd: string, id: string, options: EditCommandOptio
     console.warn(`Warning: git auto-commit failed: ${message}`);
   }
 
-  console.log(`Edited ${ticket.display_id}: ${formatEditSummary(changes)}`);
+  success(`Edited ${ticket.display_id}: ${formatEditSummary(changes)}`);
 }
