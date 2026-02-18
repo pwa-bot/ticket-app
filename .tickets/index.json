@@ -1,8 +1,21 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T21:15:01.804Z",
+  "generated_at": "2026-02-18T21:15:02.038Z",
   "workflow": "simple-v1",
   "tickets": [
+    {
+      "id": "01KHS9PF0AGVDSF6G0FER0W2R7",
+      "short_id": "01KHS9PF",
+      "display_id": "TK-01KHS9PF",
+      "title": "Task E - PR cache worker Phase B",
+      "state": "backlog",
+      "priority": "p1",
+      "labels": [
+        "worker",
+        "pull-request"
+      ],
+      "path": ".tickets/tickets/01KHS9PF0AGVDSF6G0FER0W2R7.md"
+    },
     {
       "id": "01KHS9NX93EJ2H4YQRY45FFXW8",
       "short_id": "01KHS9NX",
