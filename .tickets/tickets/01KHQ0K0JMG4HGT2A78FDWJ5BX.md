@@ -1,15 +1,15 @@
 ---
 id: 01KHQ0K0JMG4HGT2A78FDWJ5BX
 title: Dashboard write actions via PR-based ticket changes
-state: ready
+state: in_progress
 priority: p0
 labels:
   - dashboard
   - github
   - writes
   - epic
-assignee: agent:openclaw
-reviewer: human:morgan
+assignee: 'agent:openclaw'
+reviewer: 'human:morgan'
 ---
 
 ## Problem
