@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T00:13:13.658Z",
+  "generated_at": "2026-02-18T00:13:13.896Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -245,20 +245,6 @@
       "path": ".tickets/tickets/01KHQ0K80HSQ3SKRHKSG08D8P9.md"
     },
     {
-      "id": "01KHQ0K8F90AJMSY7WBVGV2KGB",
-      "short_id": "01KHQ0K8",
-      "display_id": "TK-01KHQ0K8",
-      "title": "Patch index.json entry and re-sort deterministically",
-      "state": "in_progress",
-      "priority": "p0",
-      "labels": [
-        "core",
-        "index",
-        "protocol"
-      ],
-      "path": ".tickets/tickets/01KHQ0K8F90AJMSY7WBVGV2KGB.md"
-    },
-    {
       "id": "01KHQ0K87Y27S53B8ZTT6QJ6JA",
       "short_id": "01KHQ0K8",
       "display_id": "TK-01KHQ0K8",
@@ -271,6 +257,20 @@
         "protocol"
       ],
       "path": ".tickets/tickets/01KHQ0K87Y27S53B8ZTT6QJ6JA.md"
+    },
+    {
+      "id": "01KHQ0K8F90AJMSY7WBVGV2KGB",
+      "short_id": "01KHQ0K8",
+      "display_id": "TK-01KHQ0K8",
+      "title": "Patch index.json entry and re-sort deterministically",
+      "state": "done",
+      "priority": "p0",
+      "labels": [
+        "core",
+        "index",
+        "protocol"
+      ],
+      "path": ".tickets/tickets/01KHQ0K8F90AJMSY7WBVGV2KGB.md"
     },
     {
       "id": "01KHMG84AJMCWQCCE84328MF5G",

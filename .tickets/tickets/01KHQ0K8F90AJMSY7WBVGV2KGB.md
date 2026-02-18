@@ -1,7 +1,7 @@
 ---
 id: 01KHQ0K8F90AJMSY7WBVGV2KGB
 title: Patch index.json entry and re-sort deterministically
-state: in_progress
+state: done
 priority: p0
 labels:
   - core
