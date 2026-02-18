@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T18:13:49.412Z",
+  "generated_at": "2026-02-18T18:13:49.653Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -121,19 +121,6 @@
         "testing"
       ],
       "path": ".tickets/tickets/01KHMG8JASDQ7VC5YZK8NFBKZP.md"
-    },
-    {
-      "id": "01KHMG86G7ZPTKKE8PWBTVYRYZ",
-      "short_id": "01KHMG86",
-      "display_id": "TK-01KHMG86",
-      "title": "Add --clear-labels and finalize label semantics",
-      "state": "in_progress",
-      "priority": "p2",
-      "labels": [
-        "refactor",
-        "contract-v1"
-      ],
-      "path": ".tickets/tickets/01KHMG86G7ZPTKKE8PWBTVYRYZ.md"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
@@ -372,6 +359,19 @@
       "priority": "p1",
       "labels": [],
       "path": ".tickets/tickets/01KHQKCTHCSF6REBDAGMHF9W9B.md"
+    },
+    {
+      "id": "01KHMG86G7ZPTKKE8PWBTVYRYZ",
+      "short_id": "01KHMG86",
+      "display_id": "TK-01KHMG86",
+      "title": "Add --clear-labels and finalize label semantics",
+      "state": "done",
+      "priority": "p2",
+      "labels": [
+        "refactor",
+        "contract-v1"
+      ],
+      "path": ".tickets/tickets/01KHMG86G7ZPTKKE8PWBTVYRYZ.md"
     }
   ]
 }

@@ -1,7 +1,7 @@
 ---
 id: 01KHMG86G7ZPTKKE8PWBTVYRYZ
 title: Add --clear-labels and finalize label semantics
-state: in_progress
+state: done
 priority: p2
 labels:
   - refactor
