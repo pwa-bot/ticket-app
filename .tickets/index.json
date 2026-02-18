@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T18:13:49.168Z",
+  "generated_at": "2026-02-18T18:13:49.412Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -127,7 +127,7 @@
       "short_id": "01KHMG86",
       "display_id": "TK-01KHMG86",
       "title": "Add --clear-labels and finalize label semantics",
-      "state": "ready",
+      "state": "in_progress",
       "priority": "p2",
       "labels": [
         "refactor",
