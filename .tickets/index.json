@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T03:41:41.114Z",
+  "generated_at": "2026-02-18T03:41:41.343Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -178,7 +178,7 @@
       "short_id": "01KHQ0K0",
       "display_id": "TK-01KHQ0K0",
       "title": "Dashboard write actions via PR-based ticket changes",
-      "state": "in_progress",
+      "state": "done",
       "priority": "p0",
       "labels": [
         "dashboard",

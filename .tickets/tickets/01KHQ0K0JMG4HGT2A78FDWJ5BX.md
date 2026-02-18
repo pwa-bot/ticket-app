@@ -1,7 +1,7 @@
 ---
 id: 01KHQ0K0JMG4HGT2A78FDWJ5BX
 title: Dashboard write actions via PR-based ticket changes
-state: in_progress
+state: done
 priority: p0
 labels:
   - dashboard
