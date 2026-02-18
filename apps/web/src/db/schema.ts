@@ -1,4 +1,19 @@
-import { pgTable, text, timestamp, jsonb, integer, bigint, boolean, primaryKey, uniqueIndex, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, jsonb, integer, bigint, boolean, primaryKey, uniqueIndex, index, serial } from "drizzle-orm/pg-core";
+
+/**
+ * Users who have signed in via GitHub OAuth.
+ */
+export const users = pgTable(
+  "users",
+  {
+    id: text("id").primaryKey(), // ulid
+    githubUserId: bigint("github_user_id", { mode: "number" }).notNull().unique(),
+    githubLogin: text("github_login").notNull(),
+    email: text("email"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  }
+);
 
 /**
  * Repos enabled by a user/org in ticket.app.
@@ -8,11 +23,13 @@ export const repos = pgTable(
   "repos",
   {
     id: text("id").primaryKey(), // ulid/uuid string
-    userId: text("user_id").notNull(),
+    installationId: bigint("installation_id", { mode: "number" }), // links to installations table
+    userId: text("user_id"), // legacy, nullable now
     owner: text("owner").notNull(),
     repo: text("repo").notNull(),
     fullName: text("full_name").notNull(), // `${owner}/${repo}` unique
     defaultBranch: text("default_branch").notNull(),
+    enabled: boolean("enabled").notNull().default(false), // whether to index this repo
 
     // GitHub SHA tracking
     lastSeenHeadSha: text("last_seen_head_sha"), // optional
@@ -125,9 +142,26 @@ export const installations = pgTable(
     id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
     githubInstallationId: bigint("github_installation_id", { mode: "number" }).notNull().unique(),
     githubAccountLogin: text("github_account_login").notNull(),
+    githubAccountType: text("github_account_type").notNull().default("User"), // User | Organization
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   }
+);
+
+/**
+ * Maps users to installations they have access to.
+ */
+export const userInstallations = pgTable(
+  "user_installations",
+  {
+    userId: text("user_id").notNull(),
+    installationId: bigint("installation_id", { mode: "number" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.userId, t.installationId] }),
+    installationIdx: index("user_installations_installation_idx").on(t.installationId),
+  })
 );
 
 /**
@@ -232,6 +266,7 @@ export type PendingChange = typeof pendingChanges.$inferSelect;
 export type NewPendingChange = typeof pendingChanges.$inferInsert;
 export type Installation = typeof installations.$inferSelect;
 export type NewInstallation = typeof installations.$inferInsert;
+export type UserInstallation = typeof userInstallations.$inferSelect;
 export type RepoSyncState = typeof repoSyncState.$inferSelect;
 export type TicketIndexSnapshot = typeof ticketIndexSnapshots.$inferSelect;
 export type PrCache = typeof prCache.$inferSelect;

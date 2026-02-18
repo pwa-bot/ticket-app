@@ -49,14 +49,50 @@ export function decryptToken(payload: string): string | null {
   }
 }
 
-export async function getAccessTokenFromCookies(): Promise<string | null> {
+export interface SessionData {
+  token: string;
+  userId: string;
+  githubLogin: string;
+}
+
+export async function getSession(): Promise<SessionData | null> {
   const store = await cookies();
   const encrypted = store.get(SESSION_COOKIE)?.value;
   if (!encrypted) {
     return null;
   }
 
-  return decryptToken(encrypted);
+  const decrypted = decryptToken(encrypted);
+  if (!decrypted) {
+    return null;
+  }
+
+  try {
+    // Try new format (JSON)
+    const parsed = JSON.parse(decrypted);
+    if (parsed.token && parsed.userId) {
+      return parsed as SessionData;
+    }
+  } catch {
+    // Fall back to old format (plain token string)
+    return {
+      token: decrypted,
+      userId: "legacy",
+      githubLogin: "unknown",
+    };
+  }
+
+  return null;
+}
+
+export async function getAccessTokenFromCookies(): Promise<string | null> {
+  const session = await getSession();
+  return session?.token ?? null;
+}
+
+export async function getCurrentUserId(): Promise<string | null> {
+  const session = await getSession();
+  return session?.userId ?? null;
 }
 
 export const cookieNames = {
