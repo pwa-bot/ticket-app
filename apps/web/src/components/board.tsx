@@ -76,15 +76,20 @@ function TicketCard({
     <div
       draggable={!pendingChange}
       onDragStart={handleDragStart}
+      onClick={() => onOpen(ticket.id)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen(ticket.id);
+        }
+      }}
+      role="button"
+      tabIndex={0}
       className={`w-full rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-slate-300 hover:shadow ${
         pendingChange ? "opacity-75" : "cursor-grab active:cursor-grabbing"
       }`}
     >
-      <button
-        type="button"
-        onClick={() => onOpen(ticket.id)}
-        className="w-full text-left"
-      >
+      <div className="w-full text-left">
         <div className="flex items-start justify-between gap-3">
           <p className="text-sm font-semibold text-slate-900">{getDisplayId(ticket)}</p>
           <span className={`rounded border px-2 py-0.5 text-xs font-medium uppercase ${PRIORITY_STYLES[ticket.priority]}`}>
@@ -101,7 +106,7 @@ function TicketCard({
             ))}
           </div>
         )}
-      </button>
+      </div>
       {pendingChange && (
         <div className="mt-3">
           <PendingBadge change={pendingChange} onDismiss={() => dismissChange(ticket.id)} />
