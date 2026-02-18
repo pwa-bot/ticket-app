@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
-import { usePendingChanges } from "@/lib/pending-changes";
+import { usePendingChangesSafe } from "@/lib/pending-changes";
 import PendingBadge from "@/components/pending-badge";
 import type { TicketState } from "@/lib/types";
 
@@ -63,9 +63,11 @@ export default function TicketDetailModal({ repo, ticketId, onClose }: TicketDet
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const { getPendingChange } = usePendingChanges();
+  const pendingChangesContext = usePendingChangesSafe();
 
-  const pendingChange = ticket ? getPendingChange(ticket.id) : null;
+  const pendingChange = ticket && pendingChangesContext 
+    ? pendingChangesContext.getPendingChange(ticket.id) 
+    : null;
 
   useEffect(() => {
     const controller = new AbortController();

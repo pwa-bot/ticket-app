@@ -1,1 +1,1 @@
-export { PendingChangesProvider, usePendingChanges } from "./context";
+export { PendingChangesProvider, usePendingChanges, usePendingChangesSafe } from "./context";

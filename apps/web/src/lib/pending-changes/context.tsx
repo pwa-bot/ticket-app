@@ -310,6 +310,11 @@ export function usePendingChanges() {
   return context;
 }
 
+/** Safe version that returns null when outside provider */
+export function usePendingChangesSafe() {
+  return useContext(PendingChangesContext);
+}
+
 // Helper functions
 
 function buildSummary(patch: TicketChangePatch, currentState?: string): string {
