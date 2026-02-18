@@ -43,6 +43,8 @@ export async function GET(request: Request) {
           assignee: t.assignee,
           reviewer: t.reviewer,
           path: t.path,
+          created: t.createdAt?.toISOString(),
+          updated: t.cachedAt?.toISOString(), // approx: last sync time
         })),
         // Freshness metadata
         _meta: {
@@ -74,6 +76,8 @@ export async function GET(request: Request) {
             assignee: t.assignee,
             reviewer: t.reviewer,
             path: t.path,
+            created: t.createdAt?.toISOString(),
+            updated: t.cachedAt?.toISOString(),
           })),
           _meta: {
             source: "stale_cache",
@@ -107,6 +111,8 @@ export async function GET(request: Request) {
         assignee: t.assignee,
         reviewer: t.reviewer,
         path: t.path,
+        created: t.createdAt?.toISOString(),
+        updated: t.cachedAt?.toISOString(),
       })),
       _meta: {
         source: result.changed ? "github" : "cache",

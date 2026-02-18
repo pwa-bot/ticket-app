@@ -4,6 +4,29 @@ import { db, schema } from "./client";
 // Helper for timestamps
 const now = () => new Date();
 
+// ULID timestamp decoding (first 10 chars = Crockford base32 timestamp)
+const CROCKFORD_DECODE: Record<string, number> = {
+  "0": 0, "1": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9,
+  "A": 10, "B": 11, "C": 12, "D": 13, "E": 14, "F": 15, "G": 16, "H": 17,
+  "J": 18, "K": 19, "M": 20, "N": 21, "P": 22, "Q": 23, "R": 24, "S": 25,
+  "T": 26, "V": 27, "W": 28, "X": 29, "Y": 30, "Z": 31,
+};
+
+function ulidToDate(ulid: string): Date | null {
+  try {
+    const timeChars = ulid.slice(0, 10).toUpperCase();
+    let timestamp = 0;
+    for (const char of timeChars) {
+      const val = CROCKFORD_DECODE[char];
+      if (val === undefined) return null;
+      timestamp = timestamp * 32 + val;
+    }
+    return new Date(timestamp);
+  } catch {
+    return null;
+  }
+}
+
 // ============================================================================
 // REPO MANAGEMENT
 // ============================================================================
@@ -142,6 +165,7 @@ export async function upsertTicketFromIndexEntry(
   const id = String(e.id).toUpperCase();
   const shortId = String(e.short_id ?? id.slice(0, 8)).toUpperCase();
   const displayId = String(e.display_id ?? `TK-${shortId}`).toUpperCase();
+  const createdAt = ulidToDate(id);
 
   await db
     .insert(schema.tickets)
@@ -157,6 +181,7 @@ export async function upsertTicketFromIndexEntry(
       assignee: e.assignee ?? null,
       reviewer: e.reviewer ?? null,
       path: String(e.path ?? `.tickets/tickets/${id}.md`),
+      createdAt,
       indexSha,
       cachedAt: now(),
     })

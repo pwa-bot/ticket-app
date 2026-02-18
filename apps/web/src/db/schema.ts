@@ -69,6 +69,7 @@ export const tickets = pgTable(
     assignee: text("assignee"),
     reviewer: text("reviewer"),
     path: text("path").notNull(), // ".tickets/tickets/<ULID>.md"
+    createdAt: timestamp("created_at", { withTimezone: true }), // derived from ULID
 
     // Optional sha tracking
     ticketSha: text("ticket_sha"), // if we ever fetch ticket file sha

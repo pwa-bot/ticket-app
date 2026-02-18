@@ -541,7 +541,9 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
       }
     }
 
-    void loadPrLinks();
+    // PR/CI loading disabled - too many GitHub API calls, causes rate limiting
+    // TODO: Cache PR data in Postgres like we do for tickets
+    // void loadPrLinks();
 
     return () => {
       cancelled = true;
