@@ -560,10 +560,9 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
                 Updated{" "}
                 {formatTimeAgo(new Date(syncMeta.lastSyncedAt))}
                 {syncMeta.source === "stale_cache" && (
-                  <span className="ml-2 text-amber-600">(using cached data)</span>
-                )}
-                {syncMeta.syncError && (
-                  <span className="ml-2 text-red-600">• {syncMeta.syncError}</span>
+                  <span className="ml-2 text-amber-600" title={syncMeta.syncError || "Using cached data"}>
+                    (cached)
+                  </span>
                 )}
               </>
             ) : loading ? (
