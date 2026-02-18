@@ -12,10 +12,17 @@ interface RepoSummary {
   html_url: string;
 }
 
+interface Installation {
+  installationId: number;
+  accountLogin: string;
+  accountType: string;
+}
+
 export default function RepoSelector() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [repos, setRepos] = useState<RepoSummary[]>([]);
+  const [installations, setInstallations] = useState<Installation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
@@ -37,17 +44,22 @@ export default function RepoSelector() {
 
     async function loadRepos() {
       try {
-        const response = await fetch("/api/repos", {
-          signal: controller.signal,
-          cache: "no-store",
-        });
+        const [reposResponse, installationsResponse] = await Promise.all([
+          fetch("/api/repos", { signal: controller.signal, cache: "no-store" }),
+          fetch("/api/github/installations", { signal: controller.signal }),
+        ]);
 
-        if (!response.ok) {
+        if (!reposResponse.ok) {
           throw new Error("Failed to load repositories");
         }
 
-        const data = (await response.json()) as { repos: RepoSummary[] };
-        setRepos(data.repos);
+        const reposData = (await reposResponse.json()) as { repos: RepoSummary[] };
+        setRepos(reposData.repos);
+        
+        if (installationsResponse.ok) {
+          const installationsData = (await installationsResponse.json()) as { installations: Installation[] };
+          setInstallations(installationsData.installations ?? []);
+        }
       } catch (err) {
         if (!controller.signal.aborted) {
           setError(err instanceof Error ? err.message : "Unknown error");
@@ -137,41 +149,84 @@ export default function RepoSelector() {
     );
   }
 
+  // Check if a repo has GitHub App access (by matching owner to installation account)
+  const installationLogins = useMemo(
+    () => new Set(installations.map((i) => i.accountLogin.toLowerCase())),
+    [installations]
+  );
+  
+  function hasAppAccess(repoFullName: string): boolean {
+    const owner = repoFullName.split("/")[0]?.toLowerCase();
+    return owner ? installationLogins.has(owner) : false;
+  }
+
+  const hasAnyInstallation = installations.length > 0;
+
   return (
     <div className="space-y-4">
+      {!hasAnyInstallation && (
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <p className="text-sm text-blue-800">
+            <span className="font-medium">💡 Tip:</span> Install the{" "}
+            <a href="/space/settings" className="underline hover:text-blue-900">
+              GitHub App
+            </a>{" "}
+            for real-time sync and higher API limits.
+          </p>
+        </div>
+      )}
       <div className="rounded-xl border border-slate-200 bg-white">
         <ul className="divide-y divide-slate-200">
-          {repos.map((repo) => (
-            <li key={repo.id} className="flex items-center justify-between gap-4 p-4">
-              <label className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={selectedSet.has(repo.full_name)}
-                  onChange={() => toggleRepo(repo.full_name)}
-                  className="h-4 w-4 rounded border-slate-300"
-                />
-                <span>
-                  <span className="font-medium text-slate-900">{repo.full_name}</span>
-                  <span className="ml-2 text-xs text-slate-500">{repo.private ? "Private" : "Public"}</span>
-                </span>
-              </label>
-              {(() => {
-                const [owner, name] = repo.full_name.split("/");
-                if (!owner || !name) {
-                  return null;
-                }
+          {repos.map((repo) => {
+            const hasApp = hasAppAccess(repo.full_name);
+            
+            return (
+              <li key={repo.id} className="flex items-center justify-between gap-4 p-4">
+                <label className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedSet.has(repo.full_name)}
+                    onChange={() => toggleRepo(repo.full_name)}
+                    className="h-4 w-4 rounded border-slate-300"
+                  />
+                  <span className="flex items-center gap-2">
+                    <span className="font-medium text-slate-900">{repo.full_name}</span>
+                    <span className="text-xs text-slate-500">{repo.private ? "Private" : "Public"}</span>
+                    {hasApp ? (
+                      <span 
+                        title="Real-time sync via GitHub App"
+                        className="cursor-help text-sm"
+                      >
+                        ⚡
+                      </span>
+                    ) : hasAnyInstallation ? (
+                      <span 
+                        title="No app access — add this repo in GitHub App settings for real-time sync"
+                        className="cursor-help text-sm text-slate-400"
+                      >
+                        🔄
+                      </span>
+                    ) : null}
+                  </span>
+                </label>
+                {(() => {
+                  const [owner, name] = repo.full_name.split("/");
+                  if (!owner || !name) {
+                    return null;
+                  }
 
-                return (
-                  <a
-                    href={`/space/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`}
-                    className="text-xs font-medium text-slate-600 underline"
-                  >
-                    Open board
-                  </a>
-                );
-              })()}
-            </li>
-          ))}
+                  return (
+                    <a
+                      href={`/space/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`}
+                      className="text-xs font-medium text-slate-600 underline"
+                    >
+                      Open board
+                    </a>
+                  );
+                })()}
+              </li>
+            );
+          })}
         </ul>
       </div>
       <div className="flex items-center justify-between">
