@@ -223,7 +223,12 @@ function BoardGrid({
   grouped: Record<TicketState, BoardTicket[]>;
   openTicket: (id: string) => void;
 }) {
-  const { createChange } = usePendingChanges();
+  const { createChange, loadPendingFromGitHub } = usePendingChanges();
+
+  // Restore pending change indicators from open GitHub PRs on mount
+  useEffect(() => {
+    void loadPendingFromGitHub(owner, repo);
+  }, [owner, repo, loadPendingFromGitHub]);
 
   const handleStateChange = async (ticketId: string, fromState: string, toState: TicketState) => {
     await createChange({

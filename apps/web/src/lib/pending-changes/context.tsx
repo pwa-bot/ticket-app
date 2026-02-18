@@ -18,6 +18,8 @@ type PendingChangesState = {
   changes: Map<string, PendingChange>;
   /** Create a new pending change (calls API) */
   createChange: (args: CreateChangeArgs) => Promise<void>;
+  /** Load pending changes from open GitHub PRs (call on board mount to restore across refresh) */
+  loadPendingFromGitHub: (owner: string, repo: string) => Promise<void>;
   /** Get pending change for a ticket */
   getPendingChange: (ticketId: string) => PendingChange | undefined;
   /** Dismiss a pending change (remove from UI without affecting Git) */
@@ -143,6 +145,38 @@ export function PendingChangesProvider({
     });
   }, []);
 
+  // Load pending changes from open GitHub PRs (restores state across page refresh)
+  const loadPendingFromGitHub = useCallback(async (owner: string, repo: string) => {
+    try {
+      const response = await fetch(
+        `/api/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/ticket-prs`
+      );
+      const result: ApiEnvelope<{ prs: Array<{ ticketId: string; prNumber: number; prUrl: string; prTitle: string; status: PendingChangeStatus }> }> =
+        await response.json();
+
+      if (!result.ok) return;
+
+      setChanges((prev) => {
+        const updated = new Map(prev);
+        for (const pr of result.data.prs) {
+          // Don't overwrite an in-flight change created this session
+          if (updated.has(pr.ticketId)) continue;
+          updated.set(pr.ticketId, {
+            type: "state_change",
+            summary: parseSummaryFromPrTitle(pr.prTitle),
+            prUrl: pr.prUrl,
+            prNumber: pr.prNumber,
+            status: pr.status,
+            createdAt: new Date().toISOString(),
+          });
+        }
+        return updated;
+      });
+    } catch {
+      // Ignore errors — board still works, just without restored pending state
+    }
+  }, []);
+
   // Poll for PR status updates
   useEffect(() => {
     const pollStatus = async () => {
@@ -213,7 +247,7 @@ export function PendingChangesProvider({
 
   return (
     <PendingChangesContext.Provider
-      value={{ changes, createChange, getPendingChange, dismissChange, onMerged }}
+      value={{ changes, createChange, loadPendingFromGitHub, getPendingChange, dismissChange, onMerged }}
     >
       {children}
     </PendingChangesContext.Provider>
@@ -250,6 +284,11 @@ function buildSummary(patch: TicketChangePatch, currentState?: string): string {
     return "reviewer updated";
   }
   return "metadata updated";
+}
+
+function parseSummaryFromPrTitle(title: string): string {
+  const match = title.match(/ticket change:\s*(.+)$/i);
+  return match ? match[1].trim() : "pending change";
 }
 
 function mapPrStatusToChangeStatus(pr: PrStatusResponse): PendingChangeStatus {
