@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T18:17:02.532Z",
+  "generated_at": "2026-02-18T18:19:10.346Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -57,19 +57,6 @@
       "path": ".tickets/tickets/01KHQ0K8PK9TVGX26XBE13A2JA.md"
     },
     {
-      "id": "01KHMG861RFP1FWRX8BXP68D9P",
-      "short_id": "01KHMG86",
-      "display_id": "TK-01KHMG86",
-      "title": "Implement --quiet flag",
-      "state": "backlog",
-      "priority": "p3",
-      "labels": [
-        "refactor",
-        "contract-v1"
-      ],
-      "path": ".tickets/tickets/01KHMG861RFP1FWRX8BXP68D9P.md"
-    },
-    {
       "id": "01KHMG8J3N02BB6BZM61GK5VSX",
       "short_id": "01KHMG8J",
       "display_id": "TK-01KHMG8J",
@@ -94,6 +81,19 @@
         "testing"
       ],
       "path": ".tickets/tickets/01KHMG8JASDQ7VC5YZK8NFBKZP.md"
+    },
+    {
+      "id": "01KHMG861RFP1FWRX8BXP68D9P",
+      "short_id": "01KHMG86",
+      "display_id": "TK-01KHMG86",
+      "title": "Implement --quiet flag",
+      "state": "ready",
+      "priority": "p3",
+      "labels": [
+        "refactor",
+        "contract-v1"
+      ],
+      "path": ".tickets/tickets/01KHMG861RFP1FWRX8BXP68D9P.md"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
