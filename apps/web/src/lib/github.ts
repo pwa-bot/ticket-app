@@ -88,14 +88,23 @@ async function repoHasTickets(token: string, fullName: string): Promise<boolean>
 
 export async function listReposWithTickets(token: string): Promise<RepoSummary[]> {
   const repos = await githubFetch<GithubRepoApi[]>("/user/repos?sort=updated&per_page=100", token);
-  const checks = await Promise.all(
-    repos.map(async (repo) => ({
-      repo,
-      hasTickets: await repoHasTickets(token, repo.full_name),
-    })),
-  );
+  
+  // Check repos in batches of 10 to avoid GitHub secondary rate limits
+  const results: { repo: GithubRepoApi; hasTickets: boolean }[] = [];
+  const batchSize = 10;
+  
+  for (let i = 0; i < repos.length; i += batchSize) {
+    const batch = repos.slice(i, i + batchSize);
+    const batchResults = await Promise.all(
+      batch.map(async (repo) => ({
+        repo,
+        hasTickets: await repoHasTickets(token, repo.full_name),
+      })),
+    );
+    results.push(...batchResults);
+  }
 
-  return checks
+  return results
     .filter((entry) => entry.hasTickets)
     .map(({ repo }) => ({
       id: repo.id,
