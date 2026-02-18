@@ -1,7 +1,7 @@
 ---
 id: 01KHQKCJ1K4PNWXQ0NW1DKQ0H7
 title: Auto-merge PRs for ticket state changes
-state: in_progress
+state: done
 priority: p1
 labels: []
 ---
