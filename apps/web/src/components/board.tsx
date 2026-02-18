@@ -211,19 +211,17 @@ function getPrKey(repoName: string, ticketId: string): string {
   return `${repoName}:${ticketId}`;
 }
 
-// Inner component that uses pending changes context
-function BoardView({
+// Inner component that handles state changes (must be inside PendingChangesProvider)
+function BoardGrid({
   owner,
   repo,
   grouped,
   openTicket,
-  loadTickets,
 }: {
   owner: string;
   repo: string;
   grouped: Record<TicketState, BoardTicket[]>;
   openTicket: (id: string) => void;
-  loadTickets: (opts?: { forceRefresh?: boolean }) => Promise<void>;
 }) {
   const { createChange } = usePendingChanges();
 
@@ -238,20 +236,44 @@ function BoardView({
   };
 
   return (
+    <div className="grid gap-4 lg:grid-cols-5">
+      {BOARD_STATES.map((state) => (
+        <Column
+          key={state}
+          state={state}
+          tickets={grouped[state]}
+          onOpen={openTicket}
+          owner={owner}
+          repo={repo}
+          onStateChange={handleStateChange}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Wrapper that provides context
+function BoardView({
+  owner,
+  repo,
+  grouped,
+  openTicket,
+  loadTickets,
+}: {
+  owner: string;
+  repo: string;
+  grouped: Record<TicketState, BoardTicket[]>;
+  openTicket: (id: string) => void;
+  loadTickets: (opts?: { forceRefresh?: boolean }) => Promise<void>;
+}) {
+  return (
     <PendingChangesProvider onMerged={() => void loadTickets({ forceRefresh: true })}>
-      <div className="grid gap-4 lg:grid-cols-5">
-        {BOARD_STATES.map((state) => (
-          <Column
-            key={state}
-            state={state}
-            tickets={grouped[state]}
-            onOpen={openTicket}
-            owner={owner}
-            repo={repo}
-            onStateChange={handleStateChange}
-          />
-        ))}
-      </div>
+      <BoardGrid
+        owner={owner}
+        repo={repo}
+        grouped={grouped}
+        openTicket={openTicket}
+      />
     </PendingChangesProvider>
   );
 }
