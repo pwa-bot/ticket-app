@@ -12,7 +12,7 @@ import { AutoMergeToggle } from "@/components/auto-merge-toggle";
 import { getCreatedTimestamp, priorityRank, type AttentionRow, type CiStatus } from "@/lib/attention";
 import { BOARD_LABELS, BOARD_STATES, PRIORITY_STYLES, groupTicketsForBoard } from "@/lib/utils";
 import { PendingChangesProvider, usePendingChanges } from "@/lib/pending-changes";
-import { isValidTransition } from "@ticketdotapp/core";
+import { isValidTransition, type TicketChangePatch } from "@ticketdotapp/core";
 import type { LinkedPrSummary } from "@/components/pr-status-badge";
 
 // Format a date as "X ago" (e.g., "2m ago", "1h ago")
@@ -290,7 +290,7 @@ function BoardGrid({
   );
 }
 
-// Wrapper that provides context
+// Wrapper that provides context for board view
 function BoardView({
   owner,
   repo,
@@ -311,6 +311,91 @@ function BoardView({
         repo={repo}
         grouped={grouped}
         openTicket={openTicket}
+      />
+    </PendingChangesProvider>
+  );
+}
+
+// Inner table component with access to pending changes context
+function TableViewInner({
+  owner,
+  repo,
+  rows,
+  openTicket,
+  prMap,
+  ciMap,
+}: {
+  owner: string;
+  repo: string;
+  rows: AttentionRow[];
+  openTicket: (id: string) => void;
+  prMap: Record<string, LinkedPrSummary[]>;
+  ciMap: Record<string, CiStatus>;
+}) {
+  const { createChange, changes } = usePendingChanges();
+  
+  const pendingTicketIds = useMemo(() => {
+    const ids: string[] = [];
+    changes.forEach((change, ticketId) => {
+      // Any status that isn't merged or failed means change is still in progress
+      if (change.status !== "merged" && change.status !== "failed") {
+        ids.push(ticketId);
+      }
+    });
+    return new Set(ids);
+  }, [changes]);
+
+  const handleChangeField = async (repoName: string, ticketId: string, patch: TicketChangePatch) => {
+    const ticket = rows.find(r => r.ticket.id === ticketId)?.ticket;
+    await createChange({
+      owner,
+      repo,
+      ticketId,
+      patch,
+      currentState: ticket?.state,
+    });
+  };
+
+  return (
+    <AttentionTable 
+      rows={rows} 
+      multiRepo={false} 
+      onOpenTicket={(_repoName, id) => openTicket(id)} 
+      onChangeField={handleChangeField}
+      pendingTicketIds={pendingTicketIds}
+      prMap={prMap} 
+      ciMap={ciMap} 
+    />
+  );
+}
+
+// Wrapper that provides context for table view
+function TableView({
+  owner,
+  repo,
+  rows,
+  openTicket,
+  loadTickets,
+  prMap,
+  ciMap,
+}: {
+  owner: string;
+  repo: string;
+  rows: AttentionRow[];
+  openTicket: (id: string) => void;
+  loadTickets: (opts?: { forceRefresh?: boolean }) => Promise<void>;
+  prMap: Record<string, LinkedPrSummary[]>;
+  ciMap: Record<string, CiStatus>;
+}) {
+  return (
+    <PendingChangesProvider onMerged={() => void loadTickets({ forceRefresh: true })}>
+      <TableViewInner
+        owner={owner}
+        repo={repo}
+        rows={rows}
+        openTicket={openTicket}
+        prMap={prMap}
+        ciMap={ciMap}
       />
     </PendingChangesProvider>
   );
@@ -665,7 +750,15 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
               loadTickets={loadTickets}
             />
           ) : (
-            <AttentionTable rows={attentionRows} multiRepo={false} onOpenTicket={(_repoName, id) => openTicket(id)} prMap={prMap} ciMap={ciMap} />
+            <TableView 
+              owner={owner}
+              repo={repo}
+              rows={attentionRows}
+              openTicket={openTicket}
+              loadTickets={loadTickets}
+              prMap={prMap}
+              ciMap={ciMap}
+            />
           )}
         </>
       )}

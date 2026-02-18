@@ -3,21 +3,24 @@
 import { Fragment, useMemo } from "react";
 import CiStatusIcon from "@/components/ci-status-icon";
 import PrStatusBadge, { type LinkedPrSummary } from "@/components/pr-status-badge";
+import { EditableSelect } from "@/components/editable-field";
 import { BOARD_LABELS, PRIORITY_STYLES } from "@/lib/utils";
 import {
   getActorDisplay,
   getAgeShort,
   getDisplayId,
   getUpdatedLabel,
-  truncateTitle,
   type AttentionRow,
   type CiStatus,
 } from "@/lib/attention";
+import type { TicketChangePatch } from "@ticketdotapp/core";
 
 interface AttentionTableProps {
   rows: AttentionRow[];
   multiRepo: boolean;
   onOpenTicket: (repo: string, ticketId: string) => void;
+  onChangeField?: (repo: string, ticketId: string, patch: TicketChangePatch) => Promise<void>;
+  pendingTicketIds?: Set<string>;
   prMap: Record<string, LinkedPrSummary[]>;
   ciMap: Record<string, CiStatus>;
 }
@@ -36,6 +39,14 @@ const STATE_SECTION_STYLES: Record<string, { bg: string; border: string; text: s
   done: { bg: "bg-gradient-to-r from-green-50 to-green-100/50", border: "border-green-300", text: "text-green-900", icon: "✅" },
 };
 
+const STATE_PILL_STYLES: Record<string, string> = {
+  backlog: "bg-slate-100 text-slate-700 border-slate-300",
+  ready: "bg-blue-50 text-blue-700 border-blue-300",
+  in_progress: "bg-amber-50 text-amber-700 border-amber-300",
+  blocked: "bg-red-50 text-red-700 border-red-300",
+  done: "bg-green-50 text-green-700 border-green-300",
+};
+
 // Generate consistent color for repo name
 function getRepoColor(repo: string): string {
   const colors = [
@@ -48,7 +59,6 @@ function getRepoColor(repo: string): string {
     "bg-teal-100 text-teal-700 border-teal-200",
     "bg-pink-100 text-pink-700 border-pink-200",
   ];
-  // Simple hash to pick consistent color
   let hash = 0;
   for (let i = 0; i < repo.length; i++) {
     hash = ((hash << 5) - hash) + repo.charCodeAt(i);
@@ -57,7 +67,15 @@ function getRepoColor(repo: string): string {
   return colors[Math.abs(hash) % colors.length];
 }
 
-export default function AttentionTable({ rows, multiRepo, onOpenTicket, prMap, ciMap }: AttentionTableProps) {
+export default function AttentionTable({ 
+  rows, 
+  multiRepo, 
+  onOpenTicket, 
+  onChangeField,
+  pendingTicketIds = new Set(),
+  prMap, 
+  ciMap 
+}: AttentionTableProps) {
   // Group rows by state
   const groupedRows = useMemo(() => {
     const groups: Record<string, AttentionRow[]> = {};
@@ -120,6 +138,8 @@ export default function AttentionTable({ rows, multiRepo, onOpenTicket, prMap, c
                   const ticketKey = keyFor(row.repo, row.ticket.id);
                   const prs = prMap[ticketKey] ?? [];
                   const ci = ciMap[ticketKey] ?? "unknown";
+                  const isPending = pendingTicketIds.has(row.ticket.id);
+                  const canEdit = !!onChangeField && !isPending;
 
                   return (
                     <tr key={ticketKey} className="border-t border-slate-100 align-top hover:bg-slate-50">
@@ -148,14 +168,45 @@ export default function AttentionTable({ rows, multiRepo, onOpenTicket, prMap, c
                         </td>
                       ) : null}
                       <td className="px-3 py-2">
-                        <span className="rounded border border-slate-300 px-2 py-0.5 text-xs text-slate-700">
-                          {BOARD_LABELS[row.ticket.state]}
-                        </span>
+                        {canEdit ? (
+                          <EditableSelect
+                            value={row.ticket.state}
+                            options={[
+                              { value: "backlog", label: "Backlog" },
+                              { value: "ready", label: "Ready" },
+                              { value: "in_progress", label: "In Progress" },
+                              { value: "blocked", label: "Blocked" },
+                              { value: "done", label: "Done" },
+                            ]}
+                            onSave={async (v) => onChangeField(row.repo, row.ticket.id, { state: v as typeof row.ticket.state })}
+                            className={`rounded border px-2 py-0.5 text-xs ${STATE_PILL_STYLES[row.ticket.state] || "border-slate-300"}`}
+                            renderValue={(v) => BOARD_LABELS[v as keyof typeof BOARD_LABELS] || v}
+                          />
+                        ) : (
+                          <span className={`rounded border px-2 py-0.5 text-xs ${STATE_PILL_STYLES[row.ticket.state] || "border-slate-300"} ${isPending ? "opacity-50" : ""}`}>
+                            {BOARD_LABELS[row.ticket.state]}
+                          </span>
+                        )}
                       </td>
                       <td className="px-3 py-2">
-                        <span className={`rounded border px-2 py-0.5 text-xs font-medium uppercase ${PRIORITY_STYLES[row.ticket.priority]}`}>
-                          {row.ticket.priority}
-                        </span>
+                        {canEdit ? (
+                          <EditableSelect
+                            value={row.ticket.priority}
+                            options={[
+                              { value: "p0", label: "P0", className: "text-red-700 font-bold" },
+                              { value: "p1", label: "P1", className: "text-orange-700 font-semibold" },
+                              { value: "p2", label: "P2", className: "text-yellow-700" },
+                              { value: "p3", label: "P3", className: "text-slate-600" },
+                            ]}
+                            onSave={async (v) => onChangeField(row.repo, row.ticket.id, { priority: v as typeof row.ticket.priority })}
+                            className={`rounded border px-2 py-0.5 text-xs font-medium uppercase ${PRIORITY_STYLES[row.ticket.priority]}`}
+                            renderValue={(v) => v.toUpperCase()}
+                          />
+                        ) : (
+                          <span className={`rounded border px-2 py-0.5 text-xs font-medium uppercase ${PRIORITY_STYLES[row.ticket.priority]} ${isPending ? "opacity-50" : ""}`}>
+                            {row.ticket.priority}
+                          </span>
+                        )}
                       </td>
                       <td className="px-3 py-2 text-slate-700">{getActorDisplay(row.ticket.assignee)}</td>
                       <td className="px-3 py-2 text-slate-700">{getActorDisplay(row.ticket.reviewer)}</td>
