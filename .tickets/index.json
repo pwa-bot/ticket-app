@@ -1,178 +1,8 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T03:41:41.343Z",
+  "generated_at": "2026-02-18T05:25:54.372Z",
   "workflow": "simple-v1",
   "tickets": [
-    {
-      "id": "01KHMG8CHHZ5875CGTFYQHD9XP",
-      "short_id": "01KHMG8C",
-      "display_id": "TK-01KHMG8C",
-      "title": "Formalize ticket schema parsing and rendering",
-      "state": "backlog",
-      "priority": "p1",
-      "labels": [
-        "refactor",
-        "contract-v1"
-      ],
-      "path": ".tickets/tickets/01KHMG8CHHZ5875CGTFYQHD9XP.md"
-    },
-    {
-      "id": "01KHMG8CRR5CXBDBBKWBF5D2K0",
-      "short_id": "01KHMG8C",
-      "display_id": "TK-01KHMG8C",
-      "title": "Deterministic ordering everywhere",
-      "state": "backlog",
-      "priority": "p1",
-      "labels": [
-        "refactor",
-        "contract-v1"
-      ],
-      "path": ".tickets/tickets/01KHMG8CRR5CXBDBBKWBF5D2K0.md"
-    },
-    {
-      "id": "01KHMG8D05HYTQ1D1RYTQXYYE0",
-      "short_id": "01KHMG8D",
-      "display_id": "TK-01KHMG8D",
-      "title": "index.json generation and recovery",
-      "state": "backlog",
-      "priority": "p1",
-      "labels": [
-        "refactor",
-        "contract-v1"
-      ],
-      "path": ".tickets/tickets/01KHMG8D05HYTQ1D1RYTQXYYE0.md"
-    },
-    {
-      "id": "01KHMG86G7ZPTKKE8PWBTVYRYZ",
-      "short_id": "01KHMG86",
-      "display_id": "TK-01KHMG86",
-      "title": "Add --clear-labels and finalize label semantics",
-      "state": "backlog",
-      "priority": "p2",
-      "labels": [
-        "refactor",
-        "contract-v1"
-      ],
-      "path": ".tickets/tickets/01KHMG86G7ZPTKKE8PWBTVYRYZ.md"
-    },
-    {
-      "id": "01KHMG8D7XQXNCPTTVPMG5V72V",
-      "short_id": "01KHMG8D",
-      "display_id": "TK-01KHMG8D",
-      "title": "Determinism hooks for tests (ULID, SOURCE_DATE_EPOCH)",
-      "state": "backlog",
-      "priority": "p2",
-      "labels": [
-        "refactor",
-        "contract-v1",
-        "testing"
-      ],
-      "path": ".tickets/tickets/01KHMG8D7XQXNCPTTVPMG5V72V.md"
-    },
-    {
-      "id": "01KHMG8DF4Z75CFS4EGBK4P1X9",
-      "short_id": "01KHMG8D",
-      "display_id": "TK-01KHMG8D",
-      "title": "Integration test harness (Vitest)",
-      "state": "backlog",
-      "priority": "p2",
-      "labels": [
-        "testing",
-        "contract-v1"
-      ],
-      "path": ".tickets/tickets/01KHMG8DF4Z75CFS4EGBK4P1X9.md"
-    },
-    {
-      "id": "01KHPT0CRPS33T28RHM1E3RH4N",
-      "short_id": "01KHPT0C",
-      "display_id": "TK-01KHPT0C",
-      "title": "Dogfooding feedback collection",
-      "state": "backlog",
-      "priority": "p2",
-      "labels": [
-        "dogfood",
-        "meta"
-      ],
-      "path": ".tickets/tickets/01KHPT0CRPS33T28RHM1E3RH4N.md"
-    },
-    {
-      "id": "01KHPTPQ1JFRRABBXV22NVET6G",
-      "short_id": "01KHPTPQ",
-      "display_id": "TK-01KHPTPQ",
-      "title": "Ticket detail modal with PR/activity info",
-      "state": "backlog",
-      "priority": "p2",
-      "labels": [
-        "dashboard",
-        "phase-2"
-      ],
-      "path": ".tickets/tickets/01KHPTPQ1JFRRABBXV22NVET6G.md"
-    },
-    {
-      "id": "01KHPTPQ8PNKT4NWNAMPV8WZX2",
-      "short_id": "01KHPTPQ",
-      "display_id": "TK-01KHPTPQ",
-      "title": "Saved views and filters",
-      "state": "backlog",
-      "priority": "p2",
-      "labels": [
-        "dashboard",
-        "phase-2"
-      ],
-      "path": ".tickets/tickets/01KHPTPQ8PNKT4NWNAMPV8WZX2.md"
-    },
-    {
-      "id": "01KHQ0K8PK9TVGX26XBE13A2JA",
-      "short_id": "01KHQ0K8",
-      "display_id": "TK-01KHQ0K8",
-      "title": "Optional auto-merge enablement when policy allows",
-      "state": "backlog",
-      "priority": "p2",
-      "labels": [
-        "github",
-        "automerge"
-      ],
-      "path": ".tickets/tickets/01KHQ0K8PK9TVGX26XBE13A2JA.md"
-    },
-    {
-      "id": "01KHMG861RFP1FWRX8BXP68D9P",
-      "short_id": "01KHMG86",
-      "display_id": "TK-01KHMG86",
-      "title": "Implement --quiet flag",
-      "state": "backlog",
-      "priority": "p3",
-      "labels": [
-        "refactor",
-        "contract-v1"
-      ],
-      "path": ".tickets/tickets/01KHMG861RFP1FWRX8BXP68D9P.md"
-    },
-    {
-      "id": "01KHMG8J3N02BB6BZM61GK5VSX",
-      "short_id": "01KHMG8J",
-      "display_id": "TK-01KHMG8J",
-      "title": "Skill doc placement and install script",
-      "state": "backlog",
-      "priority": "p3",
-      "labels": [
-        "docs",
-        "contract-v1"
-      ],
-      "path": ".tickets/tickets/01KHMG8J3N02BB6BZM61GK5VSX.md"
-    },
-    {
-      "id": "01KHMG8JASDQ7VC5YZK8NFBKZP",
-      "short_id": "01KHMG8J",
-      "display_id": "TK-01KHMG8J",
-      "title": "Add --no-commit flag for dev/testing",
-      "state": "backlog",
-      "priority": "p3",
-      "labels": [
-        "refactor",
-        "testing"
-      ],
-      "path": ".tickets/tickets/01KHMG8JASDQ7VC5YZK8NFBKZP.md"
-    },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
       "short_id": "01KHQ0K0",
@@ -186,6 +16,8 @@
         "writes",
         "epic"
       ],
+      "assignee": "agent:openclaw",
+      "reviewer": "human:morgan",
       "path": ".tickets/tickets/01KHQ0K0JMG4HGT2A78FDWJ5BX.md"
     },
     {
@@ -284,6 +116,45 @@
       "path": ".tickets/tickets/01KHMG868YHD8BK7DA7FGT89RB.md"
     },
     {
+      "id": "01KHMG8CHHZ5875CGTFYQHD9XP",
+      "short_id": "01KHMG8C",
+      "display_id": "TK-01KHMG8C",
+      "title": "Formalize ticket schema parsing and rendering",
+      "state": "backlog",
+      "priority": "p1",
+      "labels": [
+        "refactor",
+        "contract-v1"
+      ],
+      "path": ".tickets/tickets/01KHMG8CHHZ5875CGTFYQHD9XP.md"
+    },
+    {
+      "id": "01KHMG8CRR5CXBDBBKWBF5D2K0",
+      "short_id": "01KHMG8C",
+      "display_id": "TK-01KHMG8C",
+      "title": "Deterministic ordering everywhere",
+      "state": "backlog",
+      "priority": "p1",
+      "labels": [
+        "refactor",
+        "contract-v1"
+      ],
+      "path": ".tickets/tickets/01KHMG8CRR5CXBDBBKWBF5D2K0.md"
+    },
+    {
+      "id": "01KHMG8D05HYTQ1D1RYTQXYYE0",
+      "short_id": "01KHMG8D",
+      "display_id": "TK-01KHMG8D",
+      "title": "index.json generation and recovery",
+      "state": "backlog",
+      "priority": "p1",
+      "labels": [
+        "refactor",
+        "contract-v1"
+      ],
+      "path": ".tickets/tickets/01KHMG8D05HYTQ1D1RYTQXYYE0.md"
+    },
+    {
       "id": "01KHPTPPBVD1JCWQ7RZV0TRBEJ",
       "short_id": "01KHPTPP",
       "display_id": "TK-01KHPTPP",
@@ -349,6 +220,148 @@
         "workflow"
       ],
       "path": ".tickets/tickets/01KHQ0K80HSQ3SKRHKSG08D8P9.md"
+    },
+    {
+      "id": "01KHQKCJ1K4PNWXQ0NW1DKQ0H7",
+      "short_id": "01KHQKCJ",
+      "display_id": "TK-01KHQKCJ",
+      "title": "Auto-merge PRs for ticket state changes",
+      "state": "backlog",
+      "priority": "p1",
+      "labels": [],
+      "path": ".tickets/tickets/01KHQKCJ1K4PNWXQ0NW1DKQ0H7.md"
+    },
+    {
+      "id": "01KHPT0CRPS33T28RHM1E3RH4N",
+      "short_id": "01KHPT0C",
+      "display_id": "TK-01KHPT0C",
+      "title": "Dogfooding feedback collection",
+      "state": "backlog",
+      "priority": "p2",
+      "labels": [
+        "dogfood",
+        "meta"
+      ],
+      "created": "2026-02-17T22:01:00.000Z",
+      "path": ".tickets/tickets/01KHPT0CRPS33T28RHM1E3RH4N.md"
+    },
+    {
+      "id": "01KHMG86G7ZPTKKE8PWBTVYRYZ",
+      "short_id": "01KHMG86",
+      "display_id": "TK-01KHMG86",
+      "title": "Add --clear-labels and finalize label semantics",
+      "state": "backlog",
+      "priority": "p2",
+      "labels": [
+        "refactor",
+        "contract-v1"
+      ],
+      "path": ".tickets/tickets/01KHMG86G7ZPTKKE8PWBTVYRYZ.md"
+    },
+    {
+      "id": "01KHMG8D7XQXNCPTTVPMG5V72V",
+      "short_id": "01KHMG8D",
+      "display_id": "TK-01KHMG8D",
+      "title": "Determinism hooks for tests (ULID, SOURCE_DATE_EPOCH)",
+      "state": "backlog",
+      "priority": "p2",
+      "labels": [
+        "refactor",
+        "contract-v1",
+        "testing"
+      ],
+      "path": ".tickets/tickets/01KHMG8D7XQXNCPTTVPMG5V72V.md"
+    },
+    {
+      "id": "01KHMG8DF4Z75CFS4EGBK4P1X9",
+      "short_id": "01KHMG8D",
+      "display_id": "TK-01KHMG8D",
+      "title": "Integration test harness (Vitest)",
+      "state": "backlog",
+      "priority": "p2",
+      "labels": [
+        "testing",
+        "contract-v1"
+      ],
+      "path": ".tickets/tickets/01KHMG8DF4Z75CFS4EGBK4P1X9.md"
+    },
+    {
+      "id": "01KHPTPQ1JFRRABBXV22NVET6G",
+      "short_id": "01KHPTPQ",
+      "display_id": "TK-01KHPTPQ",
+      "title": "Ticket detail modal with PR/activity info",
+      "state": "backlog",
+      "priority": "p2",
+      "labels": [
+        "dashboard",
+        "phase-2"
+      ],
+      "path": ".tickets/tickets/01KHPTPQ1JFRRABBXV22NVET6G.md"
+    },
+    {
+      "id": "01KHPTPQ8PNKT4NWNAMPV8WZX2",
+      "short_id": "01KHPTPQ",
+      "display_id": "TK-01KHPTPQ",
+      "title": "Saved views and filters",
+      "state": "backlog",
+      "priority": "p2",
+      "labels": [
+        "dashboard",
+        "phase-2"
+      ],
+      "path": ".tickets/tickets/01KHPTPQ8PNKT4NWNAMPV8WZX2.md"
+    },
+    {
+      "id": "01KHQ0K8PK9TVGX26XBE13A2JA",
+      "short_id": "01KHQ0K8",
+      "display_id": "TK-01KHQ0K8",
+      "title": "Optional auto-merge enablement when policy allows",
+      "state": "backlog",
+      "priority": "p2",
+      "labels": [
+        "github",
+        "automerge"
+      ],
+      "path": ".tickets/tickets/01KHQ0K8PK9TVGX26XBE13A2JA.md"
+    },
+    {
+      "id": "01KHMG861RFP1FWRX8BXP68D9P",
+      "short_id": "01KHMG86",
+      "display_id": "TK-01KHMG86",
+      "title": "Implement --quiet flag",
+      "state": "backlog",
+      "priority": "p3",
+      "labels": [
+        "refactor",
+        "contract-v1"
+      ],
+      "path": ".tickets/tickets/01KHMG861RFP1FWRX8BXP68D9P.md"
+    },
+    {
+      "id": "01KHMG8J3N02BB6BZM61GK5VSX",
+      "short_id": "01KHMG8J",
+      "display_id": "TK-01KHMG8J",
+      "title": "Skill doc placement and install script",
+      "state": "backlog",
+      "priority": "p3",
+      "labels": [
+        "docs",
+        "contract-v1"
+      ],
+      "path": ".tickets/tickets/01KHMG8J3N02BB6BZM61GK5VSX.md"
+    },
+    {
+      "id": "01KHMG8JASDQ7VC5YZK8NFBKZP",
+      "short_id": "01KHMG8J",
+      "display_id": "TK-01KHMG8J",
+      "title": "Add --no-commit flag for dev/testing",
+      "state": "backlog",
+      "priority": "p3",
+      "labels": [
+        "refactor",
+        "testing"
+      ],
+      "path": ".tickets/tickets/01KHMG8JASDQ7VC5YZK8NFBKZP.md"
     }
   ]
 }
