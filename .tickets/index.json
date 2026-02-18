@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T00:13:13.184Z",
+  "generated_at": "2026-02-18T00:13:13.421Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -263,7 +263,7 @@
       "short_id": "01KHQ0K8",
       "display_id": "TK-01KHQ0K8",
       "title": "Implement frontmatter patch algorithm with semantic preservation",
-      "state": "in_progress",
+      "state": "done",
       "priority": "p0",
       "labels": [
         "core",
