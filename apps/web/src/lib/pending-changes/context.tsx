@@ -106,6 +106,11 @@ export function PendingChangesProvider({
         }
         return updated;
       });
+
+      // If auto-merged, trigger board refresh
+      if (result.data.status === "merged" && onMerged) {
+        setTimeout(onMerged, 500);
+      }
     } catch (e) {
       // Network error
       setChanges((prev) => {
@@ -121,7 +126,7 @@ export function PendingChangesProvider({
         return updated;
       });
     }
-  }, []);
+  }, [onMerged]);
 
   // Get pending change for a ticket
   const getPendingChange = useCallback(

@@ -186,7 +186,23 @@ export async function createTicketChangePr(args: CreateTicketChangePrArgs): Prom
     body: prBodyText,
   });
 
-  // 11. TODO: Optional auto-merge enablement (future)
+  // 11. Attempt auto-merge via squash
+  try {
+    await octokit.rest.pulls.merge({
+      owner,
+      repo,
+      pull_number: pr.data.number,
+      merge_method: "squash",
+    });
+    return {
+      pr_url: pr.data.html_url,
+      pr_number: pr.data.number,
+      branch,
+      status: "merged",
+    };
+  } catch {
+    // Fall back if merge fails (required checks, reviews, conflicts, etc.)
+  }
 
   return {
     pr_url: pr.data.html_url,
