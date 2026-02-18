@@ -1,52 +1,74 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db/client";
-import { getCurrentUserId, getAccessTokenFromCookies } from "@/lib/auth";
+import { getCurrentUserId, getAccessTokenFromCookies, getSession } from "@/lib/auth";
+import { getAppOctokit } from "@/lib/github-app";
 
 /**
  * POST /api/github/installations/refresh
  * 
- * Re-fetch user's GitHub App installations from GitHub API.
- * Useful when user installs the app while already logged in.
+ * Find GitHub App installations for the current user.
+ * Uses the App's own API to list installations, then matches by account login.
  */
 export async function POST() {
   const userId = await getCurrentUserId();
-  const token = await getAccessTokenFromCookies();
+  const session = await getSession();
   
-  if (!userId || !token) {
+  if (!userId || !session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  try {
-    const installationsResponse = await fetch(
-      "https://api.github.com/user/installations",
-      {
+  const githubLogin = session.githubLogin;
+  
+  // Also fetch user's orgs to match org installations
+  const token = await getAccessTokenFromCookies();
+  let userOrgs: string[] = [];
+  
+  if (token) {
+    try {
+      const orgsResponse = await fetch("https://api.github.com/user/orgs", {
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: "application/vnd.github+json",
         },
+      });
+      if (orgsResponse.ok) {
+        const orgsData = await orgsResponse.json() as Array<{ login: string }>;
+        userOrgs = orgsData.map(o => o.login.toLowerCase());
       }
-    );
-
-    if (!installationsResponse.ok) {
-      const text = await installationsResponse.text();
-      console.error("[refresh installations] GitHub API error:", text);
-      return NextResponse.json(
-        { error: "Failed to fetch installations from GitHub" },
-        { status: 502 }
-      );
+    } catch (e) {
+      console.error("[refresh installations] Failed to fetch orgs:", e);
     }
+  }
 
-    const installationsData = (await installationsResponse.json()) as {
-      installations: Array<{
-        id: number;
-        account: { login: string; type: string };
-      }>;
-    };
+  try {
+    // Use App authentication to list ALL installations of our app
+    const octokit = getAppOctokit();
+    const { data } = await octokit.rest.apps.listInstallations({ per_page: 100 });
+    
+    // Filter to installations that belong to this user or their orgs
+    const userLogins = new Set([
+      githubLogin.toLowerCase(),
+      ...userOrgs,
+    ]);
+    
+    const userInstallations = data.filter(inst => {
+      const accountLogin = (inst.account as { login?: string })?.login?.toLowerCase();
+      return accountLogin && userLogins.has(accountLogin);
+    });
+    
+    console.log("[refresh installations]", {
+      githubLogin,
+      userOrgs,
+      totalInstallations: data.length,
+      matchedInstallations: userInstallations.length,
+    });
 
     const registered = [];
 
-    for (const inst of installationsData.installations) {
+    for (const inst of userInstallations) {
+      const account = inst.account as { login: string; type: string };
+      
       const existingInstallation = await db.query.installations.findFirst({
         where: eq(schema.installations.githubInstallationId, inst.id),
       });
@@ -59,8 +81,8 @@ export async function POST() {
         await db
           .update(schema.installations)
           .set({
-            githubAccountLogin: inst.account.login,
-            githubAccountType: inst.account.type,
+            githubAccountLogin: account.login,
+            githubAccountType: account.type,
             updatedAt: new Date(),
           })
           .where(eq(schema.installations.id, existingInstallation.id));
@@ -69,8 +91,8 @@ export async function POST() {
           .insert(schema.installations)
           .values({
             githubInstallationId: inst.id,
-            githubAccountLogin: inst.account.login,
-            githubAccountType: inst.account.type,
+            githubAccountLogin: account.login,
+            githubAccountType: account.type,
           })
           .returning({ id: schema.installations.id });
         installationDbId = inserted.id;
@@ -87,8 +109,8 @@ export async function POST() {
 
       registered.push({
         installationId: inst.id,
-        accountLogin: inst.account.login,
-        accountType: inst.account.type,
+        accountLogin: account.login,
+        accountType: account.type,
       });
     }
 
