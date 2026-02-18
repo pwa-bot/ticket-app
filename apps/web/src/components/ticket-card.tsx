@@ -15,7 +15,8 @@ interface TicketCardProps {
   };
   pendingChange?: PendingChange;
   onOpen: (id: string) => void;
-  onDismissPending?: () => void;
+  onCancelPending?: () => void;
+  onRetryPending?: () => void;
 }
 
 function getDisplayId(ticket: { id: string; display_id?: string }): string {
@@ -26,7 +27,8 @@ export default function TicketCard({
   ticket,
   pendingChange,
   onOpen,
-  onDismissPending,
+  onCancelPending,
+  onRetryPending,
 }: TicketCardProps) {
   return (
     <button
@@ -59,7 +61,7 @@ export default function TicketCard({
 
       {pendingChange && (
         <div className="mt-3">
-          <PendingBadge change={pendingChange} onDismiss={onDismissPending} />
+          <PendingBadge change={pendingChange} onCancel={onCancelPending} onRetry={onRetryPending} />
         </div>
       )}
     </button>

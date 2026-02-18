@@ -1,34 +1,21 @@
-# Current Task: P1 Refactoring (Contract v1)
+# Current Ticket-App Backlog Run
+# Started: 2026-02-18 07:04 PST
 
-## Tickets
-1. Formalize ticket schema parsing and rendering
-2. Deterministic ordering everywhere  
-3. index.json generation and recovery
+## Queue (in order)
+1. [IN PROGRESS] 01KHMG8CHHZ5875CGTFYQHD9XP - Formalize ticket schema parsing and rendering
+2. 01KHMG8CRR5CXBDBBKWBF5D2K0 - Deterministic ordering everywhere
+3. 01KHMG8D05HYTQ1D1RYTQXYYE0 - index.json generation and recovery
+4. 01KHPT0CRPS33T28RHM1E3RH4N - Dogfooding feedback collection
+5. 01KHMG86G7ZPTKKE8PWBTVYRYZ - Add --clear-labels and finalize label semantics
+6. 01KHMG8D7XQXNCPTTVPMG5V72V - Determinism hooks for tests
+7. 01KHMG8DF4Z75CFS4EGBK4P1X9 - Integration test harness (Vitest)
+8. 01KHPTPQ1JFRRABBXV22NVET6G - Ticket detail modal with PR/activity info
+9. 01KHPTPQ8PNKT4NWNAMPV8WZX2 - Saved views and filters
+10. 01KHQ0K8PK9TVGX26XBE13A2JA - Optional auto-merge enablement
+11. 01KHMG861RFP1FWRX8BXP68D9P - Implement --quiet flag
+12. 01KHMG8J3N02BB6BZM61GK5VSX - Skill doc placement and install script
+13. 01KHMG8JASDQ7VC5YZK8NFBKZP - Add --no-commit flag for dev/testing
 
-## Requirements
-
-### 1. Schema Parsing
-- Strict YAML frontmatter validation
-- Clear error messages for invalid tickets
-- Type-safe parsing with Zod or similar
-
-### 2. Deterministic Ordering
-- Tickets sorted by: priority (p0-p3), then created date, then ID
-- index.json always in deterministic order
-- `ticket list` output always consistent
-
-### 3. index.json Recovery
-- `ticket rebuild-index` regenerates from ticket files
-- `ticket validate --fix` auto-repairs index
-- Handle missing/corrupt index gracefully
-
-## Files
-- apps/cli/src/lib/parse.ts — schema parsing
-- apps/cli/src/lib/index-manager.ts — index operations
-- apps/cli/src/commands/*.ts — command implementations
-
-## Tests
-Run: `pnpm turbo test`
-Ensure all 25+ tests pass after changes.
-
-When complete, output DONE.
+## Session
+- Current session: warm-falcon
+- Status: RUNNING

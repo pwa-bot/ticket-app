@@ -1,10 +1,11 @@
 "use client";
 
-import type { PendingChange, PendingChangeStatus } from "@ticketdotapp/core";
+import type { PendingChange, PendingChangeStatus, TicketChangePatch } from "@ticketdotapp/core";
 
 interface PendingBadgeProps {
   change: PendingChange;
-  onDismiss?: () => void;
+  onCancel?: () => void;
+  onRetry?: () => void;
 }
 
 const STATUS_CONFIG: Record<
@@ -61,8 +62,9 @@ const STATUS_CONFIG: Record<
   },
 };
 
-export default function PendingBadge({ change, onDismiss }: PendingBadgeProps) {
+export default function PendingBadge({ change, onCancel, onRetry }: PendingBadgeProps) {
   const config = STATUS_CONFIG[change.status];
+  const showActions = change.status === "failed" || change.status === "conflict";
 
   return (
     <div
@@ -84,12 +86,23 @@ export default function PendingBadge({ change, onDismiss }: PendingBadgeProps) {
         </a>
       )}
 
-      {(change.status === "failed" || change.status === "conflict") && onDismiss && (
+      {showActions && onRetry && (
         <button
           type="button"
-          onClick={onDismiss}
+          onClick={onRetry}
           className="ml-1 opacity-60 hover:opacity-100"
-          title="Dismiss"
+          title="Retry (close PR and try again)"
+        >
+          ↻
+        </button>
+      )}
+
+      {showActions && onCancel && (
+        <button
+          type="button"
+          onClick={onCancel}
+          className="ml-1 opacity-60 hover:opacity-100"
+          title="Cancel (close PR)"
         >
           ✕
         </button>

@@ -75,9 +75,23 @@ describe("json output mode", () => {
     const { output } = captureStdout();
     await runShow(cwd, "01ARZ3ND", { json: true });
 
-    const payload = JSON.parse(output.join("").trim()) as { ok: boolean; data: { id: string; body_md: string }; warnings: unknown[] };
+    const payload = JSON.parse(output.join("").trim()) as {
+      ok: boolean;
+      data: {
+        ticket: { id: string; title: string; state: string; priority: string; labels: string[]; path: string };
+        frontmatter: { id: string; title: string; state: string; priority: string; labels: string[] };
+        body_md: string;
+      };
+      warnings: unknown[];
+    };
     expect(payload.ok).toBe(true);
-    expect(payload.data.id).toBe(id);
+    expect(payload.data.ticket.id).toBe(id);
+    expect(payload.data.ticket.title).toBe("One");
+    expect(payload.data.frontmatter.id).toBe(id);
+    expect(payload.data.frontmatter.title).toBe("One");
+    expect(payload.data.frontmatter.state).toBe("ready");
+    expect(payload.data.frontmatter.priority).toBe("p1");
+    expect(payload.data.frontmatter.labels).toEqual(["bug"]);
     expect(payload.data.body_md.trim()).toBe("Ticket body");
     expect(payload.warnings).toEqual([]);
   });
@@ -103,5 +117,28 @@ describe("json output mode", () => {
     expect(payload.data.fix_requested).toBe(false);
     expect(payload.data.fixes_applied).toBe(false);
     expect(payload.warnings).toEqual([]);
+  });
+
+  it("fails show when ticket schema is invalid", async () => {
+    const cwd = await mkTempRepo();
+    const id = "01ARZ3NDEKTSV4RRFFQ69G5FAV";
+    await writeTicket(cwd, id, "One");
+    await rebuildIndex(cwd);
+
+    await fs.writeFile(
+      path.join(cwd, ".tickets/tickets", `${id}.md`),
+      `---
+id: ${id}
+title: Broken
+state: ready
+priority: p1
+labels: bad
+---
+Ticket body
+`,
+      "utf8"
+    );
+
+    await expect(runShow(cwd, id, { json: true })).rejects.toMatchObject({ code: "validation_failed" });
   });
 });

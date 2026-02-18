@@ -59,6 +59,14 @@ function parseCreated(value: unknown): string | undefined {
   return new Date(epoch).toISOString();
 }
 
+function hasOwnKey(record: Record<string, unknown>, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(record, key);
+}
+
+function isValidActor(value: string): boolean {
+  return /^(human|agent):[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(value);
+}
+
 export function parseTicketDocument(markdown: string, file: string, expectedId?: string): ParsedTicketDocument {
   const yamlBlock = requireFrontmatterEnvelope(markdown, file);
   if (/\t/.test(yamlBlock)) {
@@ -84,53 +92,59 @@ export function parseTicketDocument(markdown: string, file: string, expectedId?:
   }
 
   const fieldErrors: string[] = [];
+  const requiredKeys = ["id", "title", "state", "priority", "labels"] as const;
+  for (const key of requiredKeys) {
+    if (!hasOwnKey(parsed.data as Record<string, unknown>, key)) {
+      fieldErrors.push(`${file}: missing required key '${key}'`);
+    }
+  }
 
   const id = typeof parsed.data.id === "string" && parsed.data.id.trim()
     ? parsed.data.id.trim()
     : "";
-  if (!id) fieldErrors.push(`${file}: id must be a non-empty string`);
+  if (hasOwnKey(parsed.data as Record<string, unknown>, "id") && !id) {
+    fieldErrors.push(`${file}: id must be a non-empty string`);
+  }
 
   const title = typeof parsed.data.title === "string" && parsed.data.title.trim()
     ? parsed.data.title.trim()
     : "";
-  if (!title) fieldErrors.push(`${file}: title must be a non-empty string`);
+  if (hasOwnKey(parsed.data as Record<string, unknown>, "title") && !title) {
+    fieldErrors.push(`${file}: title must be a non-empty string`);
+  }
 
   const stateRaw = typeof parsed.data.state === "string" && parsed.data.state.trim()
-    ? parsed.data.state.trim().toLowerCase()
+    ? parsed.data.state.trim()
     : "";
-  if (!stateRaw) {
+  const hasState = hasOwnKey(parsed.data as Record<string, unknown>, "state");
+  if (hasState && !stateRaw) {
     fieldErrors.push(`${file}: state must be a non-empty string`);
-  } else if (!isState(stateRaw)) {
+  } else if (hasState && !isState(stateRaw)) {
     fieldErrors.push(`${file}: invalid state '${stateRaw}'`);
   }
 
   const priorityRaw = typeof parsed.data.priority === "string" && parsed.data.priority.trim()
-    ? parsed.data.priority.trim().toLowerCase()
+    ? parsed.data.priority.trim()
     : "";
-  if (!priorityRaw) {
+  const hasPriority = hasOwnKey(parsed.data as Record<string, unknown>, "priority");
+  if (hasPriority && !priorityRaw) {
     fieldErrors.push(`${file}: priority must be a non-empty string`);
-  } else if (!isPriority(priorityRaw)) {
+  } else if (hasPriority && !isPriority(priorityRaw)) {
     fieldErrors.push(`${file}: invalid priority '${priorityRaw}'`);
   }
 
   let labels: string[] = [];
-  if (!Array.isArray(parsed.data.labels) || parsed.data.labels.some((entry) => typeof entry !== "string")) {
+  if (hasOwnKey(parsed.data as Record<string, unknown>, "labels")
+      && (!Array.isArray(parsed.data.labels) || parsed.data.labels.some((entry) => typeof entry !== "string"))) {
     fieldErrors.push(`${file}: labels must be an array of strings`);
   } else {
-    labels = [...new Set(parsed.data.labels.map((entry) => entry.toLowerCase().trim()).filter(Boolean))];
+    labels = Array.isArray(parsed.data.labels)
+      ? [...new Set(parsed.data.labels.map((entry) => entry.toLowerCase().trim()).filter(Boolean))]
+      : [];
   }
 
   if (expectedId && id && id !== expectedId) {
     fieldErrors.push(`${file}: id must match filename`);
-  }
-
-  if (fieldErrors.length > 0) {
-    throw new TicketError(
-      ERROR_CODE.VALIDATION_FAILED,
-      fieldErrors.join("\n"),
-      EXIT_CODE.VALIDATION_FAILED,
-      { file, errors: fieldErrors }
-    );
   }
 
   const frontmatter: ParsedTicketFrontmatter = {
@@ -142,11 +156,30 @@ export function parseTicketDocument(markdown: string, file: string, expectedId?:
     created: parseCreated(parsed.data.created)
   };
 
-  if (typeof parsed.data.assignee === "string" && parsed.data.assignee.trim()) {
-    frontmatter.assignee = parsed.data.assignee.trim();
+  if (hasOwnKey(parsed.data as Record<string, unknown>, "assignee")) {
+    const assignee = typeof parsed.data.assignee === "string" ? parsed.data.assignee.trim() : "";
+    if (!assignee || !isValidActor(assignee)) {
+      fieldErrors.push(`${file}: assignee must match 'human:<slug>' or 'agent:<slug>'`);
+    } else {
+      frontmatter.assignee = assignee;
+    }
   }
-  if (typeof parsed.data.reviewer === "string" && parsed.data.reviewer.trim()) {
-    frontmatter.reviewer = parsed.data.reviewer.trim();
+  if (hasOwnKey(parsed.data as Record<string, unknown>, "reviewer")) {
+    const reviewer = typeof parsed.data.reviewer === "string" ? parsed.data.reviewer.trim() : "";
+    if (!reviewer || !isValidActor(reviewer)) {
+      fieldErrors.push(`${file}: reviewer must match 'human:<slug>' or 'agent:<slug>'`);
+    } else {
+      frontmatter.reviewer = reviewer;
+    }
+  }
+
+  if (fieldErrors.length > 0) {
+    throw new TicketError(
+      ERROR_CODE.VALIDATION_FAILED,
+      fieldErrors.join("\n"),
+      EXIT_CODE.VALIDATION_FAILED,
+      { file, errors: fieldErrors }
+    );
   }
 
   return { parsed, frontmatter };

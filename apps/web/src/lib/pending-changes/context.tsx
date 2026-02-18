@@ -24,6 +24,10 @@ type PendingChangesState = {
   getPendingChange: (ticketId: string) => PendingChange | undefined;
   /** Dismiss a pending change (remove from UI without affecting Git) */
   dismissChange: (ticketId: string) => void;
+  /** Cancel a pending change (close PR on GitHub and remove from UI) */
+  cancelChange: (ticketId: string) => Promise<void>;
+  /** Retry a pending change (close old PR and create new one) */
+  retryChange: (args: CreateChangeArgs) => Promise<void>;
   /** Refresh index.json callback (called when PR merges) */
   onMerged?: () => void;
 };
@@ -136,7 +140,7 @@ export function PendingChangesProvider({
     [changes]
   );
 
-  // Dismiss a pending change
+  // Dismiss a pending change (UI only, doesn't affect GitHub)
   const dismissChange = useCallback((ticketId: string) => {
     setChanges((prev) => {
       const updated = new Map(prev);
@@ -144,6 +148,46 @@ export function PendingChangesProvider({
       return updated;
     });
   }, []);
+
+  // Cancel a pending change (close PR on GitHub and remove from UI)
+  const cancelChange = useCallback(async (ticketId: string) => {
+    const change = changes.get(ticketId);
+    if (!change || !change.prUrl || !change.prNumber) {
+      dismissChange(ticketId);
+      return;
+    }
+
+    // Extract owner/repo from prUrl
+    const urlMatch = change.prUrl.match(/github\.com\/([^/]+)\/([^/]+)\/pull/);
+    if (!urlMatch) {
+      dismissChange(ticketId);
+      return;
+    }
+
+    const [, owner, repo] = urlMatch;
+
+    try {
+      await fetch(
+        `/api/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/prs/${change.prNumber}/status`,
+        { method: "PATCH" }
+      );
+    } catch {
+      // Best effort — still remove from UI
+    }
+
+    dismissChange(ticketId);
+  }, [changes, dismissChange]);
+
+  // Retry a pending change (close old PR and create new one)
+  const retryChange = useCallback(async (args: CreateChangeArgs) => {
+    const { ticketId } = args;
+    
+    // First cancel the existing change
+    await cancelChange(ticketId);
+    
+    // Then create a new one
+    await createChange(args);
+  }, [cancelChange, createChange]);
 
   // Load pending changes from open GitHub PRs (restores state across page refresh)
   const loadPendingFromGitHub = useCallback(async (owner: string, repo: string) => {
@@ -247,7 +291,7 @@ export function PendingChangesProvider({
 
   return (
     <PendingChangesContext.Provider
-      value={{ changes, createChange, loadPendingFromGitHub, getPendingChange, dismissChange, onMerged }}
+      value={{ changes, createChange, loadPendingFromGitHub, getPendingChange, dismissChange, cancelChange, retryChange, onMerged }}
     >
       {children}
     </PendingChangesContext.Provider>

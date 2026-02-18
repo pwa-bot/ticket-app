@@ -63,8 +63,18 @@ function TicketCard({
   owner: string;
   repo: string;
 }) {
-  const { getPendingChange, dismissChange } = usePendingChanges();
+  const { getPendingChange, cancelChange, retryChange } = usePendingChanges();
   const pendingChange = getPendingChange(ticket.id);
+
+  // Parse target state from pending change summary for retry
+  const getRetryPatch = (): { state: TicketState } | null => {
+    if (!pendingChange) return null;
+    const match = pendingChange.summary.match(/→\s*(\w+)/);
+    if (match && BOARD_STATES.includes(match[1] as TicketState)) {
+      return { state: match[1] as TicketState };
+    }
+    return null;
+  };
 
   const handleDragStart = (e: React.DragEvent) => {
     console.log("[drag] started:", ticket.id, ticket.state);
@@ -118,7 +128,16 @@ function TicketCard({
       </button>
       {pendingChange && (
         <div className="px-4 pb-4">
-          <PendingBadge change={pendingChange} onDismiss={() => dismissChange(ticket.id)} />
+          <PendingBadge
+            change={pendingChange}
+            onCancel={() => cancelChange(ticket.id)}
+            onRetry={() => {
+              const patch = getRetryPatch();
+              if (patch) {
+                void retryChange({ owner, repo, ticketId: ticket.id, patch, currentState: ticket.state });
+              }
+            }}
+          />
         </div>
       )}
     </div>

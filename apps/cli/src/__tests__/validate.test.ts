@@ -1,9 +1,9 @@
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import matter from "gray-matter";
 import { afterEach, describe, expect, it } from "vitest";
 import { runValidate } from "../commands/validate.js";
+import { EXIT_CODE, TicketError } from "../lib/errors.js";
 import { rebuildIndex } from "../lib/index.js";
 
 const tempDirs: string[] = [];
@@ -65,13 +65,22 @@ created: 2026-02-16T00:00:00.000Z
 `
     );
 
-    await expect(runValidate(cwd, {})).rejects.toThrow("Validation failed");
-    await expect(runValidate(cwd, {})).rejects.toThrow("filename must be a valid ULID");
-    await expect(runValidate(cwd, {})).rejects.toThrow("invalid state 'nope'");
-    await expect(runValidate(cwd, {})).rejects.toThrow("invalid priority 'p9'");
-    await expect(runValidate(cwd, {})).rejects.toThrow("labels must be an array of strings");
-    // Note: created/updated are optional per PROTOCOL.md §2.6
-    await expect(runValidate(cwd, {})).rejects.toThrow("index.json is missing, invalid, or stale");
+    let error: unknown;
+    try {
+      await runValidate(cwd, {});
+    } catch (caught) {
+      error = caught;
+    }
+
+    expect(error).toBeInstanceOf(TicketError);
+    const ticketError = error as TicketError;
+    expect(ticketError.exitCode).toBe(EXIT_CODE.VALIDATION_FAILED);
+    expect(ticketError.message).toContain("Validation failed");
+    expect(ticketError.message).toContain("filename must be a valid ULID");
+    expect(ticketError.message).toContain("invalid state 'nope'");
+    expect(ticketError.message).toContain("invalid priority 'p9'");
+    expect(ticketError.message).toContain("labels must be an array of strings");
+    expect(ticketError.message).toContain("index.json is missing, invalid, or stale");
   });
 
   it("regenerates stale index with --fix", async () => {
@@ -95,5 +104,160 @@ labels: []
     const indexRaw = await fs.readFile(path.join(cwd, ".tickets/index.json"), "utf8");
     const index = JSON.parse(indexRaw) as { tickets: Array<{ id: string }> };
     expect(index.tickets.map((ticket) => ticket.id)).toContain(id);
+  });
+
+  it("fails when frontmatter delimiters are not exact --- lines", async () => {
+    const cwd = await mkTempRepo();
+    const id = "01ARZ3NDEKTSV4RRFFQ69G5FAC";
+    await writeTicket(
+      cwd,
+      id,
+      `--- 
+id: ${id}
+title: Bad delimiter
+state: backlog
+priority: p1
+labels: []
+---
+`
+    );
+
+    await expect(runValidate(cwd, {})).rejects.toThrow("frontmatter must begin on line 1 and be delimited by exact '---' lines");
+  });
+
+  it("fails when closing delimiter is not exact ---", async () => {
+    const cwd = await mkTempRepo();
+    const id = "01ARZ3NDEKTSV4RRFFQ69G5FAK";
+    await writeTicket(
+      cwd,
+      id,
+      `---
+id: ${id}
+title: Bad closing delimiter
+state: backlog
+priority: p1
+labels: []
+--- 
+`
+    );
+
+    await expect(runValidate(cwd, {})).rejects.toThrow("frontmatter must begin on line 1 and be delimited by exact '---' lines");
+  });
+
+  it("fails when required keys are missing", async () => {
+    const cwd = await mkTempRepo();
+    const id = "01ARZ3NDEKTSV4RRFFQ69G5FAD";
+    await writeTicket(
+      cwd,
+      id,
+      `---
+id: ${id}
+title: Missing fields
+state: backlog
+---
+`
+    );
+
+    await expect(runValidate(cwd, {})).rejects.toThrow("missing required key 'priority'");
+    await expect(runValidate(cwd, {})).rejects.toThrow("missing required key 'labels'");
+  });
+
+  it("fails when frontmatter id does not match filename stem exactly", async () => {
+    const cwd = await mkTempRepo();
+    const id = "01ARZ3NDEKTSV4RRFFQ69G5FAE";
+    await writeTicket(
+      cwd,
+      id,
+      `---
+id: 01ARZ3NDEKTSV4RRFFQ69G5FAF
+title: Wrong id
+state: backlog
+priority: p1
+labels: []
+---
+`
+    );
+
+    await expect(runValidate(cwd, {})).rejects.toThrow("id must match filename");
+  });
+
+  it("fails when enums are not exact lowercase values", async () => {
+    const cwd = await mkTempRepo();
+    const id = "01ARZ3NDEKTSV4RRFFQ69G5FAG";
+    await writeTicket(
+      cwd,
+      id,
+      `---
+id: ${id}
+title: Enum case
+state: Ready
+priority: P1
+labels: []
+---
+`
+    );
+
+    await expect(runValidate(cwd, {})).rejects.toThrow("invalid state 'Ready'");
+    await expect(runValidate(cwd, {})).rejects.toThrow("invalid priority 'P1'");
+  });
+
+  it("fails when labels is not an array", async () => {
+    const cwd = await mkTempRepo();
+    const id = "01ARZ3NDEKTSV4RRFFQ69G5FAH";
+    await writeTicket(
+      cwd,
+      id,
+      `---
+id: ${id}
+title: Labels type
+state: backlog
+priority: p1
+labels: bug
+---
+`
+    );
+
+    await expect(runValidate(cwd, {})).rejects.toThrow("labels must be an array of strings");
+  });
+
+  it("fails when YAML frontmatter contains tab characters", async () => {
+    const cwd = await mkTempRepo();
+    const id = "01ARZ3NDEKTSV4RRFFQ69G5FAL";
+    await writeTicket(
+      cwd,
+      id,
+      `---
+id: ${id}
+title:\tTabbed
+state: backlog
+priority: p1
+labels: []
+---
+`
+    );
+
+    await expect(runValidate(cwd, {})).rejects.toThrow("YAML frontmatter must not contain tab characters");
+  });
+
+  it("fails when assignee/reviewer are present but invalid", async () => {
+    const cwd = await mkTempRepo();
+    const id = "01ARZ3NDEKTSV4RRFFQ69G5FAJ";
+    await writeTicket(
+      cwd,
+      id,
+      `---
+id: ${id}
+title: Actor fields
+state: ready
+priority: p1
+labels: []
+assignee: ""
+reviewer: 123
+---
+`
+    );
+
+    await expect(runValidate(cwd, {})).rejects.toThrow("assignee must match 'human:<slug>' or 'agent:<slug>'");
+    await expect(runValidate(cwd, {})).rejects.toThrow("reviewer must match 'human:<slug>' or 'agent:<slug>'");
   });
 });

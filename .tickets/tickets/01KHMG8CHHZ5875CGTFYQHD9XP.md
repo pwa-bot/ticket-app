@@ -1,7 +1,7 @@
 ---
 id: 01KHMG8CHHZ5875CGTFYQHD9XP
 title: Formalize ticket schema parsing and rendering
-state: backlog
+state: in_progress
 priority: p1
 labels:
   - refactor
