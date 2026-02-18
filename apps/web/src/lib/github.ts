@@ -146,6 +146,7 @@ export function clearTicketIndexCache(repo?: string) {
 
 export interface TicketDetailResponse {
   id: string;
+  display_id: string;
   repo: string;
   path: string;
   html_url: string | null;
@@ -250,8 +251,11 @@ export async function getTicketById(token: string, repo: string, id: string): Pr
     ...(frontmatter as Partial<TicketFrontmatter>),
   };
 
+  const ticketId = ticketLike.id ?? id;
+
   return {
-    id: ticketLike.id ?? id,
+    id: ticketId,
+    display_id: `TK-${ticketId.slice(0, 8)}`,
     repo,
     path,
     html_url: payload.html_url ?? null,
