@@ -14,11 +14,12 @@ import { runValidate } from "./commands/validate.js";
 import { runInstallHooks } from "./commands/install-hooks.js";
 import { EXIT_CODE, TicketError } from "./lib/errors.js";
 import { failureEnvelope, writeEnvelope } from "./lib/json.js";
-import { setQuietMode } from "./lib/output.js";
+import { setNoCommitMode, setQuietMode } from "./lib/output.js";
 
 interface GlobalCliOptions {
   json?: boolean;
   quiet?: boolean;
+  noCommit?: boolean;
 }
 
 function getGlobalOptions(command: Command): GlobalCliOptions {
@@ -34,9 +35,11 @@ async function main(): Promise<void> {
     .version("0.1.0")
     .option("--json", "Emit a JSON envelope")
     .option("-q, --quiet", "Suppress success output")
+    .option("--no-commit", "Skip auto-commit (for dev/testing)")
     .hook("preAction", (thisCommand) => {
       const opts = thisCommand.optsWithGlobals<GlobalCliOptions>();
       setQuietMode(opts.quiet ?? false);
+      setNoCommitMode(opts.noCommit ?? false);
     });
 
   program

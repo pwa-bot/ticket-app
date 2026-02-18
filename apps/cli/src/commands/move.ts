@@ -5,7 +5,7 @@ import { INDEX_PATH } from "../lib/constants.js";
 import { autoCommit } from "../lib/git.js";
 import { rebuildIndex } from "../lib/index.js";
 import { readIndex } from "../lib/io.js";
-import { success } from "../lib/output.js";
+import { shouldCommit, success } from "../lib/output.js";
 import { resolveTicket } from "../lib/resolve.js";
 import { displayId } from "../lib/ulid.js";
 import { assertTransition, normalizeState } from "../lib/workflow.js";
@@ -40,15 +40,17 @@ export async function runMove(cwd: string, id: string, stateValue: string, optio
 
   const indexPath = path.join(cwd, INDEX_PATH);
 
-  try {
-    await autoCommit(
-      cwd,
-      [ticketPath, indexPath],
-      `ticket: ${displayId(ticket.id)} -> ${state}`
-    );
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.warn(`Warning: git auto-commit failed: ${message}`);
+  if (shouldCommit()) {
+    try {
+      await autoCommit(
+        cwd,
+        [ticketPath, indexPath],
+        `ticket: ${displayId(ticket.id)} -> ${state}`
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`Warning: git auto-commit failed: ${message}`);
+    }
   }
 
   success(`Moved ${displayId(ticket.id)} to ${state}`);

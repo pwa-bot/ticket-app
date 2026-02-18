@@ -6,7 +6,7 @@ import { ERROR_CODE, EXIT_CODE, TicketError } from "../lib/errors.js";
 import { autoCommit } from "../lib/git.js";
 import { rebuildIndex } from "../lib/index.js";
 import { readIndex } from "../lib/io.js";
-import { success } from "../lib/output.js";
+import { shouldCommit, success } from "../lib/output.js";
 import { resolveTicket } from "../lib/resolve.js";
 import { now } from "../lib/ulid.js";
 
@@ -183,11 +183,13 @@ export async function runEdit(cwd: string, id: string, options: EditCommandOptio
   await rebuildIndex(cwd);
   const indexPath = path.join(cwd, INDEX_PATH);
 
-  try {
-    await autoCommit(cwd, [ticketPath, indexPath], `edit(${ticket.display_id}): ${formatEditSummary(changes)}`);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.warn(`Warning: git auto-commit failed: ${message}`);
+  if (shouldCommit()) {
+    try {
+      await autoCommit(cwd, [ticketPath, indexPath], `edit(${ticket.display_id}): ${formatEditSummary(changes)}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`Warning: git auto-commit failed: ${message}`);
+    }
   }
 
   success(`Edited ${ticket.display_id}: ${formatEditSummary(changes)}`);
