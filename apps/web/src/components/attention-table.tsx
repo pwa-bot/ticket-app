@@ -162,8 +162,8 @@ export default function AttentionTable({
                       </td>
                       {multiRepo ? (
                         <td className="px-3 py-2">
-                          <span className={`inline-block truncate max-w-[120px] rounded-full border px-2 py-0.5 text-xs font-medium ${getRepoColor(row.repo)}`} title={row.repo}>
-                            {row.repo.split("/")[1] || row.repo}
+                          <span className={`inline-block truncate max-w-[220px] rounded-full border px-2 py-0.5 text-xs font-medium ${getRepoColor(row.repo)}`} title={row.repo}>
+                            {row.repo}
                           </span>
                         </td>
                       ) : null}

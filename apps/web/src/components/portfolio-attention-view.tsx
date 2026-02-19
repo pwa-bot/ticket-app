@@ -240,13 +240,14 @@ export default function PortfolioAttentionView() {
                   key={r.fullName}
                   type="button"
                   onClick={() => toggleRepo(r.fullName)}
-                  className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                  className={`max-w-[240px] rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
                     isActive
                       ? "border-slate-700 bg-slate-800 text-white"
                       : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
                   }`}
+                  title={r.fullName}
                 >
-                  {r.repo}
+                  <span className="block truncate">{r.fullName}</span>
                 </button>
               );
             })}
