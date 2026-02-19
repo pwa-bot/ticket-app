@@ -1,14 +1,30 @@
 /**
  * GET /api/repos/:owner/:repo/ticket-prs
  *
- * Returns open PRs with ticket-change/* branches, including their current status.
- * Used to restore pending change indicators across page refresh.
+ * Returns cached PRs linked to tickets from Postgres (no GitHub API calls).
  */
 
+import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import type { ApiEnvelope, ApiErrorCode } from "@ticketdotapp/core";
-import { getOctokitFromSession } from "@/lib/github/client";
-import { getTicketPrs, type TicketPrInfo } from "@/lib/github/get-ticket-prs";
+import type { ApiEnvelope } from "@ticketdotapp/core";
+import { db, schema } from "@/db/client";
+import { getCurrentUserId } from "@/lib/auth";
+
+type TicketPrInfo = {
+  ticketId: string;
+  prNumber: number;
+  prUrl: string;
+  prTitle: string;
+  status:
+    | "creating_pr"
+    | "pending_checks"
+    | "waiting_review"
+    | "mergeable"
+    | "auto_merge_enabled"
+    | "merged"
+    | "conflict"
+    | "failed";
+};
 
 interface RouteParams {
   params: Promise<{ owner: string; repo: string }>;
@@ -16,11 +32,22 @@ interface RouteParams {
 
 type TicketPrsResponse = { prs: TicketPrInfo[] };
 
-export async function GET(_req: Request, { params }: RouteParams) {
-  const { owner, repo } = await params;
+function mapStatus(row: {
+  merged: boolean | null;
+  mergeableState: string | null;
+  checksState: string;
+}): TicketPrInfo["status"] {
+  if (row.merged) return "merged";
+  if (row.mergeableState === "dirty") return "conflict";
+  if (row.checksState === "fail") return "pending_checks";
+  if (row.mergeableState === "blocked") return "waiting_review";
+  if (row.mergeableState === "clean" && row.checksState === "pass") return "mergeable";
+  return "pending_checks";
+}
 
-  const octokit = await getOctokitFromSession();
-  if (!octokit) {
+export async function GET(_req: Request, { params }: RouteParams) {
+  const userId = await getCurrentUserId();
+  if (!userId) {
     const resp: ApiEnvelope<TicketPrsResponse> = {
       ok: false,
       error: {
@@ -31,21 +58,25 @@ export async function GET(_req: Request, { params }: RouteParams) {
     return NextResponse.json(resp, { status: 401 });
   }
 
-  try {
-    const prs = await getTicketPrs({ octokit, owner, repo });
-    const resp: ApiEnvelope<TicketPrsResponse> = { ok: true, data: { prs } };
-    return NextResponse.json(resp);
-  } catch (e: unknown) {
-    const error = e as { status?: number; message?: string; code?: ApiErrorCode };
-    const isGitHubError = typeof error.status === "number";
+  const { owner, repo } = await params;
+  const fullName = `${owner}/${repo}`;
 
-    const resp: ApiEnvelope<TicketPrsResponse> = {
-      ok: false,
-      error: {
-        code: error?.code ?? (isGitHubError ? "github_permission_denied" : "unknown"),
-        message: error?.message ?? "Failed to fetch ticket PRs",
-      },
-    };
-    return NextResponse.json(resp, { status: isGitHubError ? error.status : 500 });
-  }
+  const rows = await db.query.ticketPrs.findMany({
+    where: eq(schema.ticketPrs.repoFullName, fullName),
+  });
+
+  const prs: TicketPrInfo[] = rows.map((row) => ({
+    ticketId: row.ticketId,
+    prNumber: row.prNumber,
+    prUrl: row.prUrl,
+    prTitle: row.title ?? "",
+    status: mapStatus({
+      merged: row.merged,
+      mergeableState: row.mergeableState,
+      checksState: row.checksState,
+    }),
+  }));
+
+  const resp: ApiEnvelope<TicketPrsResponse> = { ok: true, data: { prs } };
+  return NextResponse.json(resp);
 }

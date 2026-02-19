@@ -125,23 +125,17 @@ export async function GET(req: NextRequest) {
     } satisfies AttentionResponse);
   }
 
-  const repoIds = targetRepos.map((r) => r.id);
   const repoFullNames = targetRepos.map((r) => r.fullName);
-  const repoByFullName = new Map(targetRepos.map((r) => [r.fullName, r]));
-  const repoById = new Map(targetRepos.map((r) => [r.id, r]));
 
   const now = Date.now();
 
   // Bulk query: tickets, PRs, checks, pending changes
-  const [tickets, prs, checks, pending] = await Promise.all([
+  const [tickets, prs, pending] = await Promise.all([
     db.query.tickets.findMany({
       where: inArray(schema.tickets.repoFullName, repoFullNames),
     }),
-    db.query.prCache.findMany({
-      where: inArray(schema.prCache.repoId, repoIds),
-    }),
-    db.query.prChecksCache.findMany({
-      where: inArray(schema.prChecksCache.repoId, repoIds),
+    db.query.ticketPrs.findMany({
+      where: inArray(schema.ticketPrs.repoFullName, repoFullNames),
     }),
     db.query.pendingChanges.findMany({
       where: and(
@@ -152,35 +146,28 @@ export async function GET(req: NextRequest) {
     }),
   ]);
 
-  // Build checks lookup: repoId:prNumber → status
-  const checksMap = new Map<string, CiStatus>();
-  for (const check of checks) {
-    checksMap.set(`${check.repoId}:${check.prNumber}`, checksStatusToCiStatus(check.status));
-  }
-
   // Build PR lookup: repoFullName:shortId → prs
   const prsByShortId = new Map<string, AttentionPrSummary[]>();
   for (const pr of prs) {
-    const repoFullName = repoById.get(pr.repoId)?.fullName;
-    if (!repoFullName) continue;
-    const ciStatus = checksMap.get(`${pr.repoId}:${pr.prNumber}`) ?? "unknown";
+    const repoFullName = pr.repoFullName;
+    const ticket = tickets.find((t) => t.repoFullName === repoFullName && t.id === pr.ticketId);
+    if (!ticket) continue;
+    const ciStatus = checksStatusToCiStatus(pr.checksState);
 
     const summary: AttentionPrSummary = {
       prNumber: pr.prNumber,
       url: pr.prUrl,
-      title: pr.title,
-      state: pr.state,
-      merged: pr.merged,
-      mergeableState: pr.mergeableState,
+      title: pr.title ?? null,
+      state: pr.state ?? null,
+      merged: pr.merged ?? null,
+      mergeableState: pr.mergeableState ?? null,
       ciStatus,
     };
 
-    for (const shortId of pr.linkedTicketShortIds ?? []) {
-      const key = `${repoFullName}:${shortId}`;
-      const existing = prsByShortId.get(key) ?? [];
-      existing.push(summary);
-      prsByShortId.set(key, existing);
-    }
+    const key = `${repoFullName}:${ticket.shortId}`;
+    const existing = prsByShortId.get(key) ?? [];
+    existing.push(summary);
+    prsByShortId.set(key, existing);
   }
 
   // Build pending changes lookup: repoFullName:ticketId → has pending

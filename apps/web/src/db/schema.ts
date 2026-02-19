@@ -32,6 +32,8 @@ export const repos = pgTable(
     enabled: boolean("enabled").notNull().default(false), // whether to index this repo
 
     // GitHub SHA tracking
+    headSha: text("head_sha"), // commit sha the cache reflects (webhook-derived)
+    webhookSyncedAt: timestamp("webhook_synced_at", { withTimezone: true }), // last successful webhook cache update
     lastSeenHeadSha: text("last_seen_head_sha"), // optional
     lastIndexSha: text("last_index_sha"), // sha of `.tickets/index.json` on default branch
 
@@ -89,6 +91,7 @@ export const tickets = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }), // derived from ULID
 
     // Optional sha tracking
+    headSha: text("head_sha"), // commit sha this row was derived from
     ticketSha: text("ticket_sha"), // if we ever fetch ticket file sha
     indexSha: text("index_sha"), // sha of index.json used to populate
 
@@ -98,6 +101,33 @@ export const tickets = pgTable(
     pk: primaryKey({ columns: [t.repoFullName, t.id] }),
     statePriIdx: index("tickets_repo_state_priority_idx").on(t.repoFullName, t.state, t.priority),
     repoIdx: index("tickets_repo_idx").on(t.repoFullName),
+  })
+);
+
+/**
+ * PR metadata cache per ticket.
+ * Derived from GitHub webhooks and safe to rebuild from Git.
+ */
+export const ticketPrs = pgTable(
+  "ticket_prs",
+  {
+    repoFullName: text("repo_full_name").notNull(),
+    ticketId: text("ticket_id").notNull(),
+    prNumber: integer("pr_number").notNull(),
+    prUrl: text("pr_url").notNull(),
+    title: text("title"),
+    state: text("state"),
+    merged: boolean("merged"),
+    mergeableState: text("mergeable_state"),
+    headRef: text("head_ref"),
+    headSha: text("head_sha"),
+    checksState: text("checks_state").notNull().default("unknown"), // pass|fail|running|unknown
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.repoFullName, t.ticketId, t.prNumber] }),
+    repoTicketIdx: index("ticket_prs_repo_ticket_idx").on(t.repoFullName, t.ticketId),
+    repoPrIdx: index("ticket_prs_repo_pr_idx").on(t.repoFullName, t.prNumber),
   })
 );
 
@@ -262,6 +292,8 @@ export type RepoBlob = typeof repoBlobs.$inferSelect;
 export type NewRepoBlob = typeof repoBlobs.$inferInsert;
 export type Ticket = typeof tickets.$inferSelect;
 export type NewTicket = typeof tickets.$inferInsert;
+export type TicketPr = typeof ticketPrs.$inferSelect;
+export type NewTicketPr = typeof ticketPrs.$inferInsert;
 export type PendingChange = typeof pendingChanges.$inferSelect;
 export type NewPendingChange = typeof pendingChanges.$inferInsert;
 export type Installation = typeof installations.$inferSelect;

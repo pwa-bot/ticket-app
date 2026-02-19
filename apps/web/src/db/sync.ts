@@ -149,6 +149,7 @@ export async function getCachedBlob(repoFullName: string, path: string) {
 export async function upsertTicketFromIndexEntry(
   repoFullName: string,
   indexSha: string,
+  headSha: string | null,
   e: {
     id: string;
     short_id?: string;
@@ -182,6 +183,7 @@ export async function upsertTicketFromIndexEntry(
       reviewer: e.reviewer ?? null,
       path: String(e.path ?? `.tickets/tickets/${id}.md`),
       createdAt,
+      headSha,
       indexSha,
       cachedAt: now(),
     })
@@ -195,6 +197,7 @@ export async function upsertTicketFromIndexEntry(
         assignee: e.assignee ?? null,
         reviewer: e.reviewer ?? null,
         path: String(e.path ?? `.tickets/tickets/${id}.md`),
+        headSha,
         indexSha,
         cachedAt: now(),
       },
@@ -350,6 +353,7 @@ export async function syncRepo(
         .update(schema.repos)
         .set({
           defaultBranch,
+          headSha: headSha,
           lastSeenHeadSha: headSha,
           lastIndexSha: indexSha,
           lastSyncedAt: now(),
@@ -386,7 +390,7 @@ export async function syncRepo(
     const idsInIndex = entries.map((e) => String(e.id).toUpperCase());
 
     for (const e of entries) {
-      await upsertTicketFromIndexEntry(fullName, indexSha, e);
+      await upsertTicketFromIndexEntry(fullName, indexSha, headSha, e);
     }
 
     // 8) Delete tickets no longer in index
@@ -397,6 +401,7 @@ export async function syncRepo(
       .update(schema.repos)
       .set({
         defaultBranch,
+        headSha: headSha,
         lastSeenHeadSha: headSha,
         lastIndexSha: indexSha,
         lastSyncedAt: now(),
