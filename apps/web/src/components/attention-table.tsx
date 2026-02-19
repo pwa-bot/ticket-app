@@ -23,6 +23,9 @@ interface AttentionTableProps {
   pendingTicketIds?: Set<string>;
   prMap: Record<string, LinkedPrSummary[]>;
   ciMap: Record<string, CiStatus>;
+  showPrCi?: boolean;
+  reasonMap?: Record<string, string[]>;
+  reasonLabels?: Record<string, string>;
 }
 
 function keyFor(repo: string, ticketId: string): string {
@@ -74,7 +77,10 @@ export default function AttentionTable({
   onChangeField,
   pendingTicketIds = new Set(),
   prMap, 
-  ciMap 
+  ciMap,
+  showPrCi = true,
+  reasonMap,
+  reasonLabels = {},
 }: AttentionTableProps) {
   // Group rows by state
   const groupedRows = useMemo(() => {
@@ -92,11 +98,8 @@ export default function AttentionTable({
     return STATE_ORDER.filter(state => groupedRows[state]?.length > 0);
   }, [groupedRows]);
 
-  const colCount = multiRepo ? 11 : 10;
-
-  if (rows.length === 0) {
-    return <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600">No tickets found.</div>;
-  }
+  const showReasons = !!reasonMap && Object.keys(reasonMap).length > 0;
+  const colCount = (multiRepo ? 9 : 8) + (showPrCi ? 2 : 0) + (showReasons ? 1 : 0);
 
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
@@ -106,12 +109,13 @@ export default function AttentionTable({
             <th className="px-3 py-2">Ticket</th>
             <th className="px-3 py-2">Title</th>
             {multiRepo ? <th className="px-3 py-2">Repo</th> : null}
+            {showReasons ? <th className="px-3 py-2">Reasons</th> : null}
             <th className="px-3 py-2">State</th>
             <th className="px-3 py-2">Priority</th>
             <th className="px-3 py-2">Assignee</th>
             <th className="px-3 py-2">Reviewer</th>
-            <th className="px-3 py-2">PR</th>
-            <th className="px-3 py-2">CI</th>
+            {showPrCi ? <th className="px-3 py-2">PR</th> : null}
+            {showPrCi ? <th className="px-3 py-2">CI</th> : null}
             <th className="px-3 py-2">Age</th>
             <th className="px-3 py-2">Updated</th>
           </tr>
@@ -140,6 +144,7 @@ export default function AttentionTable({
                   const ci = ciMap[ticketKey] ?? "unknown";
                   const isPending = pendingTicketIds.has(row.ticket.id);
                   const canEdit = !!onChangeField && !isPending;
+                  const reasons = reasonMap?.[ticketKey] ?? [];
 
                   return (
                     <tr key={ticketKey} className="border-t border-slate-100 align-top hover:bg-slate-50">
@@ -165,6 +170,24 @@ export default function AttentionTable({
                           <span className={`inline-block truncate max-w-[220px] rounded-full border px-2 py-0.5 text-xs font-medium ${getRepoColor(row.repo)}`} title={row.repo}>
                             {row.repo}
                           </span>
+                        </td>
+                      ) : null}
+                      {showReasons ? (
+                        <td className="px-3 py-2">
+                          {reasons.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {reasons.map((reason) => (
+                                <span
+                                  key={`${ticketKey}:${reason}`}
+                                  className="rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-xs text-slate-700"
+                                >
+                                  {reasonLabels[reason] ?? reason}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
                         </td>
                       ) : null}
                       <td className="px-3 py-2">
@@ -210,8 +233,8 @@ export default function AttentionTable({
                       </td>
                       <td className="px-3 py-2 text-slate-700">{getActorDisplay(row.ticket.assignee)}</td>
                       <td className="px-3 py-2 text-slate-700">{getActorDisplay(row.ticket.reviewer)}</td>
-                      <td className="px-3 py-2"><PrStatusBadge prs={prs} /></td>
-                      <td className="px-3 py-2"><CiStatusIcon status={ci} /></td>
+                      {showPrCi ? <td className="px-3 py-2"><PrStatusBadge prs={prs} /></td> : null}
+                      {showPrCi ? <td className="px-3 py-2"><CiStatusIcon status={ci} /></td> : null}
                       <td className="px-3 py-2 text-slate-700">{getAgeShort(row)}</td>
                       <td className="px-3 py-2 text-slate-700">{getUpdatedLabel(row)}</td>
                     </tr>
