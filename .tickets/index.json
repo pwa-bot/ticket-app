@@ -1,8 +1,21 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-18T21:15:02.510Z",
+  "generated_at": "2026-02-19T04:55:01.426Z",
   "workflow": "simple-v1",
   "tickets": [
+    {
+      "id": "01KHT40QGXG6EWEA41J6ZJEVTC",
+      "short_id": "01KHT40Q",
+      "display_id": "TK-01KHT40Q",
+      "title": "Multi-repo portfolio view with Attention default",
+      "state": "backlog",
+      "priority": "p0",
+      "labels": [
+        "portfolio",
+        "dashboard"
+      ],
+      "path": ".tickets/tickets/01KHT40QGXG6EWEA41J6ZJEVTC.md"
+    },
     {
       "id": "01KHS9PF0AGVDSF6G0FER0W2R7",
       "short_id": "01KHS9PF",
