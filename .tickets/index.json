@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-19T04:55:01.939Z",
+  "generated_at": "2026-02-19T04:55:03.621Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -67,6 +67,20 @@
         "checks"
       ],
       "path": ".tickets/tickets/01KHS9PF7Q5KP7EQDSVS8QQM6Q.md"
+    },
+    {
+      "id": "01KHT40SNQEEQW7G0DP1CWW6VM",
+      "short_id": "01KHT40S",
+      "display_id": "TK-01KHT40S",
+      "title": "GitHub check-run policy enforcement for Ticket Protocol",
+      "state": "backlog",
+      "priority": "p1",
+      "labels": [
+        "governance",
+        "github-app",
+        "checks"
+      ],
+      "path": ".tickets/tickets/01KHT40SNQEEQW7G0DP1CWW6VM.md"
     },
     {
       "id": "01KHS9PFF2Z37S54PZD6QGW8DJ",
