@@ -1,7 +1,7 @@
 ---
 id: 01KHS9PEAA0N73R7B5RDV35EVQ
 title: Task B - Webhook handler with signature verification and dedupe
-state: in_progress
+state: done
 priority: p0
 labels:
   - webhooks
