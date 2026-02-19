@@ -117,9 +117,10 @@ export function PendingChangesProvider({
         return updated;
       });
 
-      // If auto-merged, trigger board refresh
+      // If auto-merged, trigger board refresh (wait for GitHub to propagate)
       if (result.data.status === "merged" && onMerged) {
-        setTimeout(onMerged, 500);
+        console.log("[pending-changes] Auto-merged, refreshing board in 1.5s...");
+        setTimeout(onMerged, 1500);
       }
     } catch (e) {
       // Network error
