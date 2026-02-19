@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-19T05:23:29.464Z",
+  "generated_at": "2026-02-19T17:13:10.627Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -117,19 +117,6 @@
       "path": ".tickets/tickets/01KHS9NX93EJ2H4YQRY45FFXW8.md"
     },
     {
-      "id": "01KHS9P9K2VG9WY9KWKY3T13X1",
-      "short_id": "01KHS9P9",
-      "display_id": "TK-01KHS9P9",
-      "title": "Task A - GitHub App setup and install flow",
-      "state": "ready",
-      "priority": "p0",
-      "labels": [
-        "github-app",
-        "auth"
-      ],
-      "path": ".tickets/tickets/01KHS9P9K2VG9WY9KWKY3T13X1.md"
-    },
-    {
       "id": "01KHS9PEAA0N73R7B5RDV35EVQ",
       "short_id": "01KHS9PE",
       "display_id": "TK-01KHS9PE",
@@ -167,6 +154,19 @@
         "cache"
       ],
       "path": ".tickets/tickets/01KHS9PES0SP0ZAJAAVQYW98E4.md"
+    },
+    {
+      "id": "01KHS9P9K2VG9WY9KWKY3T13X1",
+      "short_id": "01KHS9P9",
+      "display_id": "TK-01KHS9P9",
+      "title": "Task A - GitHub App setup and install flow",
+      "state": "in_progress",
+      "priority": "p0",
+      "labels": [
+        "github-app",
+        "auth"
+      ],
+      "path": ".tickets/tickets/01KHS9P9K2VG9WY9KWKY3T13X1.md"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
