@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-19T05:17:01.774Z",
+  "generated_at": "2026-02-19T05:23:29.464Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -169,21 +169,6 @@
       "path": ".tickets/tickets/01KHS9PES0SP0ZAJAAVQYW98E4.md"
     },
     {
-      "id": "01KHT40QGXG6EWEA41J6ZJEVTC",
-      "short_id": "01KHT40Q",
-      "display_id": "TK-01KHT40Q",
-      "title": "Multi-repo portfolio view with Attention default",
-      "state": "in_progress",
-      "priority": "p0",
-      "labels": [
-        "portfolio",
-        "dashboard"
-      ],
-      "assignee": "agent:openclaw",
-      "reviewer": "human:morgan",
-      "path": ".tickets/tickets/01KHT40QGXG6EWEA41J6ZJEVTC.md"
-    },
-    {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
       "short_id": "01KHQ0K0",
       "display_id": "TK-01KHQ0K0",
@@ -255,6 +240,21 @@
         "protocol"
       ],
       "path": ".tickets/tickets/01KHQ0K8F90AJMSY7WBVGV2KGB.md"
+    },
+    {
+      "id": "01KHT40QGXG6EWEA41J6ZJEVTC",
+      "short_id": "01KHT40Q",
+      "display_id": "TK-01KHT40Q",
+      "title": "Multi-repo portfolio view with Attention default",
+      "state": "done",
+      "priority": "p0",
+      "labels": [
+        "portfolio",
+        "dashboard"
+      ],
+      "assignee": "agent:openclaw",
+      "reviewer": "human:morgan",
+      "path": ".tickets/tickets/01KHT40QGXG6EWEA41J6ZJEVTC.md"
     },
     {
       "id": "01KHT40SNQEEQW7G0DP1CWW6VM",
