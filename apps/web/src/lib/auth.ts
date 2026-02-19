@@ -59,6 +59,15 @@ export interface SessionData {
 const UNAUTHORIZED_MESSAGE = "Unauthorized";
 
 export async function getSession(): Promise<SessionData | null> {
+  // DEV ONLY: bypass auth for local QA
+  if (process.env.DEV_BYPASS_AUTH === "true" && process.env.DEV_BYPASS_USER_ID) {
+    return {
+      token: "dev-bypass-token",
+      userId: process.env.DEV_BYPASS_USER_ID,
+      githubLogin: "dev-user",
+    };
+  }
+
   const store = await cookies();
   const encrypted = store.get(SESSION_COOKIE)?.value;
   if (!encrypted) {

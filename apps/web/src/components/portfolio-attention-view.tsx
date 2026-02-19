@@ -141,22 +141,20 @@ export default function PortfolioAttentionView() {
   }
 
   // Toggle a repo in the filter
+  // Click = solo that repo (show only it). Click again = show all.
   function toggleRepo(fullName: string) {
     const current = data?.repos ?? [];
     const all = new Set(current.map((r) => r.fullName));
     const active = selectedRepos ?? all;
-    const next = new Set(active);
-    if (next.has(fullName)) {
-      next.delete(fullName);
-    } else {
-      next.add(fullName);
-    }
-    // If all repos selected, remove the filter param
-    if (next.size === all.size) {
+
+    // If this repo is the only one selected, deselect it (show all)
+    if (active.size === 1 && active.has(fullName)) {
       setQueryParam("repos", undefined);
-    } else {
-      setQueryParam("repos", Array.from(next).join(","));
+      return;
     }
+
+    // Otherwise, solo this repo
+    setQueryParam("repos", fullName);
   }
 
   const allRepos = data?.repos ?? [];
