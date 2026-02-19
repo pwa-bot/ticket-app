@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq, inArray, and, ne } from "drizzle-orm";
+import { eq, inArray, and, ne, sql } from "drizzle-orm";
 import { db, schema } from "@/db/client";
 import { requireSession } from "@/lib/auth";
 import type { CiStatus } from "@/lib/attention";
@@ -41,6 +41,7 @@ export interface EnabledRepoSummary {
   fullName: string;
   owner: string;
   repo: string;
+  totalTickets: number;
 }
 
 export interface AttentionResponse {
@@ -106,17 +107,31 @@ export async function GET(req: NextRequest) {
     ),
   });
 
+  // Apply repo filter if provided
+  const targetRepos = filterSet
+    ? repos.filter((r) => filterSet.has(r.fullName))
+    : repos;
+
+  const enabledRepoFullNames = repos.map((r) => r.fullName);
+  const repoTicketCounts = enabledRepoFullNames.length > 0
+    ? await db.select({
+      repoFullName: schema.tickets.repoFullName,
+      total: sql<number>`count(*)`,
+    })
+      .from(schema.tickets)
+      .where(inArray(schema.tickets.repoFullName, enabledRepoFullNames))
+      .groupBy(schema.tickets.repoFullName)
+    : [];
+
+  const ticketCountsByRepo = new Map(repoTicketCounts.map((row) => [row.repoFullName, Number(row.total)]));
+
   // Build enabled repo summaries for selector
   const enabledRepos: EnabledRepoSummary[] = repos.map((r) => ({
     fullName: r.fullName,
     owner: r.owner,
     repo: r.repo,
+    totalTickets: ticketCountsByRepo.get(r.fullName) ?? 0,
   }));
-
-  // Apply repo filter if provided
-  const targetRepos = filterSet
-    ? repos.filter((r) => filterSet.has(r.fullName))
-    : repos;
 
   if (targetRepos.length === 0) {
     return NextResponse.json({
