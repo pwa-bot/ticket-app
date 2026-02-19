@@ -1,7 +1,7 @@
 ---
 id: 01KHS9PEHNNAVY89FZD943BPDV
 title: Task C - Worker push sync index.json into Postgres
-state: ready
+state: in_progress
 priority: p0
 labels:
   - worker
