@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-19T04:55:03.869Z",
+  "generated_at": "2026-02-19T04:55:04.129Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -107,6 +107,19 @@
         "api"
       ],
       "path": ".tickets/tickets/01KHS9PFF2Z37S54PZD6QGW8DJ.md"
+    },
+    {
+      "id": "01KHT40T5MGCWRB1KQYB8M568T",
+      "short_id": "01KHT40T",
+      "display_id": "TK-01KHT40T",
+      "title": "Ticket templates (bug/feature/chore) for consistent creation",
+      "state": "backlog",
+      "priority": "p2",
+      "labels": [
+        "templates",
+        "cli"
+      ],
+      "path": ".tickets/tickets/01KHT40T5MGCWRB1KQYB8M568T.md"
     },
     {
       "id": "01KHS9NX93EJ2H4YQRY45FFXW8",
