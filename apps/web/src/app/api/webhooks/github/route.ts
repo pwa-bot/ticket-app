@@ -66,12 +66,12 @@ interface CheckPayload {
   };
 }
 
-function verifySignature(payload: string, signature: string | null): boolean {
-  if (!WEBHOOK_SECRET || !signature) return false;
+function verifySignature(payload: Buffer, signature: string): boolean {
+  if (!WEBHOOK_SECRET) return false;
   const expected = `sha256=${crypto.createHmac("sha256", WEBHOOK_SECRET).update(payload).digest("hex")}`;
 
   try {
-    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+    return crypto.timingSafeEqual(Buffer.from(signature, "utf8"), Buffer.from(expected, "utf8"));
   } catch {
     return false;
   }
@@ -279,12 +279,21 @@ async function handleCheckEvent(event: "check_run" | "check_suite", payload: Che
 
 export async function POST(req: NextRequest) {
   try {
-    const rawBody = await req.text();
+    const rawBodyBytes = Buffer.from(await req.arrayBuffer());
+    const rawBody = rawBodyBytes.toString("utf8");
     const signature = req.headers.get("x-hub-signature-256");
     const event = req.headers.get("x-github-event") ?? "";
     const deliveryId = req.headers.get("x-github-delivery");
 
-    if (WEBHOOK_SECRET && !verifySignature(rawBody, signature)) {
+    if (!WEBHOOK_SECRET) {
+      return NextResponse.json({ ok: false, error: "webhook_secret_not_configured" }, { status: 500 });
+    }
+
+    if (!signature) {
+      return NextResponse.json({ ok: false, error: "missing_signature" }, { status: 401 });
+    }
+
+    if (!verifySignature(rawBodyBytes, signature)) {
       return NextResponse.json({ ok: false, error: "invalid_signature" }, { status: 401 });
     }
 
