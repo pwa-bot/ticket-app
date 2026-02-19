@@ -348,9 +348,13 @@ function TableViewInner({
 
   const handleChangeField = async (repoName: string, ticketId: string, patch: TicketChangePatch) => {
     const ticket = rows.find(r => r.ticket.id === ticketId)?.ticket;
+    // Use repoName if provided (multi-board), otherwise fall back to single owner/repo
+    const [targetOwner, targetRepo] = repoName.includes("/") 
+      ? repoName.split("/") 
+      : [owner, repo];
     await createChange({
-      owner,
-      repo,
+      owner: targetOwner,
+      repo: targetRepo,
       ticketId,
       patch,
       currentState: ticket?.state,
