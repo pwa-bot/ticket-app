@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { db, schema } from "@/db/client";
 import { eq } from "drizzle-orm";
+import { getInstallationOctokit } from "@/lib/github-app";
+import {
+  upsertBlob,
+  upsertTicketFromIndexEntry,
+  deleteTicketsNotInIndex,
+  getRepo,
+} from "@/db/sync";
 
 const WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET;
 
@@ -166,7 +173,7 @@ async function handlePushEvent(payload: PushPayload, deliveryId: string): Promis
     return { ok: true, message: "Repo not connected" };
   }
 
-  // Update sync state to indicate new content available
+  // Update sync state
   await db
     .insert(schema.repoSyncState)
     .values({
@@ -174,7 +181,7 @@ async function handlePushEvent(payload: PushPayload, deliveryId: string): Promis
       headSha,
       lastWebhookDeliveryId: deliveryId,
       lastSyncedAt: new Date(),
-      status: "ok",
+      status: "syncing",
     })
     .onConflictDoUpdate({
       target: schema.repoSyncState.repoId,
@@ -182,20 +189,138 @@ async function handlePushEvent(payload: PushPayload, deliveryId: string): Promis
         headSha,
         lastWebhookDeliveryId: deliveryId,
         lastSyncedAt: new Date(),
-        status: "ok",
+        status: "syncing",
       },
     });
 
-  // TODO: When we have GitHub App with installation tokens, fetch index.json here
-  // For now, we just record that new content is available
-  // The next user request will sync via the existing flow
+  // If no installation ID, we can't fetch - just record sync needed
+  if (!installationId) {
+    console.log(`[webhook] Push to ${fullName} recorded (no installation), head_sha=${headSha}`);
+    return { ok: true, message: `Push recorded for ${fullName} (no installation token)` };
+  }
 
-  console.log(`[webhook] Push to ${fullName} recorded, head_sha=${headSha}`);
+  // Sync tickets using installation token
+  try {
+    const syncResult = await syncTicketsFromWebhook({
+      fullName,
+      defaultBranch,
+      headSha,
+      installationId,
+      repoId: repo.id,
+    });
 
-  return { 
-    ok: true, 
-    message: `Push recorded for ${fullName}`,
-  };
+    // Update sync state to ok
+    await db
+      .update(schema.repoSyncState)
+      .set({ status: "ok", lastSyncedAt: new Date() })
+      .where(eq(schema.repoSyncState.repoId, repo.id));
+
+    console.log(`[webhook] Push to ${fullName} synced, ${syncResult.ticketCount} tickets, sha=${syncResult.indexSha}`);
+
+    return {
+      ok: true,
+      message: `Synced ${syncResult.ticketCount} tickets for ${fullName}`,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Sync failed";
+    console.error(`[webhook] Push sync failed for ${fullName}:`, message);
+
+    // Update sync state to error
+    await db
+      .update(schema.repoSyncState)
+      .set({ status: "error", lastSyncedAt: new Date() })
+      .where(eq(schema.repoSyncState.repoId, repo.id));
+
+    // Don't fail the webhook - GitHub will retry
+    return { ok: true, message: `Push recorded, sync failed: ${message}` };
+  }
+}
+
+// ============================================================================
+// Webhook Sync Helper
+// ============================================================================
+
+interface SyncFromWebhookArgs {
+  fullName: string;
+  defaultBranch: string;
+  headSha: string;
+  installationId: number;
+  repoId: string;
+}
+
+interface IndexJson {
+  format_version: number;
+  tickets: Array<{
+    id: string;
+    short_id?: string;
+    display_id?: string;
+    title?: string;
+    state?: string;
+    priority?: string;
+    labels?: string[];
+    assignee?: string | null;
+    reviewer?: string | null;
+    path?: string;
+  }>;
+}
+
+async function syncTicketsFromWebhook(args: SyncFromWebhookArgs): Promise<{ ticketCount: number; indexSha: string }> {
+  const { fullName, defaultBranch, headSha, installationId, repoId } = args;
+  const [owner, repoName] = fullName.split("/");
+
+  // Get installation Octokit
+  const octokit = getInstallationOctokit(installationId);
+
+  // Fetch index.json
+  const indexRes = await octokit.rest.repos.getContent({
+    owner,
+    repo: repoName,
+    path: ".tickets/index.json",
+    ref: defaultBranch,
+  });
+
+  if (Array.isArray(indexRes.data) || indexRes.data.type !== "file") {
+    throw new Error("index.json is not a file");
+  }
+
+  const indexSha = indexRes.data.sha;
+  const rawIndex = Buffer.from(indexRes.data.content, "base64").toString("utf-8");
+
+  // Parse index.json
+  const idx: IndexJson = JSON.parse(rawIndex);
+
+  if (idx.format_version !== 1 || !Array.isArray(idx.tickets)) {
+    throw new Error("index.json format invalid");
+  }
+
+  // Upsert blob cache
+  await upsertBlob(fullName, ".tickets/index.json", indexSha, rawIndex);
+
+  // Upsert tickets
+  const entries = idx.tickets;
+  const idsInIndex = entries.map((e) => String(e.id).toUpperCase());
+
+  for (const e of entries) {
+    await upsertTicketFromIndexEntry(fullName, indexSha, e);
+  }
+
+  // Delete tickets no longer in index
+  await deleteTicketsNotInIndex(fullName, idsInIndex);
+
+  // Update repo metadata
+  await db
+    .update(schema.repos)
+    .set({
+      lastSeenHeadSha: headSha,
+      lastIndexSha: indexSha,
+      lastSyncedAt: new Date(),
+      syncStatus: "idle",
+      syncError: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(schema.repos.fullName, fullName));
+
+  return { ticketCount: entries.length, indexSha };
 }
 
 interface PullRequestPayload {
