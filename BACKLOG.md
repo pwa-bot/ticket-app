@@ -21,12 +21,12 @@ Acceptance:
 - push/pull_request/check_run webhooks populate cache
 - manual refresh triggers async sync
 
-**Status: 90% COMPLETE**
+**Status: COMPLETE ✅**
 - ✅ GitHub App installed on pwa-bot org
 - ✅ Webhook handlers: push, pull_request, check_run, installation
 - ✅ DB schema: prCache, prChecksCache, tickets, repoSyncState
 - ✅ Installation token flow (`getInstallationOctokit`)
-- ⏳ Push handler needs to fetch index.json (currently just records sync needed)
+- ✅ Push handler fetches and syncs index.json (commit 8306aa3)
 
 ---
 
@@ -128,8 +128,8 @@ PR-based Writes ───► GitHub App (DONE ✅)
 ## Recommended Sequencing
 
 1. ✅ PR-based writes (complete)
-2. ⏳ Finish Derived Cache (push handler → fetch index.json)
-3. Portfolio Attention view
+2. ✅ Derived Cache + webhook sync (complete)
+3. Portfolio Attention view ← **NEXT**
 4. Merge readiness badge
 5. Saved views
 6. GitHub check-run enforcement
