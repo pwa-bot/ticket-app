@@ -129,18 +129,14 @@ export default function SettingsClient() {
           </p>
           <details className="mt-3">
             <summary className="text-sm text-slate-500 cursor-pointer hover:text-slate-700">
-              Where should I install?
+              Why do I need the app?
             </summary>
             <div className="mt-2 text-sm text-slate-600 space-y-2">
               <p>
-                <strong>Install on each account/org that owns repos you want to track.</strong>
+                The GitHub App enables <strong>webhooks</strong> — when you push changes, your board updates automatically.
               </p>
               <p>
-                GitHub App access is per-account. If your repos are owned by an org like <code className="bg-slate-100 px-1 rounded">acme-corp</code>, 
-                install on that org. Personal repos need install on your personal account.
-              </p>
-              <p>
-                Without the app, boards still work via OAuth — you just won't get real-time webhook updates.
+                Without the app, boards still work. You'll just need to refresh manually to see changes.
               </p>
             </div>
           </details>
