@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-19T19:21:11.872Z",
+  "generated_at": "2026-02-19T19:45:57.779Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -17,6 +17,21 @@
       "assignee": "agent:openclaw",
       "reviewer": "human:morgan",
       "path": ".tickets/tickets/01KHT40QS0ATEZA86AEW9E94R9.md"
+    },
+    {
+      "id": "01KHVQ02ZX1SX13ZB6HZPK4A1N",
+      "short_id": "01KHVQ02",
+      "display_id": "TK-01KHVQ02",
+      "title": "Dashboard add totals and repo counts to attention endpoint; fix empty states",
+      "state": "backlog",
+      "priority": "p0",
+      "labels": [
+        "dashboard",
+        "api",
+        "attention",
+        "p0"
+      ],
+      "path": ".tickets/tickets/01KHVQ02ZX1SX13ZB6HZPK4A1N.md"
     },
     {
       "id": "01KHS9PF0AGVDSF6G0FER0W2R7",
