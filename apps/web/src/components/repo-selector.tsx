@@ -202,6 +202,11 @@ export default function RepoSelector() {
                   <span className="flex items-center gap-2">
                     <span className="font-medium text-slate-900">{repo.full_name}</span>
                     <span className="text-xs text-slate-500">{repo.private ? "Private" : "Public"}</span>
+                    {hasApp ? (
+                      <span title="GitHub App connected" className="text-sm">⚡</span>
+                    ) : (
+                      <span title="OAuth only" className="text-sm opacity-40">⚡</span>
+                    )}
                   </span>
                 </label>
                 {(() => {
