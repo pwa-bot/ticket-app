@@ -2,13 +2,14 @@
 id: 01KHT40SNQEEQW7G0DP1CWW6VM
 title: GitHub check-run policy enforcement for Ticket Protocol
 state: backlog
-priority: p1
+priority: p0
 labels:
   - governance
   - github-app
   - checks
-assignee: agent:openclaw
-reviewer: human:morgan
+assignee: 'agent:openclaw'
+reviewer: 'human:morgan'
+updated: '2026-02-19T05:09:33.549Z'
 ---
 
 ## Problem
