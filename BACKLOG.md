@@ -76,19 +76,33 @@ Includes:
 
 ---
 
-## Phase 2: P1 high leverage
+## Phase 1.5: Governance (moved up — this is the differentiator)
 
-### P1: GitHub Check-run Policy Enforcement
+### P0: Minimal GitHub Check-run (protocol integrity)
 
 Depends on: GitHub App + basic webhook infra.
-Delivers: governance with Git primitives.
+Delivers: governance with Git primitives. **The "teeth."**
 
-Includes:
+Includes (v1 minimal):
 - validate Ticket Protocol on PRs touching .tickets/
-- validate ticket-change transitions
-- block merge with annotations
+- schema validation (frontmatter, id matches filename)
+- hard fail with annotations on violations
 
-### P1: Slack integration v1 (digest + review reminders)
+Excludes (Phase 2 expansion):
+- transition validation
+- custom policy rules
+- opt-in gates
+
+---
+
+## Phase 2: P1 high leverage
+
+### P1: Expand check-run into policy (opt-in gates)
+
+Depends on: Minimal check-run working.
+Delivers: "P0 requires reviewer", custom rules.
+
+### P1: Slack integration v1 (attention routing only)
 
 Depends on: Portfolio + merge readiness.
 Delivers: attention routing to where humans are.
@@ -96,8 +110,12 @@ Delivers: attention routing to where humans are.
 Includes:
 - daily digest for "Attention"
 - reviewer reminders
+- "mergeable now" alerts
 - deep links to ticket + PR
-- rate limiting
+
+Excludes (keeps scope tight):
+- ticket CRUD from Slack
+- interactive state changes
 
 ---
 
@@ -129,9 +147,12 @@ PR-based Writes ───► GitHub App (DONE ✅)
 
 1. ✅ PR-based writes (complete)
 2. ✅ Derived Cache + webhook sync (complete)
-3. Portfolio Attention view ← **NEXT**
-4. Merge readiness badge
-5. Saved views
-6. GitHub check-run enforcement
-7. Slack digest + reminders
-8. Templates
+3. Minimal GitHub check-run (protocol integrity) ← **NEXT**
+4. Portfolio Attention view
+5. Merge readiness badge
+6. Saved views
+7. Expand check-run into policy (opt-in gates)
+8. Slack digest + reminders (attention routing only)
+9. Templates
+
+*Rationale: Checks are the "teeth" — the differentiator that makes ticket.app a protocol with enforcement, not just files + dashboard. Moving them earlier strengthens positioning.*
