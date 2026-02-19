@@ -160,7 +160,10 @@ export default function SettingsClient() {
                       <span className="ml-2 text-xs text-slate-500">{inst.accountType}</span>
                     </div>
                     <a
-                      href={`https://github.com/settings/installations/${inst.installationId}`}
+                      href={inst.accountType === "Organization" 
+                        ? `https://github.com/organizations/${inst.accountLogin}/settings/installations/${inst.installationId}`
+                        : `https://github.com/settings/installations/${inst.installationId}`
+                      }
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs text-slate-600 hover:text-slate-900 underline"
