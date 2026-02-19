@@ -174,7 +174,40 @@ export default function SettingsClient() {
                 ))}
               </div>
 
+              {/* Accounts needing install */}
+              {ownersNeedingInstall.length > 0 && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                  <p className="text-sm font-medium text-amber-900">
+                    Some repos need the app installed
+                  </p>
+                  <p className="mt-1 text-sm text-amber-700">
+                    You have {ownersNeedingInstall.reduce((sum, o) => sum + o.count, 0)} repo(s) owned by: {ownersNeedingInstall.map(o => o.owner).join(", ")}
+                  </p>
+                  <p className="mt-2 text-sm text-amber-700">
+                    Install the app on those accounts to enable webhooks for all your repos.
+                  </p>
+                  {installUrl && (
+                    <div className="mt-3">
+                      <a
+                        href={installUrl}
+                        className="rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
+                      >
+                        Install on another account →
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="flex items-center gap-3">
+                {installUrl && (
+                  <a
+                    href={installUrl}
+                    className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    Add another account
+                  </a>
+                )}
                 <button
                   onClick={refreshInstallations}
                   disabled={refreshing}
