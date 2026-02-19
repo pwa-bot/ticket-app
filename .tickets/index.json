@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-19T04:55:01.426Z",
+  "generated_at": "2026-02-19T04:55:01.679Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -15,6 +15,19 @@
         "dashboard"
       ],
       "path": ".tickets/tickets/01KHT40QGXG6EWEA41J6ZJEVTC.md"
+    },
+    {
+      "id": "01KHT40QS0ATEZA86AEW9E94R9",
+      "short_id": "01KHT40Q",
+      "display_id": "TK-01KHT40Q",
+      "title": "Saved views and shareable filter links",
+      "state": "backlog",
+      "priority": "p0",
+      "labels": [
+        "dashboard",
+        "saved-views"
+      ],
+      "path": ".tickets/tickets/01KHT40QS0ATEZA86AEW9E94R9.md"
     },
     {
       "id": "01KHS9PF0AGVDSF6G0FER0W2R7",
