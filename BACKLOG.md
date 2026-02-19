@@ -78,15 +78,17 @@ Includes:
 
 ## Phase 1.5: Governance (moved up — this is the differentiator)
 
-### P0: Minimal GitHub Check-run (protocol integrity)
+### P0: Minimal GitHub Check-run (protocol integrity) — COMPLETE ✅
 
 Depends on: GitHub App + basic webhook infra.
 Delivers: governance with Git primitives. **The "teeth."**
 
-Includes (v1 minimal):
-- validate Ticket Protocol on PRs touching .tickets/
-- schema validation (frontmatter, id matches filename)
-- hard fail with annotations on violations
+**Shipped in commit 45cc0ac:**
+- Creates "Ticket Protocol" check run on PR open/sync/reopen
+- Validates: required fields, id matches filename, valid states/priorities
+- Label and actor format validation
+- Line-level annotations on failures
+- Hard fail blocks merge
 
 Excludes (Phase 2 expansion):
 - transition validation
@@ -147,8 +149,8 @@ PR-based Writes ───► GitHub App (DONE ✅)
 
 1. ✅ PR-based writes (complete)
 2. ✅ Derived Cache + webhook sync (complete)
-3. Minimal GitHub check-run (protocol integrity) ← **NEXT**
-4. Portfolio Attention view
+3. ✅ Minimal GitHub check-run (commit 45cc0ac)
+4. Portfolio Attention view ← **NEXT**
 5. Merge readiness badge
 6. Saved views
 7. Expand check-run into policy (opt-in gates)
