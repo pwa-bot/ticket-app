@@ -12,7 +12,8 @@ import {
   type CreateChangePrResponse,
   type TicketChangePatch,
 } from "@ticketdotapp/core";
-import { getOctokitFromSession } from "@/lib/github/client";
+import { isUnauthorizedResponse, requireSession } from "@/lib/auth";
+import { createOctokit } from "@/lib/github/client";
 import { createTicketChangePr } from "@/lib/github/create-ticket-change-pr";
 
 interface RouteParams {
@@ -21,20 +22,10 @@ interface RouteParams {
 
 export async function POST(req: NextRequest, { params }: RouteParams) {
   try {
+    const { token } = await requireSession();
     const { owner, repo, ticketId } = await params;
 
-    // Get authenticated client
-    const octokit = await getOctokitFromSession();
-    if (!octokit) {
-      const resp: ApiEnvelope<CreateChangePrResponse> = {
-        ok: false,
-        error: {
-          code: "github_permission_denied",
-          message: "Not authenticated. Please log in with GitHub.",
-        },
-      };
-      return NextResponse.json(resp, { status: 401 });
-    }
+    const octokit = createOctokit(token);
 
     // Parse request body
     const body = await req.json();
@@ -70,6 +61,10 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(resp, { status: 201 });
   } catch (e: unknown) {
+    if (isUnauthorizedResponse(e)) {
+      return e;
+    }
+
     // Handle TicketError with structured code
     if (e instanceof TicketError) {
       const resp: ApiEnvelope<CreateChangePrResponse> = {

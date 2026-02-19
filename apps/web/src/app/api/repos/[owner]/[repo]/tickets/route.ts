@@ -1,17 +1,14 @@
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { db, schema } from "@/db/client";
-import { getCurrentUserId } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 
 interface RouteParams {
   params: Promise<{ owner: string; repo: string }>;
 }
 
 export async function GET(_req: NextRequest, { params }: RouteParams) {
-  const userId = await getCurrentUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  await requireSession();
 
   const { owner, repo } = await params;
   const fullName = `${owner}/${repo}`;

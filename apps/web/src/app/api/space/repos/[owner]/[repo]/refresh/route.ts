@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db/client";
-import { getAccessTokenFromCookies } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 import { syncRepo } from "@/db/sync";
 
 interface Params {
@@ -16,10 +16,7 @@ interface Params {
  * TODO: Enqueue job and return immediately when we add Redis.
  */
 export async function POST(_req: NextRequest, { params }: Params) {
-  const token = await getAccessTokenFromCookies();
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { token } = await requireSession();
 
   const { owner, repo: repoName } = await params;
   const fullName = `${owner}/${repoName}`;

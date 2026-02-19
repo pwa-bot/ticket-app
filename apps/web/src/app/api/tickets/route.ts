@@ -1,13 +1,10 @@
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db, schema } from "@/db/client";
-import { getCurrentUserId } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 
 export async function GET(request: Request) {
-  const userId = await getCurrentUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  await requireSession();
 
   const url = new URL(request.url);
   const repo = url.searchParams.get("repo");

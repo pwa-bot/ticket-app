@@ -1,5 +1,6 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 
 const SESSION_COOKIE = "ticket_app_session";
 const OAUTH_STATE_COOKIE = "ticket_app_oauth_state";
@@ -55,6 +56,8 @@ export interface SessionData {
   githubLogin: string;
 }
 
+const UNAUTHORIZED_MESSAGE = "Unauthorized";
+
 export async function getSession(): Promise<SessionData | null> {
   const store = await cookies();
   const encrypted = store.get(SESSION_COOKIE)?.value;
@@ -85,14 +88,25 @@ export async function getSession(): Promise<SessionData | null> {
   return null;
 }
 
+export async function requireSession(): Promise<SessionData> {
+  const session = await getSession();
+  if (!session?.token || !session?.userId) {
+    throw NextResponse.json({ error: UNAUTHORIZED_MESSAGE }, { status: 401 });
+  }
+  return {
+    userId: session.userId,
+    token: session.token,
+    githubLogin: session.githubLogin ?? "unknown",
+  };
+}
+
+export function isUnauthorizedResponse(error: unknown): error is Response {
+  return error instanceof Response && error.status === 401;
+}
+
 export async function getAccessTokenFromCookies(): Promise<string | null> {
   const session = await getSession();
   return session?.token ?? null;
-}
-
-export async function getCurrentUserId(): Promise<string | null> {
-  const session = await getSession();
-  return session?.userId ?? null;
 }
 
 export const cookieNames = {

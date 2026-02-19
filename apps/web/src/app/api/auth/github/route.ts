@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
-import { cookieNames, encryptToken, getAccessTokenFromCookies } from "@/lib/auth";
+import { cookieNames, encryptToken, isUnauthorizedResponse, requireSession } from "@/lib/auth";
 import { db, schema } from "@/db/client";
 
 function getBaseUrl(request: Request): string {
@@ -14,6 +14,18 @@ function generateUlid(): string {
   const timestamp = Date.now().toString(36);
   const random = randomBytes(10).toString("hex");
   return `${timestamp}${random}`.toUpperCase().slice(0, 26);
+}
+
+async function hasSession(): Promise<boolean> {
+  try {
+    await requireSession();
+    return true;
+  } catch (error) {
+    if (isUnauthorizedResponse(error)) {
+      return false;
+    }
+    throw error;
+  }
 }
 
 export async function GET(request: Request) {
@@ -35,11 +47,8 @@ export async function GET(request: Request) {
   
   // If user already has a valid session and no OAuth params, redirect to space
   // Unless force=1 which means we want to re-authenticate
-  if (!code && !installationId && !forceReauth) {
-    const existingToken = await getAccessTokenFromCookies();
-    if (existingToken) {
-      return NextResponse.redirect(new URL("/space", request.url));
-    }
+  if (!code && !installationId && !forceReauth && await hasSession()) {
+    return NextResponse.redirect(new URL("/space", request.url));
   }
 
   // Case 1: Start OAuth flow
@@ -68,8 +77,7 @@ export async function GET(request: Request) {
   // The installation will be auto-detected on next login or we can refresh
   if (installationId && !code) {
     // User already has a session, just go to space
-    const existingToken = await getAccessTokenFromCookies();
-    if (existingToken) {
+    if (await hasSession()) {
       return NextResponse.redirect(new URL("/space", request.url));
     }
 

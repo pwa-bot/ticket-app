@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import type { ApiEnvelope } from "@ticketdotapp/core";
 import { db, schema } from "@/db/client";
-import { getCurrentUserId } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 
 type TicketPrInfo = {
   ticketId: string;
@@ -46,17 +46,7 @@ function mapStatus(row: {
 }
 
 export async function GET(_req: Request, { params }: RouteParams) {
-  const userId = await getCurrentUserId();
-  if (!userId) {
-    const resp: ApiEnvelope<TicketPrsResponse> = {
-      ok: false,
-      error: {
-        code: "github_permission_denied",
-        message: "Not authenticated. Please log in with GitHub.",
-      },
-    };
-    return NextResponse.json(resp, { status: 401 });
-  }
+  await requireSession();
 
   const { owner, repo } = await params;
   const fullName = `${owner}/${repo}`;

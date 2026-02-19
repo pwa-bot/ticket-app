@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and } from "drizzle-orm";
 import { db, schema } from "@/db/client";
-import { getCurrentUserId } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 import { getInstallationOctokit } from "@/lib/github-app";
 import { randomBytes } from "node:crypto";
 
@@ -22,10 +22,7 @@ function generateUlid(): string {
  * Uses installation token (not user OAuth).
  */
 export async function GET(_req: NextRequest, { params }: Params) {
-  const userId = await getCurrentUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { userId } = await requireSession();
 
   const { installationId: installationIdStr } = await params;
   const githubInstallationId = parseInt(installationIdStr, 10);

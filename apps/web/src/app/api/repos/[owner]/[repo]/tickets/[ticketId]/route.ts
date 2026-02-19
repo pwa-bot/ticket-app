@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and } from "drizzle-orm";
-import { getAccessTokenFromCookies } from "@/lib/auth";
+import { isUnauthorizedResponse, requireSession } from "@/lib/auth";
 import { getCachedBlob, upsertBlob, getRepo } from "@/db/sync";
 import { db, schema } from "@/db/client";
 
@@ -16,10 +16,7 @@ interface RouteParams {
  */
 export async function GET(req: NextRequest, { params }: RouteParams) {
   try {
-    const token = await getAccessTokenFromCookies();
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { token } = await requireSession();
 
     const { owner, repo, ticketId } = await params;
     const fullName = `${owner}/${repo}`;
@@ -104,6 +101,9 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       source,
     });
   } catch (error) {
+    if (isUnauthorizedResponse(error)) {
+      return error;
+    }
     console.error("[ticket-detail] Error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },

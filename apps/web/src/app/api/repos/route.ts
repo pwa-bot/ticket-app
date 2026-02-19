@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { eq, inArray } from "drizzle-orm";
 import { db, schema } from "@/db/client";
-import { getCurrentUserId } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 
 /**
  * GET /api/repos
@@ -10,11 +10,7 @@ import { getCurrentUserId } from "@/lib/auth";
  * Uses Postgres cache only — no GitHub API calls required.
  */
 export async function GET() {
-  const userId = await getCurrentUserId();
-
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { userId } = await requireSession();
 
   try {
     // Get user's installation IDs

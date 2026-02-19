@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAccessTokenFromCookies } from "@/lib/auth";
+import { isUnauthorizedResponse, requireSession } from "@/lib/auth";
 import { syncRepo, getRepo, reconcilePendingChanges } from "@/db/sync";
 
 interface RouteParams {
@@ -14,10 +14,7 @@ interface RouteParams {
  */
 export async function POST(req: NextRequest, { params }: RouteParams) {
   try {
-    const token = await getAccessTokenFromCookies();
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { token } = await requireSession();
 
     const { owner, repo } = await params;
     const fullName = `${owner}/${repo}`;
@@ -52,6 +49,9 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       syncedAt: new Date().toISOString(),
     });
   } catch (error) {
+    if (isUnauthorizedResponse(error)) {
+      return error;
+    }
     console.error("[sync] Error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },

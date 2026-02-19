@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db/client";
-import { getCurrentUserId } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 
 /**
  * GET /api/github/installations
@@ -9,10 +9,7 @@ import { getCurrentUserId } from "@/lib/auth";
  * Returns installations associated with the current user.
  */
 export async function GET() {
-  const userId = await getCurrentUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { userId } = await requireSession();
 
   // Get installations for this user
   const userInstallations = await db.query.userInstallations.findMany({

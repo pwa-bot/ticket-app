@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db/client";
-import { getCurrentUserId } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 import { getAppOctokit } from "@/lib/github-app";
 
 /**
@@ -10,10 +10,7 @@ import { getAppOctokit } from "@/lib/github-app";
  * Register an installation after user installs the GitHub App.
  */
 export async function POST(req: NextRequest) {
-  const userId = await getCurrentUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { userId } = await requireSession();
 
   const body = await req.json();
   const { installationId } = body as { installationId?: number };

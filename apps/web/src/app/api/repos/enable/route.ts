@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and } from "drizzle-orm";
 import { db, schema } from "@/db/client";
-import { getCurrentUserId } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 import { syncRepo } from "@/db/sync";
 import { getInstallationOctokit } from "@/lib/github-app";
 
@@ -12,10 +12,7 @@ import { getInstallationOctokit } from "@/lib/github-app";
  * Triggers initial sync when enabling.
  */
 export async function POST(req: NextRequest) {
-  const userId = await getCurrentUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { userId } = await requireSession();
 
   const body = await req.json();
   const { owner, repo, enabled } = body as { owner?: string; repo?: string; enabled?: boolean };

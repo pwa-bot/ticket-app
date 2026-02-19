@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
-import { getAccessTokenFromCookies } from "@/lib/auth";
+import { isUnauthorizedResponse, requireSession } from "@/lib/auth";
 
 export async function GET() {
-  const token = await getAccessTokenFromCookies();
-  return NextResponse.json({ authenticated: !!token });
+  try {
+    await requireSession();
+    return NextResponse.json({ authenticated: true });
+  } catch (error) {
+    if (isUnauthorizedResponse(error)) {
+      return NextResponse.json({ authenticated: false });
+    }
+    throw error;
+  }
 }

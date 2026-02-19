@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db/client";
-import { getAccessTokenFromCookies } from "@/lib/auth";
+import { isUnauthorizedResponse, requireSession } from "@/lib/auth";
 
 /**
  * GET /api/auth/github/install
@@ -22,7 +22,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/space", request.url));
   }
 
-  const token = await getAccessTokenFromCookies();
+  let token: string | null = null;
+  try {
+    ({ token } = await requireSession());
+  } catch (error) {
+    if (!isUnauthorizedResponse(error)) {
+      throw error;
+    }
+  }
   
   if (token) {
     // User is logged in - fetch installation details from GitHub

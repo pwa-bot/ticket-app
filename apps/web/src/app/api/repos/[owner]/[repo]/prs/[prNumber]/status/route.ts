@@ -7,8 +7,8 @@ import { and, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import type { ApiEnvelope, PrStatusResponse } from "@ticketdotapp/core";
 import { db, schema } from "@/db/client";
-import { getCurrentUserId } from "@/lib/auth";
-import { getOctokitFromSession } from "@/lib/github/client";
+import { isUnauthorizedResponse, requireSession } from "@/lib/auth";
+import { createOctokit } from "@/lib/github/client";
 
 interface RouteParams {
   params: Promise<{ owner: string; repo: string; prNumber: string }>;
@@ -22,14 +22,7 @@ function checksState(status: string): PrStatusResponse["checks"]["state"] {
 }
 
 export async function GET(_req: NextRequest, { params }: RouteParams) {
-  const userId = await getCurrentUserId();
-  if (!userId) {
-    const resp: ApiEnvelope<PrStatusResponse> = {
-      ok: false,
-      error: { code: "github_permission_denied", message: "Not authenticated. Please log in with GitHub." },
-    };
-    return NextResponse.json(resp, { status: 401 });
-  }
+  await requireSession();
 
   const { owner, repo, prNumber } = await params;
   const prNum = Number(prNumber);
@@ -73,6 +66,7 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
 
 export async function PATCH(_req: NextRequest, { params }: RouteParams) {
   try {
+    const { token } = await requireSession();
     const { owner, repo, prNumber } = await params;
     const prNum = Number(prNumber);
 
@@ -84,14 +78,7 @@ export async function PATCH(_req: NextRequest, { params }: RouteParams) {
       return NextResponse.json(resp, { status: 400 });
     }
 
-    const octokit = await getOctokitFromSession();
-    if (!octokit) {
-      const resp: ApiEnvelope<{ closed: boolean }> = {
-        ok: false,
-        error: { code: "github_permission_denied", message: "Not authenticated. Please log in with GitHub." },
-      };
-      return NextResponse.json(resp, { status: 401 });
-    }
+    const octokit = createOctokit(token);
 
     await octokit.rest.pulls.update({
       owner,
@@ -107,6 +94,9 @@ export async function PATCH(_req: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ ok: true, data: { closed: true } } satisfies ApiEnvelope<{ closed: boolean }>);
   } catch (e: unknown) {
+    if (isUnauthorizedResponse(e)) {
+      return e;
+    }
     const err = e as { status?: number; message?: string };
     return NextResponse.json(
       {

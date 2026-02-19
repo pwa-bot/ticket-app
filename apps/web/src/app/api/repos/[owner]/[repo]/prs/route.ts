@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db, schema } from "@/db/client";
-import { getCurrentUserId } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 import type { CiStatus } from "@/lib/attention";
 
 interface Params {
@@ -29,10 +29,7 @@ function checksToCi(status: string): CiStatus {
 }
 
 export async function GET(_request: Request, { params }: Params) {
-  const userId = await getCurrentUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  await requireSession();
 
   const { owner, repo } = await params;
   const fullRepo = `${owner}/${repo}`;

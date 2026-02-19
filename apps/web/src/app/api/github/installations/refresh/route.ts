@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db/client";
-import { getCurrentUserId, getAccessTokenFromCookies } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 
 /**
  * POST /api/github/installations/refresh
@@ -10,12 +10,7 @@ import { getCurrentUserId, getAccessTokenFromCookies } from "@/lib/auth";
  * Works with read:user scope — calls GET /user/installations.
  */
 export async function POST() {
-  const userId = await getCurrentUserId();
-  const token = await getAccessTokenFromCookies();
-
-  if (!userId || !token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { userId, token } = await requireSession();
 
   try {
     // Use user's OAuth token to list their GitHub App installations.

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAccessTokenFromCookies } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 import { getTicketById } from "@/lib/github";
 
 interface Params {
@@ -7,10 +7,7 @@ interface Params {
 }
 
 export async function GET(request: Request, { params }: Params) {
-  const token = await getAccessTokenFromCookies();
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { token } = await requireSession();
 
   const { id } = await params;
   const url = new URL(request.url);

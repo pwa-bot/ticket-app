@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq, inArray, and, ne } from "drizzle-orm";
 import { db, schema } from "@/db/client";
-import { getCurrentUserId } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 import type { CiStatus } from "@/lib/attention";
 
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -78,10 +78,7 @@ function checksStatusToCiStatus(status: string): CiStatus {
  * Query param ?repos=owner/repo,owner/repo2 to filter to specific repos.
  */
 export async function GET(req: NextRequest) {
-  const userId = await getCurrentUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { userId } = await requireSession();
 
   // Parse optional repo filter
   const { searchParams } = new URL(req.url);
