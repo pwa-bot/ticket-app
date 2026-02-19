@@ -23,12 +23,24 @@ export function isValidTransition(from: TicketState, to: TicketState): boolean {
   if (from === "done") return false;
   const allowed: Record<TicketState, TicketState[]> = {
     backlog: ["ready", "blocked"],
-    ready: ["in_progress", "blocked"],
+    ready: ["in_progress", "blocked", "backlog"],  // backlog = deprioritize
+    in_progress: ["done", "blocked", "ready"],
+    blocked: ["ready", "in_progress"],
+    done: [],  // terminal; reopen via explicit action (future)
+  };
+  return allowed[from].includes(to);
+}
+
+/** Returns allowed target states for a given state */
+export function getAllowedTransitions(from: TicketState): TicketState[] {
+  const allowed: Record<TicketState, TicketState[]> = {
+    backlog: ["ready", "blocked"],
+    ready: ["in_progress", "blocked", "backlog"],
     in_progress: ["done", "blocked", "ready"],
     blocked: ["ready", "in_progress"],
     done: [],
   };
-  return allowed[from].includes(to);
+  return allowed[from] ?? [];
 }
 
 export function validateActorRef(v: string): asserts v is ActorRef {

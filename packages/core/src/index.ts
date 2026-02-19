@@ -11,6 +11,7 @@ export {
   normalizeState,
   normalizePriority,
   isValidTransition,
+  getAllowedTransitions,
   validateActorRef,
   normalizeLabels,
 } from "./protocol.js";

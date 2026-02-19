@@ -5,6 +5,7 @@ import {
   normalizePriority,
   normalizeState,
   isValidTransition,
+  getAllowedTransitions,
   validateActorRef,
   type TicketState,
   type TicketPriority,
@@ -46,9 +47,11 @@ export function patchTicketFrontmatter(args: {
   if (args.patch.state) {
     const nextState = safeNormalizeState(args.patch.state, args.ticketPath);
     if (!isValidTransition(curState, nextState)) {
+      const suggestions = getAllowedTransitions(curState);
       throw err("invalid_transition", `Invalid transition: ${curState} → ${nextState}`, {
         from: curState,
         to: nextState,
+        suggestions,
       });
     }
     fm.state = nextState;
