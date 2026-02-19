@@ -49,6 +49,10 @@ export interface AttentionResponse {
   loadedAt: string;
 }
 
+function ticketLookupKey(repoFullName: string, ticketId: string): string {
+  return `${repoFullName}:${ticketId}`;
+}
+
 function checksStatusToCiStatus(status: string): CiStatus {
   switch (status) {
     case "pass": return "success";
@@ -146,11 +150,17 @@ export async function GET(req: NextRequest) {
     }),
   ]);
 
+  // Build ticket lookup: repoFullName:ticketId → ticket
+  const ticketByRepoAndId = new Map<string, (typeof tickets)[number]>();
+  for (const ticket of tickets) {
+    ticketByRepoAndId.set(ticketLookupKey(ticket.repoFullName, ticket.id), ticket);
+  }
+
   // Build PR lookup: repoFullName:shortId → prs
   const prsByShortId = new Map<string, AttentionPrSummary[]>();
   for (const pr of prs) {
     const repoFullName = pr.repoFullName;
-    const ticket = tickets.find((t) => t.repoFullName === repoFullName && t.id === pr.ticketId);
+    const ticket = ticketByRepoAndId.get(ticketLookupKey(repoFullName, pr.ticketId));
     if (!ticket) continue;
     const ciStatus = checksStatusToCiStatus(pr.checksState);
 
