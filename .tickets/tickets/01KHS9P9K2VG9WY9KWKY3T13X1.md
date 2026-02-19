@@ -1,7 +1,7 @@
 ---
 id: 01KHS9P9K2VG9WY9KWKY3T13X1
 title: Task A - GitHub App setup and install flow
-state: in_progress
+state: done
 priority: p0
 labels:
   - github-app
