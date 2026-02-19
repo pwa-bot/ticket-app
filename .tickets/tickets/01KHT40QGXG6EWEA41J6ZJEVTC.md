@@ -1,13 +1,13 @@
 ---
 id: 01KHT40QGXG6EWEA41J6ZJEVTC
 title: Multi-repo portfolio view with Attention default
-state: backlog
+state: ready
 priority: p0
 labels:
   - portfolio
   - dashboard
-assignee: agent:openclaw
-reviewer: human:morgan
+assignee: 'agent:openclaw'
+reviewer: 'human:morgan'
 ---
 
 ## Problem
