@@ -1,7 +1,7 @@
 ---
 id: 01KHS9PES0SP0ZAJAAVQYW98E4
 title: Task D - UI reads from DB only for board and table
-state: ready
+state: in_progress
 priority: p0
 labels:
   - frontend

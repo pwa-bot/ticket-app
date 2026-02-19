@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-19T21:35:43.795Z",
+  "generated_at": "2026-02-19T21:47:22.109Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -192,19 +192,6 @@
       "path": ".tickets/tickets/01KHT40T5MGCWRB1KQYB8M568T.md"
     },
     {
-      "id": "01KHS9PES0SP0ZAJAAVQYW98E4",
-      "short_id": "01KHS9PE",
-      "display_id": "TK-01KHS9PE",
-      "title": "Task D - UI reads from DB only for board and table",
-      "state": "ready",
-      "priority": "p0",
-      "labels": [
-        "frontend",
-        "cache"
-      ],
-      "path": ".tickets/tickets/01KHS9PES0SP0ZAJAAVQYW98E4.md"
-    },
-    {
       "id": "01KHT40R161HJ71E5QEKP02SM8",
       "short_id": "01KHT40R",
       "display_id": "TK-01KHT40R",
@@ -231,6 +218,19 @@
         "push"
       ],
       "path": ".tickets/tickets/01KHS9PEHNNAVY89FZD943BPDV.md"
+    },
+    {
+      "id": "01KHS9PES0SP0ZAJAAVQYW98E4",
+      "short_id": "01KHS9PE",
+      "display_id": "TK-01KHS9PE",
+      "title": "Task D - UI reads from DB only for board and table",
+      "state": "in_progress",
+      "priority": "p0",
+      "labels": [
+        "frontend",
+        "cache"
+      ],
+      "path": ".tickets/tickets/01KHS9PES0SP0ZAJAAVQYW98E4.md"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
