@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-19T17:13:11.071Z",
+  "generated_at": "2026-02-19T18:47:02.178Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -103,20 +103,6 @@
       "path": ".tickets/tickets/01KHT40T5MGCWRB1KQYB8M568T.md"
     },
     {
-      "id": "01KHS9NX93EJ2H4YQRY45FFXW8",
-      "short_id": "01KHS9NX",
-      "display_id": "TK-01KHS9NX",
-      "title": "GitHub App + webhooks + derived Postgres cache for dashboard",
-      "state": "ready",
-      "priority": "p0",
-      "labels": [
-        "github-app",
-        "webhooks",
-        "cache"
-      ],
-      "path": ".tickets/tickets/01KHS9NX93EJ2H4YQRY45FFXW8.md"
-    },
-    {
       "id": "01KHS9PEAA0N73R7B5RDV35EVQ",
       "short_id": "01KHS9PE",
       "display_id": "TK-01KHS9PE",
@@ -154,6 +140,20 @@
         "cache"
       ],
       "path": ".tickets/tickets/01KHS9PES0SP0ZAJAAVQYW98E4.md"
+    },
+    {
+      "id": "01KHS9NX93EJ2H4YQRY45FFXW8",
+      "short_id": "01KHS9NX",
+      "display_id": "TK-01KHS9NX",
+      "title": "GitHub App + webhooks + derived Postgres cache for dashboard",
+      "state": "in_progress",
+      "priority": "p0",
+      "labels": [
+        "github-app",
+        "webhooks",
+        "cache"
+      ],
+      "path": ".tickets/tickets/01KHS9NX93EJ2H4YQRY45FFXW8.md"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",

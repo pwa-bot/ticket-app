@@ -1,7 +1,7 @@
 ---
 id: 01KHS9NX93EJ2H4YQRY45FFXW8
 title: GitHub App + webhooks + derived Postgres cache for dashboard
-state: ready
+state: in_progress
 priority: p0
 labels:
   - github-app
