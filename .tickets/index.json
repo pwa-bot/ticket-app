@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-19T05:17:01.540Z",
+  "generated_at": "2026-02-19T05:17:01.774Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -173,7 +173,7 @@
       "short_id": "01KHT40Q",
       "display_id": "TK-01KHT40Q",
       "title": "Multi-repo portfolio view with Attention default",
-      "state": "ready",
+      "state": "in_progress",
       "priority": "p0",
       "labels": [
         "portfolio",

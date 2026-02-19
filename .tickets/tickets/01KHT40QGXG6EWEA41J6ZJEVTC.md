@@ -1,7 +1,7 @@
 ---
 id: 01KHT40QGXG6EWEA41J6ZJEVTC
 title: Multi-repo portfolio view with Attention default
-state: ready
+state: in_progress
 priority: p0
 labels:
   - portfolio
