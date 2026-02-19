@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-19T04:55:04.129Z",
+  "generated_at": "2026-02-19T04:55:58.521Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -14,6 +14,8 @@
         "portfolio",
         "dashboard"
       ],
+      "assignee": "agent:openclaw",
+      "reviewer": "human:morgan",
       "path": ".tickets/tickets/01KHT40QGXG6EWEA41J6ZJEVTC.md"
     },
     {
@@ -27,6 +29,8 @@
         "dashboard",
         "saved-views"
       ],
+      "assignee": "agent:openclaw",
+      "reviewer": "human:morgan",
       "path": ".tickets/tickets/01KHT40QS0ATEZA86AEW9E94R9.md"
     },
     {
@@ -40,6 +44,8 @@
         "merge",
         "github"
       ],
+      "assignee": "agent:openclaw",
+      "reviewer": "human:morgan",
       "path": ".tickets/tickets/01KHT40R161HJ71E5QEKP02SM8.md"
     },
     {
@@ -80,6 +86,8 @@
         "github-app",
         "checks"
       ],
+      "assignee": "agent:openclaw",
+      "reviewer": "human:morgan",
       "path": ".tickets/tickets/01KHT40SNQEEQW7G0DP1CWW6VM.md"
     },
     {
@@ -93,6 +101,8 @@
         "slack",
         "notifications"
       ],
+      "assignee": "agent:openclaw",
+      "reviewer": "human:morgan",
       "path": ".tickets/tickets/01KHT40SXFYEQ5Z9MCXQFZ6AA9.md"
     },
     {
@@ -119,6 +129,8 @@
         "templates",
         "cli"
       ],
+      "assignee": "agent:openclaw",
+      "reviewer": "human:morgan",
       "path": ".tickets/tickets/01KHT40T5MGCWRB1KQYB8M568T.md"
     },
     {

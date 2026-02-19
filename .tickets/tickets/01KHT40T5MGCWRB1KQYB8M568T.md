@@ -6,20 +6,25 @@ priority: p2
 labels:
   - templates
   - cli
+assignee: agent:openclaw
+reviewer: human:morgan
 ---
 
 ## Problem
 
-Describe the problem and context.
+Tickets created by agents vary in quality. Templates standardize structure for faster review and execution.
 
 ## Acceptance Criteria
 
-- [ ] 
-
-## Spec
-
-Keep small specs inline. Link longer docs if needed.
+- [ ] Add templates directory: `.tickets/templates/` (optional)
+- [ ] Provide built-in templates:
+  - bug.md (repro, expected, actual)
+  - feature.md (problem, AC, spec)
+  - chore.md (scope, checklist)
+- [ ] CLI supports:
+  - `ticket new "Title" --template bug --ci`
+- [ ] Dashboard shows template used (optional, via label or x_ticket)
 
 ## Notes
 
-Any extra context, links, screenshots.
+Keep templates additive. Do not expand protocol required fields.

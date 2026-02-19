@@ -7,20 +7,32 @@ labels:
   - governance
   - github-app
   - checks
+assignee: agent:openclaw
+reviewer: human:morgan
 ---
 
 ## Problem
 
-Describe the problem and context.
+We need real governance using Git primitives: block merges if ticket rules are violated.
+
+## Scope
+
+GitHub App check-run that validates Ticket Protocol invariants on PRs touching `.tickets/`.
 
 ## Acceptance Criteria
 
-- [ ] 
+- [ ] Check triggers on PR events when files under `.tickets/` change
+- [ ] Validates:
+  - ticket frontmatter schema
+  - id matches filename
+  - valid states/priorities/labels
+  - x_ticket preserved (no dropping unknown keys)
+  - index.json matches ticket changes (basic consistency)
+- [ ] For ticket-change PRs, validate transition allowed per repo workflow config
+- [ ] Emits annotations with actionable messages
+- [ ] Fails check to block merge when violations exist
 
-## Spec
+## Cut
 
-Keep small specs inline. Link longer docs if needed.
-
-## Notes
-
-Any extra context, links, screenshots.
+- Full enterprise policy language (later)
+- Custom workflows beyond preset/overrides (later)
