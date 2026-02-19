@@ -323,6 +323,380 @@ async function syncTicketsFromWebhook(args: SyncFromWebhookArgs): Promise<{ tick
   return { ticketCount: entries.length, indexSha };
 }
 
+// ============================================================================
+// Protocol Check (GitHub Check Run)
+// ============================================================================
+
+interface ProtocolCheckArgs {
+  owner: string;
+  repo: string;
+  prNumber: number;
+  headSha: string;
+  installationId: number;
+}
+
+interface ValidationError {
+  path: string;
+  line?: number;
+  message: string;
+}
+
+async function runProtocolCheck(args: ProtocolCheckArgs): Promise<void> {
+  const { owner, repo, prNumber, headSha, installationId } = args;
+  const octokit = getInstallationOctokit(installationId);
+
+  // 1. Create check run in "in_progress" state
+  const checkRun = await octokit.rest.checks.create({
+    owner,
+    repo,
+    name: "Ticket Protocol",
+    head_sha: headSha,
+    status: "in_progress",
+    started_at: new Date().toISOString(),
+  });
+
+  const checkRunId = checkRun.data.id;
+
+  try {
+    // 2. Get files changed in this PR
+    const filesRes = await octokit.rest.pulls.listFiles({
+      owner,
+      repo,
+      pull_number: prNumber,
+      per_page: 100,
+    });
+
+    const ticketFiles = filesRes.data.filter(
+      (f) => f.filename.startsWith(".tickets/tickets/") && f.filename.endsWith(".md") && f.status !== "removed"
+    );
+
+    const indexChanged = filesRes.data.some((f) => f.filename === ".tickets/index.json");
+
+    // If no ticket files changed, pass immediately
+    if (ticketFiles.length === 0 && !indexChanged) {
+      await octokit.rest.checks.update({
+        owner,
+        repo,
+        check_run_id: checkRunId,
+        status: "completed",
+        conclusion: "success",
+        completed_at: new Date().toISOString(),
+        output: {
+          title: "No ticket files changed",
+          summary: "This PR does not modify any ticket files.",
+        },
+      });
+      return;
+    }
+
+    // 3. Validate each ticket file
+    const errors: ValidationError[] = [];
+
+    for (const file of ticketFiles) {
+      const fileErrors = await validateTicketFile({
+        octokit,
+        owner,
+        repo,
+        ref: headSha,
+        path: file.filename,
+      });
+      errors.push(...fileErrors);
+    }
+
+    // 4. If index.json changed, validate it
+    if (indexChanged) {
+      const indexErrors = await validateIndexJson({
+        octokit,
+        owner,
+        repo,
+        ref: headSha,
+      });
+      errors.push(...indexErrors);
+    }
+
+    // 5. Complete the check run
+    if (errors.length === 0) {
+      await octokit.rest.checks.update({
+        owner,
+        repo,
+        check_run_id: checkRunId,
+        status: "completed",
+        conclusion: "success",
+        completed_at: new Date().toISOString(),
+        output: {
+          title: "Protocol validation passed",
+          summary: `Validated ${ticketFiles.length} ticket file(s)${indexChanged ? " and index.json" : ""}.`,
+        },
+      });
+    } else {
+      // Build annotations from errors
+      const annotations = errors.slice(0, 50).map((e) => ({
+        path: e.path,
+        start_line: e.line ?? 1,
+        end_line: e.line ?? 1,
+        annotation_level: "failure" as const,
+        message: e.message,
+      }));
+
+      await octokit.rest.checks.update({
+        owner,
+        repo,
+        check_run_id: checkRunId,
+        status: "completed",
+        conclusion: "failure",
+        completed_at: new Date().toISOString(),
+        output: {
+          title: `${errors.length} protocol violation(s)`,
+          summary: `Found ${errors.length} issue(s) in ticket files. Fix them to pass this check.`,
+          annotations,
+        },
+      });
+    }
+  } catch (error) {
+    // Mark check as errored if something went wrong
+    console.error("[protocol-check] Error:", error);
+    await octokit.rest.checks.update({
+      owner,
+      repo,
+      check_run_id: checkRunId,
+      status: "completed",
+      conclusion: "failure",
+      completed_at: new Date().toISOString(),
+      output: {
+        title: "Protocol check error",
+        summary: `An error occurred while validating: ${error instanceof Error ? error.message : "Unknown error"}`,
+      },
+    });
+  }
+}
+
+// ============================================================================
+// Ticket File Validation
+// ============================================================================
+
+interface ValidateFileArgs {
+  octokit: ReturnType<typeof getInstallationOctokit>;
+  owner: string;
+  repo: string;
+  ref: string;
+  path: string;
+}
+
+async function validateTicketFile(args: ValidateFileArgs): Promise<ValidationError[]> {
+  const { octokit, owner, repo, ref, path } = args;
+  const errors: ValidationError[] = [];
+
+  try {
+    // Fetch file content
+    const res = await octokit.rest.repos.getContent({
+      owner,
+      repo,
+      path,
+      ref,
+    });
+
+    if (Array.isArray(res.data) || res.data.type !== "file") {
+      errors.push({ path, message: "Expected a file" });
+      return errors;
+    }
+
+    const content = Buffer.from(res.data.content, "base64").toString("utf-8");
+
+    // Parse frontmatter
+    const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+    if (!fmMatch) {
+      errors.push({ path, line: 1, message: "Missing YAML frontmatter (expected --- delimiters)" });
+      return errors;
+    }
+
+    const fmContent = fmMatch[1];
+    let frontmatter: Record<string, unknown>;
+    
+    try {
+      // Simple YAML parsing for frontmatter
+      frontmatter = parseSimpleYaml(fmContent);
+    } catch (e) {
+      errors.push({ path, line: 1, message: `Invalid YAML frontmatter: ${e instanceof Error ? e.message : "parse error"}` });
+      return errors;
+    }
+
+    // Extract expected ID from filename
+    const filenameMatch = path.match(/([A-Z0-9]{26})\.md$/i);
+    const expectedId = filenameMatch?.[1]?.toUpperCase();
+
+    // Validate required fields
+    if (!frontmatter.id) {
+      errors.push({ path, line: 2, message: "Missing required field: id" });
+    } else if (expectedId && String(frontmatter.id).toUpperCase() !== expectedId) {
+      errors.push({ path, line: 2, message: `id "${frontmatter.id}" does not match filename (expected ${expectedId})` });
+    }
+
+    if (!frontmatter.title) {
+      errors.push({ path, line: 2, message: "Missing required field: title" });
+    }
+
+    if (!frontmatter.state) {
+      errors.push({ path, line: 2, message: "Missing required field: state" });
+    } else {
+      const validStates = ["backlog", "ready", "in_progress", "blocked", "done"];
+      const state = String(frontmatter.state).toLowerCase();
+      if (!validStates.includes(state)) {
+        errors.push({ path, line: 2, message: `Invalid state "${frontmatter.state}" (must be one of: ${validStates.join(", ")})` });
+      }
+    }
+
+    if (!frontmatter.priority) {
+      errors.push({ path, line: 2, message: "Missing required field: priority" });
+    } else {
+      const validPriorities = ["p0", "p1", "p2", "p3"];
+      const priority = String(frontmatter.priority).toLowerCase();
+      if (!validPriorities.includes(priority)) {
+        errors.push({ path, line: 2, message: `Invalid priority "${frontmatter.priority}" (must be one of: ${validPriorities.join(", ")})` });
+      }
+    }
+
+    // Validate labels if present
+    if (frontmatter.labels !== undefined) {
+      if (!Array.isArray(frontmatter.labels)) {
+        errors.push({ path, line: 2, message: "labels must be an array" });
+      } else {
+        for (const label of frontmatter.labels) {
+          const l = String(label).trim().toLowerCase();
+          if (/\s/.test(l)) {
+            errors.push({ path, line: 2, message: `Label "${label}" contains whitespace` });
+          } else if (!/^[a-z0-9][a-z0-9_-]{0,31}$/.test(l)) {
+            errors.push({ path, line: 2, message: `Invalid label format: "${label}"` });
+          }
+        }
+      }
+    }
+
+    // Validate assignee/reviewer if present
+    for (const field of ["assignee", "reviewer"]) {
+      const value = frontmatter[field];
+      if (value !== undefined && value !== null) {
+        const v = String(value);
+        if (!v.includes(":")) {
+          errors.push({ path, line: 2, message: `${field} must be in format "human:slug" or "agent:slug"` });
+        } else {
+          const [type] = v.split(":");
+          if (type !== "human" && type !== "agent") {
+            errors.push({ path, line: 2, message: `${field} type must be "human" or "agent", got "${type}"` });
+          }
+        }
+      }
+    }
+
+  } catch (e) {
+    errors.push({ path, message: `Failed to fetch file: ${e instanceof Error ? e.message : "unknown error"}` });
+  }
+
+  return errors;
+}
+
+async function validateIndexJson(args: Omit<ValidateFileArgs, "path">): Promise<ValidationError[]> {
+  const { octokit, owner, repo, ref } = args;
+  const errors: ValidationError[] = [];
+  const path = ".tickets/index.json";
+
+  try {
+    const res = await octokit.rest.repos.getContent({
+      owner,
+      repo,
+      path,
+      ref,
+    });
+
+    if (Array.isArray(res.data) || res.data.type !== "file") {
+      errors.push({ path, message: "Expected a file" });
+      return errors;
+    }
+
+    const content = Buffer.from(res.data.content, "base64").toString("utf-8");
+
+    let index: { format_version?: number; tickets?: unknown[] };
+    try {
+      index = JSON.parse(content);
+    } catch {
+      errors.push({ path, line: 1, message: "Invalid JSON" });
+      return errors;
+    }
+
+    if (index.format_version !== 1) {
+      errors.push({ path, line: 1, message: `format_version must be 1, got ${index.format_version}` });
+    }
+
+    if (!Array.isArray(index.tickets)) {
+      errors.push({ path, line: 1, message: "tickets must be an array" });
+    }
+
+  } catch (e) {
+    errors.push({ path, message: `Failed to fetch file: ${e instanceof Error ? e.message : "unknown error"}` });
+  }
+
+  return errors;
+}
+
+/**
+ * Simple YAML frontmatter parser.
+ * Handles the subset we need: scalar values, arrays.
+ */
+function parseSimpleYaml(content: string): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  const lines = content.split("\n");
+  let currentKey: string | null = null;
+  let currentArray: string[] | null = null;
+
+  for (const line of lines) {
+    // Skip empty lines and comments
+    if (!line.trim() || line.trim().startsWith("#")) continue;
+
+    // Check for array item
+    if (line.match(/^\s+-\s+/)) {
+      if (currentArray) {
+        const value = line.replace(/^\s+-\s+/, "").trim();
+        currentArray.push(value);
+      }
+      continue;
+    }
+
+    // Check for key: value
+    const kvMatch = line.match(/^([a-z_][a-z0-9_]*)\s*:\s*(.*)$/i);
+    if (kvMatch) {
+      // Save previous array if any
+      if (currentKey && currentArray) {
+        result[currentKey] = currentArray;
+        currentArray = null;
+      }
+
+      const [, key, rawValue] = kvMatch;
+      currentKey = key;
+      const value = rawValue.trim();
+
+      if (value === "" || value === "[]") {
+        // Start of array or empty
+        currentArray = [];
+      } else if (value === "null" || value === "~") {
+        result[key] = null;
+      } else if (value.startsWith("[") && value.endsWith("]")) {
+        // Inline array
+        const inner = value.slice(1, -1);
+        result[key] = inner ? inner.split(",").map((s) => s.trim()) : [];
+      } else {
+        result[key] = value;
+        currentKey = null;
+      }
+    }
+  }
+
+  // Save final array if any
+  if (currentKey && currentArray) {
+    result[currentKey] = currentArray;
+  }
+
+  return result;
+}
+
 interface PullRequestPayload {
   action: string;
   number: number;
@@ -333,18 +707,21 @@ interface PullRequestPayload {
     state: string;
     merged: boolean;
     mergeable_state?: string;
-    head: { ref: string };
+    head: { ref: string; sha: string };
+    base: { ref: string };
   };
   repository: {
     full_name: string;
     owner: { login: string };
     name: string;
   };
+  installation?: { id: number };
 }
 
 async function handlePullRequestEvent(payload: PullRequestPayload): Promise<{ ok: boolean; message?: string }> {
   const fullName = payload.repository.full_name;
   const pr = payload.pull_request;
+  const installationId = payload.installation?.id;
 
   // Find repo
   const repo = await db.query.repos.findFirst({
@@ -385,6 +762,21 @@ async function handlePullRequestEvent(payload: PullRequestPayload): Promise<{ ok
         updatedAt: new Date(),
       },
     });
+
+  // Run protocol check on PR open/sync/reopen (if we have installation token)
+  const shouldCheck = ["opened", "synchronize", "reopened"].includes(payload.action);
+  if (shouldCheck && installationId) {
+    // Fire and forget - don't block the webhook response
+    runProtocolCheck({
+      owner: payload.repository.owner.login,
+      repo: payload.repository.name,
+      prNumber: pr.number,
+      headSha: pr.head.sha,
+      installationId,
+    }).catch((err) => {
+      console.error(`[webhook] Protocol check failed for PR #${pr.number}:`, err);
+    });
+  }
 
   return { ok: true, message: `PR #${pr.number} cached` };
 }
