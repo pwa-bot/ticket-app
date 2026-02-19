@@ -127,6 +127,23 @@ export default function SettingsClient() {
           <p className="mt-1 text-sm text-slate-600">
             Install the Ticket GitHub App for real-time sync via webhooks and higher API limits.
           </p>
+          <details className="mt-3">
+            <summary className="text-sm text-slate-500 cursor-pointer hover:text-slate-700">
+              Where should I install?
+            </summary>
+            <div className="mt-2 text-sm text-slate-600 space-y-2">
+              <p>
+                <strong>Install on each account/org that owns repos you want to track.</strong>
+              </p>
+              <p>
+                GitHub App access is per-account. If your repos are owned by an org like <code className="bg-slate-100 px-1 rounded">acme-corp</code>, 
+                install on that org. Personal repos need install on your personal account.
+              </p>
+              <p>
+                Without the app, boards still work via OAuth — you just won't get real-time webhook updates.
+              </p>
+            </div>
+          </details>
         </div>
 
         <div className="p-6">
