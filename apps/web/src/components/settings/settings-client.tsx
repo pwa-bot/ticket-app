@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 type Installation = {
@@ -9,43 +9,12 @@ type Installation = {
   accountType: "User" | "Organization";
 };
 
-type RepoSummary = {
-  full_name: string;
-};
-
 export default function SettingsClient() {
   const [loading, setLoading] = useState(true);
   const [installations, setInstallations] = useState<Installation[]>([]);
-  const [repos, setRepos] = useState<RepoSummary[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [installUrl, setInstallUrl] = useState<string | null>(null);
-
-  // Compute which accounts own repos and whether they have app installed
-  const installationLogins = useMemo(
-    () => new Set(installations.map((i) => i.accountLogin.toLowerCase())),
-    [installations]
-  );
-
-  const repoOwners = useMemo(() => {
-    const owners = new Map<string, { count: number; hasApp: boolean }>();
-    for (const repo of repos) {
-      const owner = repo.full_name.split("/")[0];
-      if (!owner) continue;
-      const existing = owners.get(owner) || { count: 0, hasApp: false };
-      existing.count++;
-      existing.hasApp = installationLogins.has(owner.toLowerCase());
-      owners.set(owner, existing);
-    }
-    return owners;
-  }, [repos, installationLogins]);
-
-  const ownersNeedingInstall = useMemo(() => 
-    Array.from(repoOwners.entries())
-      .filter(([_, info]) => !info.hasApp)
-      .map(([owner, info]) => ({ owner, count: info.count })),
-    [repoOwners]
-  );
 
   useEffect(() => {
     loadData().then(() => {
@@ -54,24 +23,21 @@ export default function SettingsClient() {
         refreshInstallations();
       }, 500);
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadData() {
     try {
-      const [iRes, uRes, rRes] = await Promise.all([
+      const [iRes, uRes] = await Promise.all([
         fetch("/api/github/installations"),
         fetch("/api/github/app/install-url"),
-        fetch("/api/repos"),
       ]);
-      
+
       const iJson = await iRes.json();
       const uJson = await uRes.json();
-      const rJson = await rRes.json();
-      
+
       setInstallations(iJson.installations ?? []);
       setInstallUrl(uJson.url ?? null);
-      setRepos(rJson.repos ?? []);
     } finally {
       setLoading(false);
     }
@@ -173,31 +139,6 @@ export default function SettingsClient() {
                   </div>
                 ))}
               </div>
-
-              {/* Accounts needing install */}
-              {ownersNeedingInstall.length > 0 && (
-                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-                  <p className="text-sm font-medium text-amber-900">
-                    Some repos need the app installed
-                  </p>
-                  <p className="mt-1 text-sm text-amber-700">
-                    You have {ownersNeedingInstall.reduce((sum, o) => sum + o.count, 0)} repo(s) owned by: {ownersNeedingInstall.map(o => o.owner).join(", ")}
-                  </p>
-                  <p className="mt-2 text-sm text-amber-700">
-                    Install the app on those accounts to enable webhooks for all your repos.
-                  </p>
-                  {installUrl && (
-                    <div className="mt-3">
-                      <a
-                        href={installUrl}
-                        className="rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
-                      >
-                        Install on another account →
-                      </a>
-                    </div>
-                  )}
-                </div>
-              )}
 
               <div className="flex items-center gap-3">
                 {installUrl && (

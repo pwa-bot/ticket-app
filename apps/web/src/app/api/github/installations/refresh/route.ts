@@ -1,98 +1,55 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db/client";
-import { getCurrentUserId, getAccessTokenFromCookies, getSession } from "@/lib/auth";
-import { getAppOctokit } from "@/lib/github-app";
+import { getCurrentUserId, getAccessTokenFromCookies } from "@/lib/auth";
 
 /**
  * POST /api/github/installations/refresh
- * 
- * Find GitHub App installations for the current user.
- * Uses the App's own API to list installations, then matches by account login.
+ *
+ * Re-fetches the current user's GitHub App installations using their OAuth token.
+ * Works with read:user scope — calls GET /user/installations.
  */
 export async function POST() {
   const userId = await getCurrentUserId();
-  const session = await getSession();
-  
-  if (!userId || !session) {
+  const token = await getAccessTokenFromCookies();
+
+  if (!userId || !token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let githubLogin = session.githubLogin;
-  const token = await getAccessTokenFromCookies();
-  
-  // If githubLogin is unknown (legacy session), fetch it from GitHub
-  if (!githubLogin || githubLogin === "unknown") {
-    if (!token) {
-      return NextResponse.json({ error: "Cannot determine GitHub login" }, { status: 400 });
-    }
-    try {
-      const userResponse = await fetch("https://api.github.com/user", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/vnd.github+json",
-        },
-      });
-      if (userResponse.ok) {
-        const userData = await userResponse.json() as { login: string };
-        githubLogin = userData.login;
-      } else {
-        return NextResponse.json({ error: "Failed to fetch GitHub user info" }, { status: 502 });
-      }
-    } catch (e) {
-      console.error("[refresh installations] Failed to fetch user:", e);
-      return NextResponse.json({ error: "Failed to fetch GitHub user info" }, { status: 502 });
-    }
-  }
-  
-  // Also fetch user's orgs to match org installations
-  let userOrgs: string[] = [];
-  
-  if (token) {
-    try {
-      const orgsResponse = await fetch("https://api.github.com/user/orgs", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/vnd.github+json",
-        },
-      });
-      if (orgsResponse.ok) {
-        const orgsData = await orgsResponse.json() as Array<{ login: string }>;
-        userOrgs = orgsData.map(o => o.login.toLowerCase());
-      }
-    } catch (e) {
-      console.error("[refresh installations] Failed to fetch orgs:", e);
-    }
-  }
-
   try {
-    // Use App authentication to list ALL installations of our app
-    const octokit = getAppOctokit();
-    const { data } = await octokit.rest.apps.listInstallations({ per_page: 100 });
-    
-    // Filter to installations that belong to this user or their orgs
-    const userLogins = new Set([
-      githubLogin.toLowerCase(),
-      ...userOrgs,
-    ]);
-    
-    const userInstallations = data.filter(inst => {
-      const accountLogin = (inst.account as { login?: string })?.login?.toLowerCase();
-      return accountLogin && userLogins.has(accountLogin);
+    // Use user's OAuth token to list their GitHub App installations.
+    // GET /user/installations works with read:user scope.
+    const response = await fetch("https://api.github.com/user/installations", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
+      },
     });
-    
-    console.log("[refresh installations]", {
-      githubLogin,
-      userOrgs,
-      totalInstallations: data.length,
-      matchedInstallations: userInstallations.length,
-    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      console.error("[refresh installations] GitHub API error:", response.status, text);
+      return NextResponse.json(
+        { error: `GitHub API error: ${response.status}` },
+        { status: 502 },
+      );
+    }
+
+    const data = (await response.json()) as {
+      installations: Array<{
+        id: number;
+        account: { login: string; type: string } | null;
+      }>;
+    };
 
     const registered = [];
 
-    for (const inst of userInstallations) {
-      const account = inst.account as { login: string; type: string };
-      
+    for (const inst of data.installations) {
+      const account = inst.account;
+      const accountLogin = account?.login ?? "unknown";
+      const accountType = account?.type ?? "User";
+
       const existingInstallation = await db.query.installations.findFirst({
         where: eq(schema.installations.githubInstallationId, inst.id),
       });
@@ -101,12 +58,11 @@ export async function POST() {
 
       if (existingInstallation) {
         installationDbId = existingInstallation.id;
-        // Update account info in case it changed
         await db
           .update(schema.installations)
           .set({
-            githubAccountLogin: account.login,
-            githubAccountType: account.type,
+            githubAccountLogin: accountLogin,
+            githubAccountType: accountType,
             updatedAt: new Date(),
           })
           .where(eq(schema.installations.id, existingInstallation.id));
@@ -115,8 +71,8 @@ export async function POST() {
           .insert(schema.installations)
           .values({
             githubInstallationId: inst.id,
-            githubAccountLogin: account.login,
-            githubAccountType: account.type,
+            githubAccountLogin: accountLogin,
+            githubAccountType: accountType,
           })
           .returning({ id: schema.installations.id });
         installationDbId = inserted.id;
@@ -125,17 +81,10 @@ export async function POST() {
       // Link user to installation
       await db
         .insert(schema.userInstallations)
-        .values({
-          userId,
-          installationId: installationDbId,
-        })
+        .values({ userId, installationId: installationDbId })
         .onConflictDoNothing();
 
-      registered.push({
-        installationId: inst.id,
-        accountLogin: account.login,
-        accountType: account.type,
-      });
+      registered.push({ installationId: inst.id, accountLogin, accountType });
     }
 
     return NextResponse.json({
@@ -147,7 +96,7 @@ export async function POST() {
     console.error("[refresh installations] Error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

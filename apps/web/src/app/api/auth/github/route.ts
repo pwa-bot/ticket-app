@@ -50,8 +50,8 @@ export async function GET(request: Request) {
     authorizeUrl.searchParams.set("client_id", clientId);
     authorizeUrl.searchParams.set("redirect_uri", redirectUri);
     authorizeUrl.searchParams.set("state", generatedState);
-    authorizeUrl.searchParams.set("scope", "repo read:user user:email"); // repo for listing, identity for user record
-    
+    authorizeUrl.searchParams.set("scope", "read:user user:email");
+
     const response = NextResponse.redirect(authorizeUrl);
     response.cookies.set(cookieNames.oauthState, generatedState, {
       httpOnly: true,
@@ -72,15 +72,15 @@ export async function GET(request: Request) {
     if (existingToken) {
       return NextResponse.redirect(new URL("/space", request.url));
     }
-    
+
     // No session, need to log in first
     const generatedState = randomBytes(16).toString("hex");
-    
+
     const authorizeUrl = new URL("https://github.com/login/oauth/authorize");
     authorizeUrl.searchParams.set("client_id", clientId);
     authorizeUrl.searchParams.set("redirect_uri", redirectUri);
     authorizeUrl.searchParams.set("state", generatedState);
-    authorizeUrl.searchParams.set("scope", "repo read:user user:email");
+    authorizeUrl.searchParams.set("scope", "read:user user:email");
     
     const response = NextResponse.redirect(authorizeUrl);
     response.cookies.set(cookieNames.oauthState, generatedState, {
@@ -237,8 +237,11 @@ export async function GET(request: Request) {
     // Non-fatal, continue with login
   }
 
-  // Always go to /space - repos work with or without app installed
-  const redirectTo = "/space";
+  // Redirect to onboarding if user has no GitHub App installations yet
+  const existingInstallation = await db.query.userInstallations.findFirst({
+    where: eq(schema.userInstallations.userId, userId),
+  });
+  const redirectTo = existingInstallation ? "/space" : "/space/onboarding";
 
   // Create session with both token and user ID
   const sessionData = JSON.stringify({

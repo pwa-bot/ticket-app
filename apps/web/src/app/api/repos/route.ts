@@ -1,39 +1,52 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { getAccessTokenFromCookies } from "@/lib/auth";
-import { listReposWithTickets } from "@/lib/github";
+import { eq, inArray } from "drizzle-orm";
+import { db, schema } from "@/db/client";
+import { getCurrentUserId } from "@/lib/auth";
 
+/**
+ * GET /api/repos
+ *
+ * Returns repos accessible to the current user via their GitHub App installations.
+ * Uses Postgres cache only — no GitHub API calls required.
+ */
 export async function GET() {
-  // Debug: check if we have the session cookie at all
-  const store = await cookies();
-  const hasSessionCookie = store.has("ticket_app_session");
-  const hasSecret = !!process.env.NEXTAUTH_SECRET;
-  
-  const token = await getAccessTokenFromCookies();
+  const userId = await getCurrentUserId();
 
-  if (!token) {
-    console.error("[/api/repos] Auth failed:", { hasSessionCookie, hasSecret });
-    return NextResponse.json({ 
-      error: "Unauthorized",
-      debug: { hasSessionCookie, hasSecret }
-    }, { status: 401 });
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const repos = await listReposWithTickets(token);
-    return NextResponse.json({ repos });
+    // Get user's installation IDs
+    const userInstallations = await db.query.userInstallations.findMany({
+      where: eq(schema.userInstallations.userId, userId),
+    });
+
+    if (userInstallations.length === 0) {
+      return NextResponse.json({ repos: [] });
+    }
+
+    const installationIds = userInstallations.map((ui) => ui.installationId);
+
+    // Get repos linked to user's installations
+    const repos = await db.query.repos.findMany({
+      where: inArray(schema.repos.installationId, installationIds),
+    });
+
+    return NextResponse.json({
+      repos: repos.map((r) => ({
+        full_name: r.fullName,
+        name: r.repo,
+        owner: r.owner,
+        enabled: r.enabled,
+        defaultBranch: r.defaultBranch,
+      })),
+    });
   } catch (error) {
     console.error("[/api/repos] Error loading repositories:", error);
-    const message = error instanceof Error ? error.message : "Failed to load repositories";
-    // If it's a GitHub auth error, suggest re-login
-    const isAuthError = message.includes("401") || message.includes("403");
     return NextResponse.json(
-      { 
-        error: isAuthError 
-          ? "GitHub authentication expired. Please log out and log back in." 
-          : message 
-      },
-      { status: isAuthError ? 401 : 500 },
+      { error: "Failed to load repositories" },
+      { status: 500 },
     );
   }
 }
