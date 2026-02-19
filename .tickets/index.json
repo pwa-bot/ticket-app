@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-19T19:45:57.779Z",
+  "generated_at": "2026-02-19T19:46:02.651Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -32,6 +32,21 @@
         "p0"
       ],
       "path": ".tickets/tickets/01KHVQ02ZX1SX13ZB6HZPK4A1N.md"
+    },
+    {
+      "id": "01KHVQ07RFJNSWWTGRF9EG0NDB",
+      "short_id": "01KHVQ07",
+      "display_id": "TK-01KHVQ07",
+      "title": "Dashboard fix Attention search and add Jump-to-ID",
+      "state": "backlog",
+      "priority": "p0",
+      "labels": [
+        "dashboard",
+        "search",
+        "attention",
+        "p0"
+      ],
+      "path": ".tickets/tickets/01KHVQ07RFJNSWWTGRF9EG0NDB.md"
     },
     {
       "id": "01KHS9PF0AGVDSF6G0FER0W2R7",
