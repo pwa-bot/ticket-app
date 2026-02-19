@@ -325,6 +325,7 @@ function TableViewInner({
   openTicket,
   prMap,
   ciMap,
+  showPrCi,
 }: {
   owner: string;
   repo: string;
@@ -332,6 +333,7 @@ function TableViewInner({
   openTicket: (id: string) => void;
   prMap: Record<string, LinkedPrSummary[]>;
   ciMap: Record<string, CiStatus>;
+  showPrCi: boolean;
 }) {
   const { createChange, changes } = usePendingChanges();
   
@@ -369,7 +371,8 @@ function TableViewInner({
       onChangeField={handleChangeField}
       pendingTicketIds={pendingTicketIds}
       prMap={prMap} 
-      ciMap={ciMap} 
+      ciMap={ciMap}
+      showPrCi={showPrCi}
     />
   );
 }
@@ -383,6 +386,7 @@ function TableView({
   loadTickets,
   prMap,
   ciMap,
+  showPrCi,
 }: {
   owner: string;
   repo: string;
@@ -391,6 +395,7 @@ function TableView({
   loadTickets: (opts?: { forceRefresh?: boolean }) => Promise<void>;
   prMap: Record<string, LinkedPrSummary[]>;
   ciMap: Record<string, CiStatus>;
+  showPrCi: boolean;
 }) {
   return (
     <PendingChangesProvider onMerged={() => void loadTickets({ forceRefresh: true })}>
@@ -401,6 +406,7 @@ function TableView({
         openTicket={openTicket}
         prMap={prMap}
         ciMap={ciMap}
+        showPrCi={showPrCi}
       />
     </PendingChangesProvider>
   );
@@ -604,6 +610,7 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
   }, [activeLabelFilter, activePriorityFilter, activeStateFilter, allTickets]);
 
   const grouped = useMemo(() => groupTicketsForBoard(filteredTickets), [filteredTickets]);
+  const hasPrData = useMemo(() => Object.keys(prMap).length > 0, [prMap]);
 
   const attentionRows = useMemo(() => {
     return filteredTickets
@@ -780,6 +787,7 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
               loadTickets={loadTickets}
               prMap={prMap}
               ciMap={ciMap}
+              showPrCi={hasPrData}
             />
           )}
         </>
@@ -787,11 +795,11 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
 
       {selectedTicketId && (
         <PendingChangesProvider onMerged={() => void loadTickets({ forceRefresh: true })}>
-          <TicketDetailModal 
+          <TicketDetailModal
             repo={fullRepo} 
-            ticketId={selectedTicketId} 
+            ticketId={index?.tickets.find((t) => t.id === selectedTicketId || t.short_id === selectedTicketId)?.id ?? selectedTicketId}
             onClose={closeTicket}
-            initialData={index?.tickets.find(t => t.id === selectedTicketId || t.short_id === selectedTicketId)}
+            initialData={index?.tickets.find((t) => t.id === selectedTicketId || t.short_id === selectedTicketId)}
           />
         </PendingChangesProvider>
       )}
