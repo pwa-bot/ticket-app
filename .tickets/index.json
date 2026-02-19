@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-19T05:11:59.319Z",
+  "generated_at": "2026-02-19T05:11:59.556Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -184,22 +184,6 @@
       "path": ".tickets/tickets/01KHS9PES0SP0ZAJAAVQYW98E4.md"
     },
     {
-      "id": "01KHT40SNQEEQW7G0DP1CWW6VM",
-      "short_id": "01KHT40S",
-      "display_id": "TK-01KHT40S",
-      "title": "GitHub check-run policy enforcement for Ticket Protocol",
-      "state": "in_progress",
-      "priority": "p0",
-      "labels": [
-        "governance",
-        "github-app",
-        "checks"
-      ],
-      "assignee": "agent:openclaw",
-      "reviewer": "human:morgan",
-      "path": ".tickets/tickets/01KHT40SNQEEQW7G0DP1CWW6VM.md"
-    },
-    {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
       "short_id": "01KHQ0K0",
       "display_id": "TK-01KHQ0K0",
@@ -271,6 +255,22 @@
         "protocol"
       ],
       "path": ".tickets/tickets/01KHQ0K8F90AJMSY7WBVGV2KGB.md"
+    },
+    {
+      "id": "01KHT40SNQEEQW7G0DP1CWW6VM",
+      "short_id": "01KHT40S",
+      "display_id": "TK-01KHT40S",
+      "title": "GitHub check-run policy enforcement for Ticket Protocol",
+      "state": "done",
+      "priority": "p0",
+      "labels": [
+        "governance",
+        "github-app",
+        "checks"
+      ],
+      "assignee": "agent:openclaw",
+      "reviewer": "human:morgan",
+      "path": ".tickets/tickets/01KHT40SNQEEQW7G0DP1CWW6VM.md"
     },
     {
       "id": "01KHMG84AJMCWQCCE84328MF5G",

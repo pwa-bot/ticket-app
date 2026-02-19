@@ -1,7 +1,7 @@
 ---
 id: 01KHT40SNQEEQW7G0DP1CWW6VM
 title: GitHub check-run policy enforcement for Ticket Protocol
-state: in_progress
+state: done
 priority: p0
 labels:
   - governance
