@@ -230,7 +230,22 @@ export default function RepoSelector() {
         </ul>
       </div>
       <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-600">{selected.length} selected</p>
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-slate-600">{selected.length} selected</p>
+          <button
+            type="button"
+            onClick={() => {
+              if (selected.length === repos.length) {
+                setSelected([]);
+              } else {
+                setSelected(repos.map((r) => r.full_name));
+              }
+            }}
+            className="text-sm font-medium text-slate-600 hover:text-slate-900 underline"
+          >
+            {selected.length === repos.length ? "Deselect all" : "Select all"}
+          </button>
+        </div>
         <button
           type="button"
           onClick={viewSelected}
