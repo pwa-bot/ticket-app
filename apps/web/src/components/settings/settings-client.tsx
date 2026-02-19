@@ -158,29 +158,6 @@ export default function SettingsClient() {
                 ))}
               </div>
 
-              {/* Show accounts that still need installation */}
-              {ownersNeedingInstall.length > 0 && (
-                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-                  <p className="text-sm font-medium text-amber-900">
-                    Some of your repos need the app installed
-                  </p>
-                  <p className="mt-1 text-sm text-amber-700">
-                    You have repos owned by: {ownersNeedingInstall.map(o => o.owner).join(", ")}
-                  </p>
-                  <p className="mt-2 text-sm text-amber-700">
-                    To install: click below, then <strong>select the correct account</strong> ({ownersNeedingInstall.map(o => o.owner).join(" or ")}) during GitHub's install flow.
-                  </p>
-                  <div className="mt-3">
-                    <a
-                      href="https://github.com/apps/ticketdotapp/installations/new"
-                      className="rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
-                    >
-                      Install GitHub App →
-                    </a>
-                  </div>
-                </div>
-              )}
-
               <div className="flex items-center gap-3">
                 {installUrl && (
                   <a
