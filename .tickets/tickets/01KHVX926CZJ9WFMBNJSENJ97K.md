@@ -1,7 +1,7 @@
 ---
 id: 01KHVX926CZJ9WFMBNJSENJ97K
 title: Consolidate auth/session helpers into requireSession()
-state: ready
+state: in_progress
 priority: p1
 labels:
   - refactor

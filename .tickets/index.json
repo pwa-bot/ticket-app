@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-19T22:07:57.812Z",
+  "generated_at": "2026-02-19T22:07:58.054Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -195,18 +195,6 @@
       "path": ".tickets/tickets/01KHT40R161HJ71E5QEKP02SM8.md"
     },
     {
-      "id": "01KHVX926CZJ9WFMBNJSENJ97K",
-      "short_id": "01KHVX92",
-      "display_id": "TK-01KHVX92",
-      "title": "Consolidate auth/session helpers into requireSession()",
-      "state": "ready",
-      "priority": "p1",
-      "labels": [
-        "refactor"
-      ],
-      "path": ".tickets/tickets/01KHVX926CZJ9WFMBNJSENJ97K.md"
-    },
-    {
       "id": "01KHS9PEHNNAVY89FZD943BPDV",
       "short_id": "01KHS9PE",
       "display_id": "TK-01KHS9PE",
@@ -231,6 +219,18 @@
         "cache"
       ],
       "path": ".tickets/tickets/01KHS9PES0SP0ZAJAAVQYW98E4.md"
+    },
+    {
+      "id": "01KHVX926CZJ9WFMBNJSENJ97K",
+      "short_id": "01KHVX92",
+      "display_id": "TK-01KHVX92",
+      "title": "Consolidate auth/session helpers into requireSession()",
+      "state": "in_progress",
+      "priority": "p1",
+      "labels": [
+        "refactor"
+      ],
+      "path": ".tickets/tickets/01KHVX926CZJ9WFMBNJSENJ97K.md"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
