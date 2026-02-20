@@ -1,22 +1,8 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T22:57:37.744Z",
+  "generated_at": "2026-02-20T23:08:40.769Z",
   "workflow": "simple-v1",
   "tickets": [
-    {
-      "id": "01KHYK07YQ9E86TPP8DHCNC82D",
-      "short_id": "01KHYK07",
-      "title": "P0 Add server-side authorization guards to all cache-backed space APIs",
-      "state": "backlog",
-      "priority": "p0",
-      "labels": [
-        "security",
-        "authorization",
-        "api"
-      ],
-      "path": ".tickets/tickets/01KHYK07YQ9E86TPP8DHCNC82D.md",
-      "display_id": "TK-01KHYK07-3"
-    },
     {
       "id": "01KHYK086MC5KPMBJZ9C0DCDNS",
       "short_id": "01KHYK08",
@@ -156,6 +142,20 @@
       ],
       "path": ".tickets/tickets/01KHYK09CZ428DT3D7SFXKW02F.md",
       "display_id": "TK-01KHYK09-2"
+    },
+    {
+      "id": "01KHYK07YQ9E86TPP8DHCNC82D",
+      "short_id": "01KHYK07",
+      "title": "P0 Add server-side authorization guards to all cache-backed space APIs",
+      "state": "ready",
+      "priority": "p0",
+      "labels": [
+        "security",
+        "authorization",
+        "api"
+      ],
+      "path": ".tickets/tickets/01KHYK07YQ9E86TPP8DHCNC82D.md",
+      "display_id": "TK-01KHYK07-3"
     },
     {
       "id": "01KHYK07Q0YPJEG6BVE7M9WVVK",
