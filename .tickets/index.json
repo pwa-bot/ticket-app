@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T03:49:36.267Z",
+  "generated_at": "2026-02-20T03:49:38.844Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -150,6 +150,20 @@
         "product"
       ],
       "path": ".tickets/tickets/01KHW6EYNJV864W99AV18FC15P.md"
+    },
+    {
+      "id": "01KHWJNQWDNXQN0CWXMDPDQM17",
+      "short_id": "01KHWJNQ",
+      "display_id": "TK-01KHWJNQ",
+      "title": "Fix short-id collision handling for same-prefix ULIDs",
+      "state": "backlog",
+      "priority": "p1",
+      "labels": [
+        "cli",
+        "ids",
+        "reliability"
+      ],
+      "path": ".tickets/tickets/01KHWJNQWDNXQN0CWXMDPDQM17.md"
     },
     {
       "id": "01KHS9PFF2Z37S54PZD6QGW8DJ",
