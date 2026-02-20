@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import AttentionTable from "@/components/attention-table";
@@ -16,6 +16,7 @@ import type {
 } from "@/app/api/space/attention/route";
 import type { AttentionReasonDetail } from "@/lib/attention-contract";
 import type { SpaceTicketsResponse } from "@/app/api/space/tickets/route";
+import { trackWebEvent } from "@/lib/telemetry";
 
 const TICKETS_PAGE_SIZE = 100;
 
@@ -170,6 +171,7 @@ export default function PortfolioAttentionView() {
   const [ticketsOffset, setTicketsOffset] = useState(0);
   const [jumpValue, setJumpValue] = useState("");
   const [jumpError, setJumpError] = useState<string | null>(null);
+  const hasTrackedView = useRef(false);
 
   const selectedRepos = useMemo(() => {
     if (!repoParam) {
@@ -231,6 +233,23 @@ export default function PortfolioAttentionView() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    if (hasTrackedView.current || loading || error) {
+      return;
+    }
+
+    const hasData = !!attentionData || !!ticketsData;
+    if (!hasData) {
+      return;
+    }
+
+    hasTrackedView.current = true;
+    trackWebEvent("dashboard_activation_viewed", {
+      tab: activeTab,
+      reposEnabled: attentionData?.totals.reposEnabled ?? attentionData?.repos.length ?? ticketsData?.repos.length ?? 0,
+    });
+  }, [activeTab, attentionData, error, loading, ticketsData]);
+
   const selectedTicketId = searchParams.get("ticket");
   const selectedTicketRepo = searchParams.get("ticketRepo");
 
@@ -247,6 +266,7 @@ export default function PortfolioAttentionView() {
   }
 
   function onOpenTicket(repo: string, ticketId: string) {
+    trackWebEvent("dashboard_activation_open_ticket", { repo, ticketId, tab: activeTab });
     const params = new URLSearchParams(searchParams.toString());
     params.set("ticket", ticketId);
     params.set("ticketRepo", repo);
@@ -276,10 +296,18 @@ export default function PortfolioAttentionView() {
     }
 
     if (working.size === 0 || working.size === allRepos.length) {
+      trackWebEvent("dashboard_activation_repo_filtered", {
+        mode: "all",
+        selectedCount: allRepos.length,
+      });
       setQueryParam("repos", undefined);
       return;
     }
 
+    trackWebEvent("dashboard_activation_repo_filtered", {
+      mode: "subset",
+      selectedCount: working.size,
+    });
     setQueryParam("repos", Array.from(working).sort().join(","));
   }
 
@@ -348,6 +376,7 @@ export default function PortfolioAttentionView() {
     const normalized = normalizeJumpId(jumpValue);
     if (!normalized) {
       setJumpError("Enter a ticket ID like TK-ABC12345 or ABC12345.");
+      trackWebEvent("dashboard_activation_jump_to_id", { outcome: "invalid_input" });
       return;
     }
 
@@ -378,9 +407,11 @@ export default function PortfolioAttentionView() {
 
     if (!match) {
       setJumpError("Not found in current repos.");
+      trackWebEvent("dashboard_activation_jump_to_id", { outcome: "not_found", id: normalized.displayId });
       return;
     }
 
+    trackWebEvent("dashboard_activation_jump_to_id", { outcome: "opened", id: normalized.displayId });
     onOpenTicket(match.repoFullName, match.ticketId);
   }
 

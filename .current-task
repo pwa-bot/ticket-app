@@ -10,7 +10,7 @@
 6. [DONE] 01KHW6ERTAS4MW29ZBGXSH325X - E2E filters URL sync and browser nav correctness
 7. [DONE] 01KHW6EX837MYH0V9AN8C25930 - E2E modal deep link loads ticket outside current page filter
 8. [DONE] 01KHW6EXQC308GTC9EV697NEA4 - API attention precedence and multi reason contract tests
-9. [IN PROGRESS] 01KHW6EYE44BXJKWXY17C9MSVK - Instrumentation MVP funnel events for CLI and dashboard activation
+9. [DONE] 01KHW6EYE44BXJKWXY17C9MSVK - Instrumentation MVP funnel events for CLI and dashboard activation
 
 ## Session
 - Current session: warm-falcon

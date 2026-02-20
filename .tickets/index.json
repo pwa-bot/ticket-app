@@ -95,7 +95,7 @@
       "short_id": "01KHW6EY",
       "display_id": "TK-01KHW6EY",
       "title": "Instrumentation MVP funnel events for CLI and dashboard activation",
-      "state": "backlog",
+      "state": "done",
       "priority": "p0",
       "labels": [
         "analytics",

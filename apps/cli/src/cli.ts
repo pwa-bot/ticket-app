@@ -15,6 +15,7 @@ import { runInstallHooks } from "./commands/install-hooks.js";
 import { EXIT_CODE, TicketError } from "./lib/errors.js";
 import { failureEnvelope, writeEnvelope } from "./lib/json.js";
 import { setNoCommitMode, setQuietMode } from "./lib/output.js";
+import { emitCliTelemetry } from "./lib/telemetry.js";
 
 interface GlobalCliOptions {
   json?: boolean;
@@ -36,10 +37,21 @@ async function main(): Promise<void> {
     .option("--json", "Emit a JSON envelope")
     .option("-q, --quiet", "Suppress success output")
     .option("--no-commit", "Skip auto-commit (for dev/testing)")
-    .hook("preAction", (thisCommand) => {
+    .hook("preAction", (thisCommand, actionCommand) => {
       const opts = thisCommand.optsWithGlobals<GlobalCliOptions>();
       setQuietMode(opts.quiet ?? false);
       setNoCommitMode(opts.noCommit ?? false);
+
+      const commandName = actionCommand.name();
+      void emitCliTelemetry("cli_activation_command_started", {
+        command: commandName,
+        args: actionCommand.args.length,
+      });
+    })
+    .hook("postAction", (_thisCommand, actionCommand) => {
+      void emitCliTelemetry("cli_activation_command_succeeded", {
+        command: actionCommand.name(),
+      });
     });
 
   program
@@ -195,6 +207,10 @@ function collectEditLabels(value: string, previous: string[]): string[] {
 }
 
 main().catch((error) => {
+  void emitCliTelemetry("cli_activation_command_failed", {
+    message: error instanceof Error ? error.message : String(error),
+  });
+
   const jsonMode = process.argv.includes("--json");
   if (jsonMode) {
     writeEnvelope(failureEnvelope(error));
