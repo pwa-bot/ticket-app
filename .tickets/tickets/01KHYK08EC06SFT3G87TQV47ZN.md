@@ -1,7 +1,7 @@
 ---
 id: 01KHYK08EC06SFT3G87TQV47ZN
 title: P1 Expose sync health in API and UI (last sync stale age error state)
-state: ready
+state: in_progress
 priority: p1
 labels:
   - ux

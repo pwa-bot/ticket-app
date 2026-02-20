@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T23:37:32.150Z",
+  "generated_at": "2026-02-20T23:37:32.391Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -119,7 +119,7 @@
       "id": "01KHYK08EC06SFT3G87TQV47ZN",
       "short_id": "01KHYK08",
       "title": "P1 Expose sync health in API and UI (last sync stale age error state)",
-      "state": "ready",
+      "state": "in_progress",
       "priority": "p1",
       "labels": [
         "ux",
