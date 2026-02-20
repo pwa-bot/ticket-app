@@ -4,7 +4,7 @@
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
-      "env": ["GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET", "NEXTAUTH_SECRET"]
+      "env": ["GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET", "NEXTAUTH_SECRET", "DATABASE_URL"]
     },
     "dev": {
       "cache": false,
