@@ -1,7 +1,7 @@
 ---
 id: 01KHW6EY6MS5WYZFZA3Y3ZCC8R
 title: Attention index tuning with explain analyze baselines
-state: in_progress
+state: done
 priority: p1
 labels:
   - data

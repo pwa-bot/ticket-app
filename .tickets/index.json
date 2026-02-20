@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T07:47:36.592Z",
+  "generated_at": "2026-02-20T07:57:06.289Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -58,20 +58,6 @@
       ],
       "path": ".tickets/tickets/01KHVQ0B6VR7M2HAWB9QPEMBED.md",
       "display_id": "TK-01KHVQ0B"
-    },
-    {
-      "id": "01KHW6EY6MS5WYZFZA3Y3ZCC8R",
-      "short_id": "01KHW6EY",
-      "title": "Attention index tuning with explain analyze baselines",
-      "state": "in_progress",
-      "priority": "p1",
-      "labels": [
-        "data",
-        "perf",
-        "indexing"
-      ],
-      "path": ".tickets/tickets/01KHW6EY6MS5WYZFZA3Y3ZCC8R.md",
-      "display_id": "TK-01KHW6EY"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
@@ -683,6 +669,20 @@
       ],
       "path": ".tickets/tickets/01KHW6EXZ1SPHTEQZND9EZWA9T.md",
       "display_id": "TK-01KHW6EX-4"
+    },
+    {
+      "id": "01KHW6EY6MS5WYZFZA3Y3ZCC8R",
+      "short_id": "01KHW6EY",
+      "title": "Attention index tuning with explain analyze baselines",
+      "state": "done",
+      "priority": "p1",
+      "labels": [
+        "data",
+        "perf",
+        "indexing"
+      ],
+      "path": ".tickets/tickets/01KHW6EY6MS5WYZFZA3Y3ZCC8R.md",
+      "display_id": "TK-01KHW6EY"
     },
     {
       "id": "01KHWGYACVZMYF855VY5J9VM6N",
