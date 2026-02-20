@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T03:19:19.043Z",
+  "generated_at": "2026-02-20T03:19:22.793Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -164,6 +164,20 @@
         "product"
       ],
       "path": ".tickets/tickets/01KHW6EYNJV864W99AV18FC15P.md"
+    },
+    {
+      "id": "01KHWGYACVZMYF855VY5J9VM6N",
+      "short_id": "01KHWGYA",
+      "display_id": "TK-01KHWGYA",
+      "title": "Implement telemetry lane using git notes with event-branch fallback",
+      "state": "backlog",
+      "priority": "p1",
+      "labels": [
+        "protocol",
+        "telemetry",
+        "git-notes"
+      ],
+      "path": ".tickets/tickets/01KHWGYACVZMYF855VY5J9VM6N.md"
     },
     {
       "id": "01KHS9PFF2Z37S54PZD6QGW8DJ",
