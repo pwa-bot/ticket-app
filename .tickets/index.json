@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T05:17:03.867Z",
+  "generated_at": "2026-02-20T05:26:59.337Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -205,21 +205,6 @@
         "policy"
       ],
       "path": ".tickets/tickets/01KHWGYAVFC7VSZ6A0EMFQT9K2.md"
-    },
-    {
-      "id": "01KHT40T5MGCWRB1KQYB8M568T",
-      "short_id": "01KHT40T",
-      "display_id": "TK-01KHT40T",
-      "title": "Ticket templates (bug/feature/chore) for consistent creation",
-      "state": "in_progress",
-      "priority": "p2",
-      "labels": [
-        "templates",
-        "cli"
-      ],
-      "assignee": "agent:openclaw",
-      "reviewer": "human:morgan",
-      "path": ".tickets/tickets/01KHT40T5MGCWRB1KQYB8M568T.md"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
@@ -848,6 +833,21 @@
         "automerge"
       ],
       "path": ".tickets/tickets/01KHQ0K8PK9TVGX26XBE13A2JA.md"
+    },
+    {
+      "id": "01KHT40T5MGCWRB1KQYB8M568T",
+      "short_id": "01KHT40T",
+      "display_id": "TK-01KHT40T",
+      "title": "Ticket templates (bug/feature/chore) for consistent creation",
+      "state": "done",
+      "priority": "p2",
+      "labels": [
+        "templates",
+        "cli"
+      ],
+      "assignee": "agent:openclaw",
+      "reviewer": "human:morgan",
+      "path": ".tickets/tickets/01KHT40T5MGCWRB1KQYB8M568T.md"
     },
     {
       "id": "01KHMG861RFP1FWRX8BXP68D9P",
