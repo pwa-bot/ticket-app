@@ -1,22 +1,8 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T03:19:23.495Z",
+  "generated_at": "2026-02-20T03:20:49.236Z",
   "workflow": "simple-v1",
   "tickets": [
-    {
-      "id": "01KHWGY6QMV26C1242E9GTYBJ8",
-      "short_id": "01KHWGY6",
-      "display_id": "TK-01KHWGY6",
-      "title": "Protocol v1.1 dual-lane state model to prevent repo bloat",
-      "state": "backlog",
-      "priority": "p0",
-      "labels": [
-        "protocol",
-        "storage",
-        "git"
-      ],
-      "path": ".tickets/tickets/01KHWGY6QMV26C1242E9GTYBJ8.md"
-    },
     {
       "id": "01KHS9PF0AGVDSF6G0FER0W2R7",
       "short_id": "01KHS9PF",
@@ -248,6 +234,20 @@
       "assignee": "agent:openclaw",
       "reviewer": "human:morgan",
       "path": ".tickets/tickets/01KHT40T5MGCWRB1KQYB8M568T.md"
+    },
+    {
+      "id": "01KHWGY6QMV26C1242E9GTYBJ8",
+      "short_id": "01KHWGY6",
+      "display_id": "TK-01KHWGY6",
+      "title": "Protocol v1.1 dual-lane state model to prevent repo bloat",
+      "state": "ready",
+      "priority": "p0",
+      "labels": [
+        "protocol",
+        "storage",
+        "git"
+      ],
+      "path": ".tickets/tickets/01KHWGY6QMV26C1242E9GTYBJ8.md"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
