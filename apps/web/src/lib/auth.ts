@@ -160,11 +160,42 @@ export async function getSession(): Promise<SessionData | null> {
   }
 
   const store = await cookies();
-  const sessionId = store.get(SESSION_COOKIE)?.value;
-  if (!sessionId || !isOpaqueSessionId(sessionId)) {
+  const cookieValue = store.get(SESSION_COOKIE)?.value;
+  if (!cookieValue) {
     return null;
   }
 
+  // Legacy fallback: encrypted JSON payload stored directly in cookie.
+  if (!isOpaqueSessionId(cookieValue)) {
+    const decrypted = decryptToken(cookieValue);
+    if (!decrypted) {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(decrypted) as {
+        token?: string;
+        userId?: string;
+        githubLogin?: string;
+      };
+
+      if (!parsed.token || !parsed.userId) {
+        return null;
+      }
+
+      return {
+        sessionId: "legacy-cookie-session",
+        token: parsed.token,
+        userId: parsed.userId,
+        githubLogin: parsed.githubLogin ?? "unknown",
+        expiresAt: new Date(Date.now() + SESSION_TTL_MS),
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  const sessionId = cookieValue;
   const sessionRow = await db.query.authSessions.findFirst({
     where: eq(schema.authSessions.id, sessionId),
   });
@@ -237,7 +268,7 @@ export async function getAccessTokenFromCookies(): Promise<string | null> {
 export async function hasSessionCookie(): Promise<boolean> {
   const store = await cookies();
   const cookieValue = store.get(SESSION_COOKIE)?.value;
-  return Boolean(cookieValue && isOpaqueSessionId(cookieValue));
+  return Boolean(cookieValue);
 }
 
 export const cookieNames = {

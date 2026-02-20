@@ -6,11 +6,16 @@ import {
   cookieNames,
   createAuthSession,
   destroySessionById,
+  encryptToken,
   getSessionIdFromRequest,
   isUnauthorizedResponse,
   requireSession,
 } from "@/lib/auth";
-import { normalizeReturnTo } from "@/lib/auth-return-to";
+import {
+  createOAuthStateBinding,
+  normalizeReturnTo,
+  validateOAuthStateBinding,
+} from "@/lib/auth-return-to";
 import { getCanonicalBaseUrl, toCanonicalUrl } from "@/lib/app-url";
 import { db, schema } from "@/db/client";
 import {
@@ -107,6 +112,7 @@ export async function GET(request: Request) {
   // Case 1: Start OAuth flow
   if (!code && !installationId) {
     const generatedState = randomBytes(16).toString("hex");
+    const stateBinding = createOAuthStateBinding(generatedState, requestedReturnTo);
 
     const authorizeUrl = new URL("https://github.com/login/oauth/authorize");
     authorizeUrl.searchParams.set("client_id", clientId);
@@ -115,7 +121,7 @@ export async function GET(request: Request) {
     authorizeUrl.searchParams.set("scope", "read:user user:email");
 
     const response = NextResponse.redirect(authorizeUrl);
-    response.cookies.set(cookieNames.oauthState, generatedState, oauthStateCookieOptions());
+    response.cookies.set(cookieNames.oauthState, stateBinding, oauthStateCookieOptions());
     response.cookies.set(cookieNames.oauthReturnTo, requestedReturnTo, oauthStateCookieOptions());
 
     return response;
@@ -130,6 +136,7 @@ export async function GET(request: Request) {
 
     // No session, need to log in first
     const generatedState = randomBytes(16).toString("hex");
+    const stateBinding = createOAuthStateBinding(generatedState, installationReturnTo);
 
     const authorizeUrl = new URL("https://github.com/login/oauth/authorize");
     authorizeUrl.searchParams.set("client_id", clientId);
@@ -138,7 +145,7 @@ export async function GET(request: Request) {
     authorizeUrl.searchParams.set("scope", "read:user user:email");
 
     const response = NextResponse.redirect(authorizeUrl);
-    response.cookies.set(cookieNames.oauthState, generatedState, oauthStateCookieOptions());
+    response.cookies.set(cookieNames.oauthState, stateBinding, oauthStateCookieOptions());
     response.cookies.set(cookieNames.oauthReturnTo, installationReturnTo, oauthStateCookieOptions());
 
     return response;
@@ -150,14 +157,21 @@ export async function GET(request: Request) {
   }
 
   // Validate state
-  const expectedState = readCookieValue(request, cookieNames.oauthState);
-
-  if (!state || !expectedState || state !== expectedState) {
-    return apiError("Invalid OAuth state", { status: 400 });
-  }
-
+  const stateBindingCookie = readCookieValue(request, cookieNames.oauthState);
   const cookieReturnTo = normalizeReturnTo(readCookieValue(request, cookieNames.oauthReturnTo));
-  const finalReturnTo = normalizeReturnTo(url.searchParams.get("returnTo") ?? cookieReturnTo);
+  const hasValidState = validateOAuthStateBinding({
+    providedState: state,
+    stateBindingCookie,
+    returnTo: cookieReturnTo,
+  });
+
+  if (!hasValidState) {
+    const response = apiError("Invalid OAuth state", { status: 400 });
+    response.cookies.set(cookieNames.oauthState, "", expiredCookieOptions());
+    response.cookies.set(cookieNames.oauthReturnTo, "", expiredCookieOptions());
+    return response;
+  }
+  const finalReturnTo = cookieReturnTo;
 
   // Exchange code for token
   const tokenResponse = await fetch("https://github.com/login/oauth/access_token", {
@@ -171,7 +185,7 @@ export async function GET(request: Request) {
       client_secret: clientSecret,
       code,
       redirect_uri: redirectUri,
-      state,
+      state: state ?? "",
     }),
     cache: "no-store",
   });
@@ -294,19 +308,33 @@ export async function GET(request: Request) {
   const redirectTo = finalReturnTo === "/space" ? defaultRedirectTo : finalReturnTo;
 
   const previousSessionId = getSessionIdFromRequest(request);
-  const { sessionId } = await createAuthSession({
-    userId,
-    githubLogin: githubUser.login,
-    accessToken: tokenData.access_token,
-  });
+  const response = NextResponse.redirect(toCanonicalUrl(request, redirectTo));
+
+  try {
+    const { sessionId } = await createAuthSession({
+      userId,
+      githubLogin: githubUser.login,
+      accessToken: tokenData.access_token,
+    });
+
+    response.cookies.set(cookieNames.session, sessionId, sessionCookieOptions());
+  } catch (error) {
+    console.error("[auth] Failed to create DB auth session; falling back to legacy cookie session:", error);
+
+    const legacySessionData = JSON.stringify({
+      token: tokenData.access_token,
+      userId,
+      githubLogin: githubUser.login,
+    });
+
+    response.cookies.set(cookieNames.session, encryptToken(legacySessionData), sessionCookieOptions());
+  }
+
   try {
     await destroySessionById(previousSessionId);
   } catch (error) {
     console.error("[auth] Failed to delete previous server session:", error);
   }
-
-  const response = NextResponse.redirect(toCanonicalUrl(request, redirectTo));
-  response.cookies.set(cookieNames.session, sessionId, sessionCookieOptions());
   response.cookies.set(cookieNames.oauthState, "", expiredCookieOptions());
   response.cookies.set(cookieNames.oauthReturnTo, "", expiredCookieOptions());
   setCsrfCookie(response, issueCsrfToken());
