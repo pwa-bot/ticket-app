@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T22:47:57.917Z",
+  "generated_at": "2026-02-20T22:57:19.807Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -170,20 +170,6 @@
       ],
       "path": ".tickets/tickets/01KHYK09CZ428DT3D7SFXKW02F.md",
       "display_id": "TK-01KHYK09-2"
-    },
-    {
-      "id": "01KHYK07F6DV5NVF7XXVJD186B",
-      "short_id": "01KHYK07",
-      "title": "P0 Enforce CSRF and POST-only on auth reconnect logout and refresh endpoints",
-      "state": "in_progress",
-      "priority": "p0",
-      "labels": [
-        "security",
-        "csrf",
-        "auth"
-      ],
-      "path": ".tickets/tickets/01KHYK07F6DV5NVF7XXVJD186B.md",
-      "display_id": "TK-01KHYK07"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
@@ -542,6 +528,20 @@
       ],
       "path": ".tickets/tickets/01KHYK00DHXBT8J9ATD1G0JM4B.md",
       "display_id": "TK-01KHYK00"
+    },
+    {
+      "id": "01KHYK07F6DV5NVF7XXVJD186B",
+      "short_id": "01KHYK07",
+      "title": "P0 Enforce CSRF and POST-only on auth reconnect logout and refresh endpoints",
+      "state": "done",
+      "priority": "p0",
+      "labels": [
+        "security",
+        "csrf",
+        "auth"
+      ],
+      "path": ".tickets/tickets/01KHYK07F6DV5NVF7XXVJD186B.md",
+      "display_id": "TK-01KHYK07"
     },
     {
       "id": "01KHMG84AJMCWQCCE84328MF5G",
