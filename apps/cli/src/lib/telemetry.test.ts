@@ -66,7 +66,9 @@ describe("telemetry lane", () => {
     const payload = fixedPayload("evt-notes-1", "cli_command_started", "2026-02-20T12:00:00.000Z");
     await writeTelemetryEvent(cwd, payload, settings);
 
-    const noteBody = await git(cwd, "notes", "--ref", settings.notesRef, "show", "HEAD");
+    const notesList = await git(cwd, "notes", "--ref", settings.notesRef, "list");
+    const annotatedObject = notesList.split(/\s+/)[1];
+    const noteBody = await git(cwd, "notes", "--ref", settings.notesRef, "show", annotatedObject);
     expect(noteBody).toContain("\"id\":\"evt-notes-1\"");
 
     const listed = await listTelemetryEvents(cwd, {}, settings);
@@ -81,7 +83,7 @@ describe("telemetry lane", () => {
     const cwd = await mkGitRepo(false);
     const settings: TelemetrySettings = {
       backend: "notes",
-      notesRef: "refs/notes/ticket-events",
+      notesRef: "refs////",
       eventRef: "refs/tickets/events",
       writeFallback: true,
       readFallback: true
@@ -96,6 +98,32 @@ describe("telemetry lane", () => {
 
     const listed = await listTelemetryEvents(cwd, {}, settings);
     expect(listed.map((entry) => entry.id)).toEqual(["evt-fallback-1"]);
+  });
+
+  it("writes notes telemetry without requiring HEAD and stores one note per event", async () => {
+    const cwd = await mkGitRepo(false);
+    const settings: TelemetrySettings = {
+      backend: "notes",
+      notesRef: "refs/notes/ticket-events",
+      eventRef: "refs/tickets/events",
+      writeFallback: true,
+      readFallback: true
+    };
+
+    const first = fixedPayload("evt-notes-2", "ticket_viewed", "2026-02-20T12:11:00.000Z");
+    const second = fixedPayload("evt-notes-3", "ticket_moved", "2026-02-20T12:12:00.000Z");
+
+    const backendOne = await writeTelemetryEvent(cwd, first, settings);
+    const backendTwo = await writeTelemetryEvent(cwd, second, settings);
+    expect(backendOne).toBe("notes");
+    expect(backendTwo).toBe("notes");
+
+    const notesEntries = await git(cwd, "notes", "--ref", settings.notesRef, "list");
+    const lines = notesEntries.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    expect(lines).toHaveLength(2);
+
+    const listed = await listTelemetryEvents(cwd, {}, settings);
+    expect(listed.map((entry) => entry.id)).toEqual(["evt-notes-2", "evt-notes-3"]);
   });
 
   it("supports direct event ref backend writes and deterministic ordering", async () => {

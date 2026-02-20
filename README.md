@@ -80,6 +80,10 @@ telemetry:
   read_fallback: true
 ```
 
+Storage behavior for v1.1 dual-lane:
+- `notes` backend writes immutable per-event note entries (prevents a single ever-growing note blob).
+- `event_ref` remains a best-effort fallback lane for environments where notes are unavailable.
+
 Policy tier selection precedence:
 - `ticket validate --policy-tier <tier>`
 - `TICKET_POLICY_TIER`

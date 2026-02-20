@@ -209,10 +209,14 @@ function toNdjsonLine(payload: CliTelemetryPayload): string {
   return `${JSON.stringify(payload)}\n`;
 }
 
+async function buildNotesAnchor(cwd: string, payload: CliTelemetryPayload): Promise<string> {
+  const seed = `ticket-telemetry-event:${payload.id}`;
+  return withTempFile(seed, async (filePath) => execGit(cwd, ["hash-object", "-w", filePath]));
+}
+
 async function writeTelemetryToNotes(cwd: string, payload: CliTelemetryPayload, notesRef: string): Promise<void> {
-  const anchor = await execGit(cwd, ["rev-parse", "--verify", "HEAD"]);
-  const existing = (await execGitAllowError(cwd, ["notes", "--ref", notesRef, "show", anchor])) ?? "";
-  const next = `${existing}${existing.endsWith("\n") || !existing ? "" : "\n"}${toNdjsonLine(payload)}`;
+  const anchor = await buildNotesAnchor(cwd, payload);
+  const next = toNdjsonLine(payload);
 
   await withTempFile(next, async (filePath) => {
     await execGit(cwd, ["notes", "--ref", notesRef, "add", "-f", "-F", filePath, anchor]);

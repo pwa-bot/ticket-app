@@ -63,11 +63,6 @@ async function rewriteEventRef(cwd: string, eventRef: string, snapshots: CliTele
 }
 
 async function rewriteNotesRef(cwd: string, notesRef: string, snapshots: CliTelemetryPayload[]): Promise<void> {
-  const head = await execGitAllowError(cwd, ["rev-parse", "--verify", "HEAD"]);
-  if (!head) {
-    throw new Error("cannot rewrite notes ref without HEAD commit");
-  }
-
   const list = await execGitAllowError(cwd, ["notes", "--ref", notesRef, "list"]);
   if (list) {
     const entries = list
@@ -82,10 +77,15 @@ async function rewriteNotesRef(cwd: string, notesRef: string, snapshots: CliTele
     }
   }
 
-  const next = toNdjson(snapshots);
-  await withTempFile(next, async (filePath) => {
-    await execGit(cwd, ["notes", "--ref", notesRef, "add", "-f", "-F", filePath, head]);
-  });
+  for (const snapshot of snapshots) {
+    const anchor = await withTempFile(
+      `ticket-telemetry-event:${snapshot.id}`,
+      async (filePath) => execGit(cwd, ["hash-object", "-w", filePath])
+    );
+    await withTempFile(toNdjson([snapshot]), async (filePath) => {
+      await execGit(cwd, ["notes", "--ref", notesRef, "add", "-f", "-F", filePath, anchor]);
+    });
+  }
 }
 
 export async function runTelemetryCompact(cwd: string, options: TelemetryCompactOptions): Promise<void> {
@@ -144,7 +144,7 @@ export async function runTelemetryCompact(cwd: string, options: TelemetryCompact
   console.log("");
   console.log("Verification:");
   console.log("  ticket validate --ci");
-  console.log("  git notes --ref " + settings.notesRef + " show HEAD");
+  console.log("  git notes --ref " + settings.notesRef + " list");
   console.log("  git show " + settings.eventRef);
   console.log("Rollback:");
   if (notesBackedUp) {

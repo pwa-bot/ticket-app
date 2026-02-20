@@ -36,6 +36,7 @@ Exit criteria:
 ### Phase 1: Enable telemetry lane in shadow mode
 
 1. Start writing telemetry to `git notes` (`refs/notes/ticket-events`) in non-blocking mode.
+   - Prefer immutable per-event note anchors (no `HEAD` dependency) to avoid repeatedly rewriting a single large note payload.
 2. Keep canonical write behavior unchanged.
 3. If notes are unavailable, mirror to fallback event ref/branch.
 
@@ -61,8 +62,8 @@ Verification commands:
 # List available notes refs
 git for-each-ref refs/notes
 
-# Inspect example note payloads
-git log --show-notes=ticket-events -n 5
+# Inspect stored note entries
+git notes --ref refs/notes/ticket-events list
 
 # Validate canonical still independent
 ticket validate --ci
@@ -88,7 +89,7 @@ ticket rebuild-index
 ticket validate --ci
 
 # Optional: compare telemetry availability across stores
-git log --show-notes=ticket-events -n 20
+git notes --ref refs/notes/ticket-events list
 ```
 
 Exit criteria:
@@ -111,7 +112,7 @@ ticket events compact --apply
 Verification commands:
 ```bash
 ticket validate --ci
-git notes --ref refs/notes/ticket-events show HEAD
+git notes --ref refs/notes/ticket-events list
 git show refs/tickets/events
 ```
 

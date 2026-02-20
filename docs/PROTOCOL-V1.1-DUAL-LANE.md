@@ -1,6 +1,6 @@
 # Ticket Protocol v1.1 Addendum: Dual-Lane State Model
 
-Status: Draft  
+Status: Implemented (reference CLI)  
 Version: 1.1.0 (additive to v1.0.0)  
 Scope: Non-breaking guidance and optional interoperability behavior
 
@@ -47,6 +47,7 @@ Recommended notes ref:
 - `refs/notes/ticket-events`
 
 Event producers SHOULD attach notes to commits that touched `.tickets/` (or to a chosen anchor commit policy) and include machine-readable payloads.
+To minimize object growth under high-frequency writes, implementations SHOULD prefer immutable per-event note anchors (for example, one anchor object per event id) instead of repeatedly appending to a single long-lived note payload.
 
 ### 3.2 Fallback: dedicated event refs/branch
 
