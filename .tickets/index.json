@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T03:49:36.035Z",
+  "generated_at": "2026-02-20T03:49:36.267Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -182,7 +182,7 @@
       "id": "01KHWGYAVFC7VSZ6A0EMFQT9K2",
       "short_id": "01KHWGYA",
       "display_id": "TK-01KHWGYA",
-      "title": "Policy tiers hard protocol checks warn execution quality opt-in strict",
+      "title": "Phase C: Policy tiers hard integrity warn quality opt-in strict",
       "state": "ready",
       "priority": "p1",
       "labels": [

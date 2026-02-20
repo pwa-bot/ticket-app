@@ -1,12 +1,13 @@
 ---
 id: 01KHWGYAVFC7VSZ6A0EMFQT9K2
-title: Policy tiers hard protocol checks warn execution quality opt-in strict
+title: 'Phase C: Policy tiers hard integrity warn quality opt-in strict'
 state: ready
 priority: p1
 labels:
   - governance
   - ci
   - policy
+updated: '2026-02-20T03:49:36.254Z'
 ---
 
 ## Problem
