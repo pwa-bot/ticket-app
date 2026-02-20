@@ -131,6 +131,8 @@ interface ServiceResponse {
   body: Record<string, unknown>;
 }
 
+const SUPPORTED_PR_ACTIONS = new Set(["opened", "reopened", "synchronize", "closed"]);
+
 export function extractShortIds(text: string): string[] {
   const out = new Set<string>();
 
@@ -230,6 +232,10 @@ export function createGithubWebhookService(deps: GithubWebhookServiceDeps) {
   }
 
   async function handlePullRequestEvent(payload: PullRequestPayload): Promise<Record<string, unknown>> {
+    if (!SUPPORTED_PR_ACTIONS.has(payload.action)) {
+      return { ok: true, message: `Ignored pull_request action ${payload.action}` };
+    }
+
     const fullName = payload.repository.full_name;
     const pr = payload.pull_request;
 
@@ -240,14 +246,13 @@ export function createGithubWebhookService(deps: GithubWebhookServiceDeps) {
 
     const haystack = `${pr.title}\n${pr.body ?? ""}\n${pr.head.ref}`;
     const shortIds = extractShortIds(haystack);
+    const matchedTickets = shortIds.length === 0 ? [] : await deps.store.findTicketsByShortIds(fullName, shortIds);
 
     await deps.store.replaceTicketPrMappings(fullName, pr.number);
 
-    if (shortIds.length === 0) {
+    if (matchedTickets.length === 0) {
       return { ok: true, message: "PR cached with no ticket links" };
     }
-
-    const matchedTickets = await deps.store.findTicketsByShortIds(fullName, shortIds);
 
     for (const ticket of matchedTickets) {
       await deps.store.upsertTicketPr({
