@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T23:17:19.539Z",
+  "generated_at": "2026-02-20T23:27:31.091Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -142,20 +142,6 @@
       ],
       "path": ".tickets/tickets/01KHYK09CZ428DT3D7SFXKW02F.md",
       "display_id": "TK-01KHYK09-2"
-    },
-    {
-      "id": "01KHYK07Q0YPJEG6BVE7M9WVVK",
-      "short_id": "01KHYK07",
-      "title": "P0 Harden OAuth callback state binding and returnTo allowlist",
-      "state": "in_progress",
-      "priority": "p0",
-      "labels": [
-        "security",
-        "oauth",
-        "auth"
-      ],
-      "path": ".tickets/tickets/01KHYK07Q0YPJEG6BVE7M9WVVK.md",
-      "display_id": "TK-01KHYK07-2"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
@@ -528,6 +514,20 @@
       ],
       "path": ".tickets/tickets/01KHYK07F6DV5NVF7XXVJD186B.md",
       "display_id": "TK-01KHYK07"
+    },
+    {
+      "id": "01KHYK07Q0YPJEG6BVE7M9WVVK",
+      "short_id": "01KHYK07",
+      "title": "P0 Harden OAuth callback state binding and returnTo allowlist",
+      "state": "done",
+      "priority": "p0",
+      "labels": [
+        "security",
+        "oauth",
+        "auth"
+      ],
+      "path": ".tickets/tickets/01KHYK07Q0YPJEG6BVE7M9WVVK.md",
+      "display_id": "TK-01KHYK07-2"
     },
     {
       "id": "01KHYK07YQ9E86TPP8DHCNC82D",
