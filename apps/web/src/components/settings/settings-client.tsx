@@ -24,7 +24,6 @@ export default function SettingsClient() {
         refreshInstallations();
       }, 500);
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadData() {

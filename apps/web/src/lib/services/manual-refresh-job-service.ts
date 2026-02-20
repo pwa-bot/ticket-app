@@ -251,7 +251,16 @@ export function createDbManualRefreshStore(): ManualRefreshStore {
         })
         .returning();
 
-      return mapJob(row);
+      if (!row || row.length === 0) {
+        throw new Error("Failed to insert job");
+      }
+      
+      const insertedRow = row[0] as typeof schema.manualRefreshJobs.$inferSelect;
+      if (!insertedRow) {
+        throw new Error("Failed to insert job");
+      }
+      
+      return mapJob(insertedRow);
     },
 
     async markRepoQueued(repoId, nowTs) {
@@ -297,8 +306,8 @@ export function createDbManualRefreshStore(): ManualRefreshStore {
           .where(and(eq(schema.manualRefreshJobs.id, row.id), eq(schema.manualRefreshJobs.status, "queued")))
           .returning();
 
-        if (updated) {
-          claimed.push(mapJob(updated));
+        if (Array.isArray(updated) && updated.length > 0) {
+          claimed.push(mapJob(updated[0] as typeof schema.manualRefreshJobs.$inferSelect));
         }
       }
 

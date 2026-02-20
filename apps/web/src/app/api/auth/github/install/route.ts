@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
 import { db, schema } from "@/db/client";
 import { isUnauthorizedResponse, requireSession } from "@/lib/auth";
 
@@ -14,7 +13,6 @@ import { isUnauthorizedResponse, requireSession } from "@/lib/auth";
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const installationId = url.searchParams.get("installation_id");
-  const setupAction = url.searchParams.get("setup_action"); // "install" | "update"
 
   if (!installationId) {
     // No installation_id means user just completed OAuth without installing

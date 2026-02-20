@@ -5,11 +5,9 @@ import { useState } from "react";
 export function CodeCard({
   children,
   label,
-  lang,
 }: {
   children: string;
   label?: string;
-  lang?: string;
 }) {
   const [copied, setCopied] = useState(false);
 
