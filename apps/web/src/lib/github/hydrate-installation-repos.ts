@@ -62,7 +62,7 @@ export async function hydrateInstallationRepos(
           repo: ghRepo.name,
           fullName,
           defaultBranch: ghRepo.default_branch ?? "main",
-          enabled: false,
+          enabled: true,
         })
         .onConflictDoUpdate({
           target: schema.repos.fullName,
