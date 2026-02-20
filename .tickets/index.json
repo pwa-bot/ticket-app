@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T07:27:33.176Z",
+  "generated_at": "2026-02-20T07:37:10.203Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -72,21 +72,6 @@
       ],
       "path": ".tickets/tickets/01KHS9PFF2Z37S54PZD6QGW8DJ.md",
       "display_id": "TK-01KHS9PF-3"
-    },
-    {
-      "id": "01KHT40SXFYEQ5Z9MCXQFZ6AA9",
-      "short_id": "01KHT40S",
-      "title": "Slack integration v1 (digest + deep links + review reminders)",
-      "state": "in_progress",
-      "priority": "p1",
-      "labels": [
-        "slack",
-        "notifications"
-      ],
-      "assignee": "agent:openclaw",
-      "reviewer": "human:morgan",
-      "path": ".tickets/tickets/01KHT40SXFYEQ5Z9MCXQFZ6AA9.md",
-      "display_id": "TK-01KHT40S-2"
     },
     {
       "id": "01KHVQ0B6VR7M2HAWB9QPEMBED",
@@ -635,6 +620,21 @@
       ],
       "path": ".tickets/tickets/01KHS9PF7Q5KP7EQDSVS8QQM6Q.md",
       "display_id": "TK-01KHS9PF-2"
+    },
+    {
+      "id": "01KHT40SXFYEQ5Z9MCXQFZ6AA9",
+      "short_id": "01KHT40S",
+      "title": "Slack integration v1 (digest + deep links + review reminders)",
+      "state": "done",
+      "priority": "p1",
+      "labels": [
+        "slack",
+        "notifications"
+      ],
+      "assignee": "agent:openclaw",
+      "reviewer": "human:morgan",
+      "path": ".tickets/tickets/01KHT40SXFYEQ5Z9MCXQFZ6AA9.md",
+      "display_id": "TK-01KHT40S-2"
     },
     {
       "id": "01KHVX91Q5116N3E8H3JF4J9H5",
