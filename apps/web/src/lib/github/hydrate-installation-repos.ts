@@ -71,6 +71,7 @@ export async function hydrateInstallationRepos(
             owner: ghRepo.owner.login,
             repo: ghRepo.name,
             defaultBranch: ghRepo.default_branch ?? "main",
+            enabled: true,
             updatedAt: new Date(),
           },
         });
