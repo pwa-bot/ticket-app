@@ -81,7 +81,8 @@ function emptyResponse(
  * Query param: ?repos=owner/repo,owner/repo2 (optional, defaults to all enabled repos)
  */
 export async function GET(req: NextRequest) {
-  const { userId } = await requireSession();
+  try {
+    const { userId } = await requireSession();
 
   const { searchParams } = new URL(req.url);
   const repoParam = searchParams.get("repos");
@@ -213,4 +214,11 @@ export async function GET(req: NextRequest) {
     },
     loadedAt: new Date().toISOString(),
   } satisfies SpaceIndexResponse);
+  } catch (error) {
+    if (error instanceof Response) {
+      return error;
+    }
+    console.error("[/api/space/index] Error:", error);
+    return apiSuccess(emptyResponse([], 0, 0) satisfies SpaceIndexResponse, { status: 200 });
+  }
 }

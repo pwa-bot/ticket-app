@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { apiError, apiSuccess } from "@/lib/api/response";
-import { requireSession } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 
 const WEB_EVENTS = new Set([
   "dashboard_activation_viewed",
@@ -17,7 +17,7 @@ interface TelemetryPayload {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await requireSession();
+    const session = await getSession();
 
     let payload: TelemetryPayload;
     try {
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
         channel: "telemetry",
         source: payload.source ?? "web",
         event: payload.event,
-        userId: session.userId,
+        userId: session?.userId ?? "anonymous",
         properties: payload.properties ?? {},
         at: new Date().toISOString(),
       }),

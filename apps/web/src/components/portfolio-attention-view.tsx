@@ -471,6 +471,9 @@ export default function PortfolioAttentionView() {
   }, [attentionData?.reasonCatalog]);
 
   const loadedAt = (activeTab === "tickets" ? indexData?.loadedAt : attentionData?.loadedAt) ?? null;
+  const reconnectHref = typeof window !== "undefined"
+    ? `/api/auth/reconnect?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`
+    : "/api/auth/reconnect?returnTo=%2Fspace";
 
   const attentionTotals = attentionData?.totals;
   const reposEnabled = attentionTotals?.reposEnabled ?? allRepos.length;
@@ -722,7 +725,19 @@ export default function PortfolioAttentionView() {
       <SaveViewBanner currentQuery={currentQuery} repo={null} basePath="/space" />
 
       {error ? (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <p>{error}</p>
+          {(error.includes("401") || error.includes("403")) ? (
+            <div className="mt-2">
+              <a
+                href={reconnectHref}
+                className="inline-block rounded-md bg-red-100 px-3 py-1.5 text-sm font-medium text-red-800 hover:bg-red-200"
+              >
+                Reconnect GitHub
+              </a>
+            </div>
+          ) : null}
+        </div>
       ) : null}
 
       {loading && !indexData && !attentionData ? (
