@@ -182,6 +182,13 @@ export async function GET(request: Request) {
   const tokenData = (await tokenResponse.json()) as { access_token?: string; error?: string };
 
   if (!tokenData.access_token || tokenData.error) {
+    if (tokenData.error === "bad_verification_code") {
+      const retryUrl = new URL("/api/auth/github", getCanonicalBaseUrl(request));
+      retryUrl.searchParams.set("force", "1");
+      retryUrl.searchParams.set("returnTo", finalReturnTo);
+      return NextResponse.redirect(retryUrl);
+    }
+
     return apiError(tokenData.error ?? "OAuth did not return an access token", { status: 400 });
   }
 
