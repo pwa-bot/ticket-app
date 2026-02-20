@@ -6,7 +6,6 @@ import { requireSession } from "@/lib/auth";
 import type { CiStatus, MergeReadiness } from "@/lib/attention";
 import { compareAttentionItems, getReasonCatalog, toReasonDetails, type AttentionReason } from "@/lib/attention-contract";
 import type { AttentionReasonDetail } from "@/lib/attention-contract";
-import { assertNoUnauthorizedRepos } from "@/lib/security/repo-access";
 
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -255,10 +254,7 @@ export async function GET(req: NextRequest) {
     ),
   });
 
-  // Apply repo filter if provided
-  if (filterSet) {
-    assertNoUnauthorizedRepos(filterSet, repos.map((repo) => repo.fullName));
-  }
+  // Apply repo filter if provided. Ignore unknown/unauthorized repos instead of failing the whole view.
   const targetRepos = filterSet
     ? repos.filter((r) => filterSet.has(r.fullName))
     : repos;

@@ -3,7 +3,6 @@ import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
 import { db, schema } from "@/db/client";
 import { apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
-import { assertNoUnauthorizedRepos } from "@/lib/security/repo-access";
 
 export interface SpaceIndexTicket {
   repoFullName: string;
@@ -118,10 +117,6 @@ export async function GET(req: NextRequest) {
         : inArray(schema.repos.installationId, installationIds),
     ),
   });
-
-  if (filterSet) {
-    assertNoUnauthorizedRepos(filterSet, repos.map((r) => r.fullName));
-  }
 
   const targetRepos = filterSet
     ? repos.filter((r) => filterSet.has(r.fullName))
