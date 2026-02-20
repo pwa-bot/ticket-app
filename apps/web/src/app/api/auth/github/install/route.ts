@@ -1,23 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, schema } from "@/db/client";
 import { isUnauthorizedResponse, requireSession } from "@/lib/auth";
+import { normalizeReturnTo } from "@/lib/auth-return-to";
 
 /**
  * GET /api/auth/github/install
- * 
+ *
  * Callback after GitHub App installation.
  * GitHub redirects here with installation_id query param.
- * 
+ *
  * We record the installation in our DB so we can use installation tokens.
  */
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const installationId = url.searchParams.get("installation_id");
 
+  const params = new URLSearchParams(url.searchParams);
+  params.delete("returnTo");
+  const defaultReturnTo = installationId
+    ? `/space/onboarding/callback${params.toString() ? `?${params.toString()}` : ""}`
+    : "/space";
+  const returnTo = normalizeReturnTo(url.searchParams.get("returnTo"), defaultReturnTo);
+
   if (!installationId) {
     // No installation_id means user just completed OAuth without installing
-    // Redirect to space
-    return NextResponse.redirect(new URL("/space", request.url));
+    return NextResponse.redirect(new URL(returnTo, request.url));
   }
 
   let token: string | null = null;
@@ -28,7 +35,7 @@ export async function GET(request: NextRequest) {
       throw error;
     }
   }
-  
+
   if (token) {
     // User is logged in - fetch installation details from GitHub
     try {
@@ -40,13 +47,13 @@ export async function GET(request: NextRequest) {
       });
 
       if (response.ok) {
-        const data = await response.json() as { 
-          installations: Array<{ 
-            id: number; 
+        const data = await response.json() as {
+          installations: Array<{
+            id: number;
             account: { login: string };
-          }> 
+          }>
         };
-        
+
         // Find the installation that was just added
         const installation = data.installations.find(
           (i) => i.id === parseInt(installationId, 10)
@@ -77,6 +84,5 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Redirect to space
-  return NextResponse.redirect(new URL("/space", request.url));
+  return NextResponse.redirect(new URL(returnTo, request.url));
 }

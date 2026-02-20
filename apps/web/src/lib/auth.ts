@@ -5,6 +5,7 @@ import { isDevAuthBypassEnabled } from "@/lib/security/auth-bypass";
 
 const SESSION_COOKIE = "ticket_app_session";
 const OAUTH_STATE_COOKIE = "ticket_app_oauth_state";
+const OAUTH_RETURN_TO_COOKIE = "ticket_app_oauth_return_to";
 const SELECTED_REPO_COOKIE = "ticket_app_repo";
 
 function getSecret(): string {
@@ -126,5 +127,6 @@ export async function getAccessTokenFromCookies(): Promise<string | null> {
 export const cookieNames = {
   session: SESSION_COOKIE,
   oauthState: OAUTH_STATE_COOKIE,
+  oauthReturnTo: OAUTH_RETURN_TO_COOKIE,
   selectedRepo: SELECTED_REPO_COOKIE,
 };

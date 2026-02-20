@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { apiError } from "@/lib/api/response";
 import { cookieNames, encryptToken, isUnauthorizedResponse, requireSession } from "@/lib/auth";
+import { normalizeReturnTo } from "@/lib/auth-return-to";
 import { db, schema } from "@/db/client";
 import {
   expiredCookieOptions,
@@ -14,6 +15,31 @@ import { issueCsrfToken, setCsrfCookie } from "@/lib/security/csrf";
 function getBaseUrl(request: Request): string {
   const url = new URL(request.url);
   return `${url.protocol}//${url.host}`;
+}
+
+function readCookieValue(request: Request, cookieName: string): string | null {
+  const cookieHeader = request.headers.get("cookie") ?? "";
+  const cookie = cookieHeader
+    .split(";")
+    .map((entry) => entry.trim())
+    .find((entry) => entry.startsWith(`${cookieName}=`));
+
+  if (!cookie) {
+    return null;
+  }
+
+  const separatorIndex = cookie.indexOf("=");
+  const value = separatorIndex >= 0 ? cookie.slice(separatorIndex + 1) : null;
+
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }
 
 function generateUlid(): string {
@@ -35,6 +61,13 @@ async function hasSession(): Promise<boolean> {
   }
 }
 
+function getOnboardingCallbackReturnTo(url: URL): string {
+  const params = new URLSearchParams(url.searchParams);
+  params.delete("returnTo");
+  const query = params.toString();
+  return query ? `/space/onboarding/callback?${query}` : "/space/onboarding/callback";
+}
+
 export async function GET(request: Request) {
   const clientId = process.env.GITHUB_CLIENT_ID;
   const clientSecret = process.env.GITHUB_CLIENT_SECRET;
@@ -51,17 +84,20 @@ export async function GET(request: Request) {
 
   // Check for force re-auth (from reconnect flow)
   const forceReauth = url.searchParams.get("force") === "1";
-  
-  // If user already has a valid session and no OAuth params, redirect to space
-  // Unless force=1 which means we want to re-authenticate
+
+  const requestedReturnTo = normalizeReturnTo(url.searchParams.get("returnTo"));
+  const installationReturnTo = normalizeReturnTo(getOnboardingCallbackReturnTo(url));
+
+  // If user already has a valid session and no OAuth params, redirect to requested destination.
+  // Unless force=1 which means we want to re-authenticate.
   if (!code && !installationId && !forceReauth && await hasSession()) {
-    return NextResponse.redirect(new URL("/space", request.url));
+    return NextResponse.redirect(new URL(requestedReturnTo, request.url));
   }
 
   // Case 1: Start OAuth flow
   if (!code && !installationId) {
     const generatedState = randomBytes(16).toString("hex");
-    
+
     const authorizeUrl = new URL("https://github.com/login/oauth/authorize");
     authorizeUrl.searchParams.set("client_id", clientId);
     authorizeUrl.searchParams.set("redirect_uri", redirectUri);
@@ -70,16 +106,16 @@ export async function GET(request: Request) {
 
     const response = NextResponse.redirect(authorizeUrl);
     response.cookies.set(cookieNames.oauthState, generatedState, oauthStateCookieOptions());
+    response.cookies.set(cookieNames.oauthReturnTo, requestedReturnTo, oauthStateCookieOptions());
 
     return response;
   }
 
-  // Case 2: Returned from GitHub App install - just redirect to space
-  // The installation will be auto-detected on next login or we can refresh
+  // Case 2: Returned from GitHub App install
   if (installationId && !code) {
-    // User already has a session, just go to space
+    // User already has a session, continue onboarding callback flow if possible
     if (await hasSession()) {
-      return NextResponse.redirect(new URL("/space", request.url));
+      return NextResponse.redirect(new URL(installationReturnTo, request.url));
     }
 
     // No session, need to log in first
@@ -90,9 +126,10 @@ export async function GET(request: Request) {
     authorizeUrl.searchParams.set("redirect_uri", redirectUri);
     authorizeUrl.searchParams.set("state", generatedState);
     authorizeUrl.searchParams.set("scope", "read:user user:email");
-    
+
     const response = NextResponse.redirect(authorizeUrl);
     response.cookies.set(cookieNames.oauthState, generatedState, oauthStateCookieOptions());
+    response.cookies.set(cookieNames.oauthReturnTo, installationReturnTo, oauthStateCookieOptions());
 
     return response;
   }
@@ -103,16 +140,14 @@ export async function GET(request: Request) {
   }
 
   // Validate state
-  const cookieHeader = request.headers.get("cookie") ?? "";
-  const expectedState = cookieHeader
-    .split(";")
-    .map((entry) => entry.trim())
-    .find((entry) => entry.startsWith(`${cookieNames.oauthState}=`))
-    ?.split("=")[1];
+  const expectedState = readCookieValue(request, cookieNames.oauthState);
 
   if (!state || !expectedState || state !== expectedState) {
     return apiError("Invalid OAuth state", { status: 400 });
   }
+
+  const cookieReturnTo = normalizeReturnTo(readCookieValue(request, cookieNames.oauthReturnTo));
+  const finalReturnTo = normalizeReturnTo(url.searchParams.get("returnTo") ?? cookieReturnTo);
 
   // Exchange code for token
   const tokenResponse = await fetch("https://github.com/login/oauth/access_token", {
@@ -161,7 +196,7 @@ export async function GET(request: Request) {
   });
 
   let userId: string;
-  
+
   if (!existingUser) {
     userId = generateUlid();
     await db.insert(schema.users).values({
@@ -240,11 +275,13 @@ export async function GET(request: Request) {
     // Non-fatal, continue with login
   }
 
-  // Redirect to onboarding if user has no GitHub App installations yet
+  // Redirect to onboarding if user has no GitHub App installations yet,
+  // unless a safe returnTo destination was requested.
   const existingInstallation = await db.query.userInstallations.findFirst({
     where: eq(schema.userInstallations.userId, userId),
   });
-  const redirectTo = existingInstallation ? "/space" : "/space/onboarding";
+  const defaultRedirectTo = existingInstallation ? "/space" : "/space/onboarding";
+  const redirectTo = finalReturnTo === "/space" ? defaultRedirectTo : finalReturnTo;
 
   // Create session with both token and user ID
   const sessionData = JSON.stringify({
@@ -256,6 +293,7 @@ export async function GET(request: Request) {
   const response = NextResponse.redirect(new URL(redirectTo, request.url));
   response.cookies.set(cookieNames.session, encryptToken(sessionData), sessionCookieOptions());
   response.cookies.set(cookieNames.oauthState, "", expiredCookieOptions());
+  response.cookies.set(cookieNames.oauthReturnTo, "", expiredCookieOptions());
   setCsrfCookie(response, issueCsrfToken());
 
   return response;

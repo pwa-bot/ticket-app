@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getAccessTokenFromCookies } from "@/lib/auth";
 import CallbackClient from "@/components/onboarding/callback-client";
+import { buildGithubAuthPath, withSearchParams } from "@/lib/auth-return-to";
 
 function CallbackFallback() {
   return (
@@ -11,10 +12,16 @@ function CallbackFallback() {
   );
 }
 
-export default async function OnboardingCallbackPage() {
+interface OnboardingCallbackPageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+export default async function OnboardingCallbackPage({ searchParams }: OnboardingCallbackPageProps) {
   const token = await getAccessTokenFromCookies();
+  const resolvedSearchParams = await searchParams;
+
   if (!token) {
-    redirect("/api/auth/github");
+    redirect(buildGithubAuthPath(withSearchParams("/space/onboarding/callback", resolvedSearchParams)));
   }
 
   return (

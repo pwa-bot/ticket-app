@@ -7,7 +7,7 @@ async function readSource(relativePath: string): Promise<string> {
   return readFile(path.resolve("src", relativePath), "utf8");
 }
 
-test("unauthenticated /space routes redirect to /api/auth/github", async () => {
+test("unauthenticated /space routes redirect to /api/auth/github with returnTo", async () => {
   const protectedSpacePages = [
     "app/space/page.tsx",
     "app/space/settings/page.tsx",
@@ -19,9 +19,20 @@ test("unauthenticated /space routes redirect to /api/auth/github", async () => {
 
   for (const page of protectedSpacePages) {
     const source = await readSource(page);
-    assert.match(source, /redirect\(["']\/api\/auth\/github["']\)/, `${page} should redirect unauthenticated users to /api/auth/github`);
-    assert.doesNotMatch(source, /redirect\(["']\/["']\)/, `${page} should not redirect unauthenticated users to /`);
+    assert.match(source, /buildGithubAuthPath\(/, `${page} should build auth redirect with returnTo`);
+    assert.match(source, /withSearchParams\(/, `${page} should preserve query params in returnTo`);
+    assert.doesNotMatch(source, /redirect\(["']\/api\/auth\/github["']\)/, `${page} should not use bare /api/auth/github redirect`);
   }
+});
+
+test("/api/auth/github validates and honors returnTo", async () => {
+  const source = await readSource("app/api/auth/github/route.ts");
+
+  assert.match(source, /normalizeReturnTo\(/, "auth route should sanitize requested returnTo values");
+  assert.match(source, /cookieNames\.oauthReturnTo/, "auth route should persist returnTo across OAuth round-trip");
+  assert.match(source, /const finalReturnTo = normalizeReturnTo\(/, "auth route should compute final safe returnTo");
+  assert.match(source, /NextResponse\.redirect\(new URL\(requestedReturnTo, request\.url\)\)/, "existing sessions should be redirected to returnTo");
+  assert.match(source, /response\.cookies\.set\(cookieNames\.oauthReturnTo, "", expiredCookieOptions\(\)\)/, "oauth returnTo cookie should be cleared after login");
 });
 
 test("/api/repos self-heals stale user_installations and returns repos across refreshed links", async () => {
