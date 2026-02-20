@@ -1,7 +1,7 @@
 "use client";
 
 import type { Priority, TicketIndex, TicketIndexEntry, TicketState } from "@ticketdotapp/core";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import AttentionTable from "@/components/attention-table";
@@ -434,6 +434,8 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
   const [view, setView] = useState<"board" | "table">("board");
   const [prMap, setPrMap] = useState<Record<string, LinkedPrSummary[]>>({});
   const [ciMap, setCiMap] = useState<Record<string, CiStatus>>({});
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const requestGenRef = useRef(0);
 
   useEffect(() => {
     setSelectedTicketId(ticketId ?? null);
@@ -463,6 +465,11 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
 
   const loadTickets = useCallback(
     async ({ forceRefresh = false }: { forceRefresh?: boolean } = {}) => {
+      abortControllerRef.current?.abort();
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+      const gen = ++requestGenRef.current;
+
       if (forceRefresh) {
         setRefreshing(true);
       } else {
@@ -478,6 +485,7 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
 
         const response = await fetch(`/api/tickets?${params.toString()}`, {
           cache: "no-store",
+          signal: controller.signal,
         });
 
         if (!response.ok) {
@@ -485,6 +493,9 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
         }
 
         const data = (await response.json()) as BoardIndex & { _meta?: typeof syncMeta };
+        if (gen !== requestGenRef.current) {
+          return;
+        }
         setIndex(data);
         if (data._meta) {
           setSyncMeta(data._meta);
@@ -494,10 +505,18 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
           setCiMap({});
         }
       } catch (err) {
+        if (err instanceof Error && err.name === "AbortError") {
+          return;
+        }
+        if (gen !== requestGenRef.current) {
+          return;
+        }
         setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
-        setLoading(false);
-        setRefreshing(false);
+        if (gen === requestGenRef.current) {
+          setLoading(false);
+          setRefreshing(false);
+        }
       }
     },
     [fullRepo],
@@ -506,6 +525,12 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
   useEffect(() => {
     void loadTickets();
   }, [loadTickets]);
+
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
 
   useEffect(() => {
     if (view !== "table" || !index) {

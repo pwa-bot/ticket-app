@@ -153,7 +153,6 @@ test("rapid tab switch: stale attention response is discarded when tickets tab a
   page,
 }) => {
   let attentionCallCount = 0;
-  let indexCallCount = 0;
 
   // First attention call is intentionally slow (simulates a stale in-flight
   // request from the initial page load that hasn't resolved yet when the user
@@ -165,7 +164,6 @@ test("rapid tab switch: stale attention response is discarded when tickets tab a
   });
 
   await page.route("**/api/space/index**", async (route) => {
-    indexCallCount++;
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -203,17 +201,27 @@ test("rapid tab switch: stale attention response is discarded when tickets tab a
 test("rapid repo filter changes: only the last response is applied to the UI", async ({
   page,
 }) => {
-  let callCount = 0;
+  let sawFilteredRequest = false;
+  const staleTitle = "Stale filtered result";
+  const latestTitle = "Latest filter result";
 
   // Simulate network jitter: the first filtered request is slow, the second
   // is fast.  Without cancellation the slow (stale) response would win.
   await page.route("**/api/space/attention**", async (route) => {
-    callCount++;
     const isFilteredForApiOnly = route.request().url().includes("repos=acme%2Fapi");
-    const delay = callCount === 2 && isFilteredForApiOnly ? 400 : 0;
-    const body =
-      callCount >= 3
-        ? { ...attentionResponse, loadedAt: "2026-02-20T09:00:00.000Z" }
+    if (isFilteredForApiOnly) {
+      sawFilteredRequest = true;
+    }
+
+    const delay = isFilteredForApiOnly ? 400 : 0;
+    const body = isFilteredForApiOnly
+      ? { ...attentionResponse, items: [{ ...attentionResponse.items[0], title: staleTitle }] }
+      : sawFilteredRequest
+        ? {
+            ...attentionResponse,
+            loadedAt: "2026-02-20T09:00:00.000Z",
+            items: [{ ...attentionResponse.items[0], title: latestTitle }],
+          }
         : attentionResponse;
     await makeDelayedFulfill(route, body, delay);
   });
@@ -236,10 +244,15 @@ test("rapid repo filter changes: only the last response is applied to the UI", a
   // with ?repos=acme%2Fapi), then immediately click All repos (triggers request
   // 3 without a repos param).
   await page.getByRole("button", { name: "acme/web" }).click();
+  await expect(page).toHaveURL(/repos=acme%2Fapi/);
   await page.getByRole("button", { name: "All repos" }).click();
 
   // Wait for the final state to settle.
   await expect(page.getByText(/items needing attention/)).toBeVisible({ timeout: 5000 });
+
+  // The late stale response must never overwrite the latest response data.
+  await expect(page.getByText(latestTitle)).toBeVisible();
+  await expect(page.getByText(staleTitle)).not.toBeVisible();
 
   // Loading must have cleared.
   await expect(page.getByText("Loading…")).not.toBeVisible();
