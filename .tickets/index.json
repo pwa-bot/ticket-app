@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T00:16:13.026Z",
+  "generated_at": "2026-02-20T00:16:13.266Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -119,6 +119,20 @@
         "contract"
       ],
       "path": ".tickets/tickets/01KHW6EXQC308GTC9EV697NEA4.md"
+    },
+    {
+      "id": "01KHW6EYE44BXJKWXY17C9MSVK",
+      "short_id": "01KHW6EY",
+      "display_id": "TK-01KHW6EY",
+      "title": "Instrumentation MVP funnel events for CLI and dashboard activation",
+      "state": "backlog",
+      "priority": "p0",
+      "labels": [
+        "analytics",
+        "product",
+        "dashboard"
+      ],
+      "path": ".tickets/tickets/01KHW6EYE44BXJKWXY17C9MSVK.md"
     },
     {
       "id": "01KHS9PF0AGVDSF6G0FER0W2R7",
