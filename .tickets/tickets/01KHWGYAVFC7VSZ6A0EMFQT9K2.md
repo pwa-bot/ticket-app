@@ -1,7 +1,7 @@
 ---
 id: 01KHWGYAVFC7VSZ6A0EMFQT9K2
 title: 'Phase C: Policy tiers hard integrity warn quality opt-in strict'
-state: ready
+state: in_progress
 priority: p1
 labels:
   - governance
