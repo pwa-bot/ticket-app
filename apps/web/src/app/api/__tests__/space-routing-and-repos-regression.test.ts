@@ -55,6 +55,14 @@ test("refresh flows hydrate repos for personal installations so repo list can in
   assert.match(refreshRouteSource, /hydratedRepoCount/, "refresh response should report hydration work");
 });
 
+test("/api/github/installations stays cache-first and does not trigger background GitHub calls", async () => {
+  const source = await readSource("app/api/github/installations/route.ts");
+
+  assert.doesNotMatch(source, /api\.github\.com\/user\/installations/, "installations GET should not call GitHub directly");
+  assert.match(source, /Use POST \/api\/github\/installations\/refresh for explicit, rate-safe refresh\./, "installations GET should document explicit refresh path");
+  assert.match(source, /db\.query\.installations\.findMany/, "installations GET should read from DB snapshot");
+});
+
 test("repo navigation uses Next Link components for in-app routing", async () => {
   const repoLinkComponents = ["components/repo-picker.tsx", "components/repo-selector.tsx"];
 
