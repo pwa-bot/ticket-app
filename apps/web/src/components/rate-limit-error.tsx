@@ -1,9 +1,43 @@
 "use client";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 interface RateLimitErrorProps {
   error: string;
   onRetry?: () => void;
+}
+
+function useProgressiveRetry(onRetry?: () => void) {
+  const [retryCount, setRetryCount] = useState(0);
+  const [nextRetryAt, setNextRetryAt] = useState<number | null>(null);
+  const [countdown, setCountdown] = useState(0);
+
+  useEffect(() => {
+    if (!nextRetryAt) return;
+
+    const timer = setInterval(() => {
+      const remaining = Math.ceil((nextRetryAt - Date.now()) / 1000);
+      if (remaining <= 0) {
+        setNextRetryAt(null);
+        setCountdown(0);
+        if (onRetry) onRetry();
+      } else {
+        setCountdown(remaining);
+      }
+    }, 100);
+
+    return () => clearInterval(timer);
+  }, [nextRetryAt, onRetry]);
+
+  const handleRetry = () => {
+    if (nextRetryAt) return; // Already waiting
+    
+    const backoffMs = Math.min(30000, 5000 * Math.pow(2, retryCount));
+    setNextRetryAt(Date.now() + backoffMs);
+    setRetryCount(prev => prev + 1);
+  };
+
+  return { handleRetry, countdown, isWaiting: !!nextRetryAt };
 }
 
 export function isRateLimitError(error: string): boolean {
@@ -19,19 +53,28 @@ export function isRateLimitError(error: string): boolean {
 
 export function RateLimitError({ error, onRetry }: RateLimitErrorProps) {
   const isRateLimit = isRateLimitError(error);
+  const { handleRetry, countdown, isWaiting } = useProgressiveRetry(onRetry);
 
   if (!isRateLimit) {
-    // Generic error
+    // Generic error with progressive retry
     return (
       <div className="rounded-lg border border-red-200 bg-red-50 p-4">
         <p className="text-sm text-red-700">{error}</p>
         {onRetry && (
-          <button
-            onClick={onRetry}
-            className="mt-2 text-sm font-medium text-red-600 hover:text-red-800"
-          >
-            Try again
-          </button>
+          <div className="mt-2">
+            {isWaiting ? (
+              <p className="text-xs text-red-600">
+                Waiting {countdown}s before retry...
+              </p>
+            ) : (
+              <button
+                onClick={handleRetry}
+                className="text-sm font-medium text-red-600 hover:text-red-800"
+              >
+                Try again
+              </button>
+            )}
+          </div>
         )}
       </div>
     );
@@ -50,12 +93,20 @@ export function RateLimitError({ error, onRetry }: RateLimitErrorProps) {
           
           <div className="mt-3 flex flex-wrap gap-2">
             {onRetry && (
-              <button
-                onClick={onRetry}
-                className="rounded-md bg-amber-100 px-3 py-1.5 text-sm font-medium text-amber-800 hover:bg-amber-200"
-              >
-                Try again
-              </button>
+              <div className="flex items-center gap-2">
+                {isWaiting ? (
+                  <div className="text-xs text-amber-700">
+                    Retrying in {countdown}s...
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleRetry}
+                    className="rounded-md bg-amber-100 px-3 py-1.5 text-sm font-medium text-amber-800 hover:bg-amber-200"
+                  >
+                    Try again
+                  </button>
+                )}
+              </div>
             )}
             
             <Link

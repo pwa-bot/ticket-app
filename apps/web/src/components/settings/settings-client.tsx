@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getApiErrorMessage } from "@/lib/api/client";
-import { shouldShowReconnectCta } from "@/lib/auth-errors";
 
 type Installation = {
   installationId: number;
@@ -21,7 +20,44 @@ export default function SettingsClient() {
 
   useEffect(() => {
     void loadData();
-  }, []);
+  }, [])
+
+  function getInstallationErrorMessage(status: number, json: unknown): {
+    title: string;
+    message: string;
+    showReconnect: boolean;
+    showInstall: boolean;
+  } {
+    if (status === 404) {
+      return {
+        title: "GitHub App Not Found",
+        message: "The Ticket GitHub App isn't installed on your account or organizations. Install it to enable real-time sync and higher API limits.",
+        showReconnect: false,
+        showInstall: true,
+      };
+    } else if (status === 403) {
+      return {
+        title: "Permission Denied",
+        message: "Your GitHub account doesn't have permission to view app installations. This can happen if you're not an owner of the organization.",
+        showReconnect: true,
+        showInstall: false,
+      };
+    } else if (status === 401) {
+      return {
+        title: "Authentication Expired",
+        message: "Your GitHub authentication has expired. Please reconnect your account.",
+        showReconnect: true,
+        showInstall: false,
+      };
+    } else {
+      return {
+        title: "Connection Error",
+        message: getApiErrorMessage(json, "Failed to refresh installations. This might be a temporary issue."),
+        showReconnect: status >= 400 && status < 500,
+        showInstall: false,
+      };
+    }
+  };
 
   async function loadData() {
     try {
@@ -51,11 +87,14 @@ export default function SettingsClient() {
       if (json.ok) {
         setInstallations(json.installations ?? []);
         if (json.installations?.length === 0) {
-          setRefreshError("No installations found. Make sure you've installed the GitHub App on your account.");
+          const errorInfo = getInstallationErrorMessage(404, json);
+          setRefreshError(`${errorInfo.title}: ${errorInfo.message}`);
+          setShowReconnectCta(errorInfo.showReconnect);
         }
       } else {
-        setRefreshError(getApiErrorMessage(json, "Failed to refresh. Try logging out and back in."));
-        setShowReconnectCta(shouldShowReconnectCta(res.status));
+        const errorInfo = getInstallationErrorMessage(res.status, json);
+        setRefreshError(`${errorInfo.title}: ${errorInfo.message}`);
+        setShowReconnectCta(errorInfo.showReconnect);
       }
     } catch (err) {
       console.error("[Settings] Refresh error:", err);

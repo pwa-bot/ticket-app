@@ -575,7 +575,28 @@ export default function PortfolioAttentionView() {
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">Repositories</p>
           <div className="flex flex-wrap gap-2">
             {allRepos.length === 0 && !loading ? (
-              <span className="text-sm text-slate-500">No enabled repos found.</span>
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 w-full">
+                <h3 className="font-medium text-amber-900 mb-2">No repositories found</h3>
+                <div className="text-sm text-amber-800 space-y-2">
+                  <p>If you expected to see repositories here:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-2">
+                    <li>Check the <Link href="/space/settings" className="underline font-medium">GitHub App is installed</Link> on your account/org</li>
+                    <li>Ensure repos have a <code className="bg-amber-100 px-1 rounded font-mono text-xs">.tickets/</code> folder</li>
+                    <li>Verify the app has access to your target repositories</li>
+                  </ul>
+                  <div className="mt-3 flex gap-2">
+                    <button 
+                      onClick={() => void load({ hardRefresh: true })} 
+                      className="text-xs underline hover:text-amber-900"
+                    >
+                      Refresh
+                    </button>
+                    <Link href="/space/settings" className="text-xs underline hover:text-amber-900">
+                      Check Settings
+                    </Link>
+                  </div>
+                </div>
+              </div>
             ) : null}
             {allRepos.map((repo) => {
               const isActive = activeRepos.has(repo.fullName);
@@ -684,9 +705,28 @@ export default function PortfolioAttentionView() {
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>
       ) : null}
 
-      {loading ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
-          {activeTab === "tickets" ? "Loading tickets…" : "Loading attention items…"}
+      {loading && !indexData && !attentionData ? (
+        <div className="space-y-4">
+          {/* Skeleton loading state */}
+          <div className="rounded-xl border border-slate-200 bg-white p-6">
+            <div className="animate-pulse">
+              <div className="h-4 bg-slate-200 rounded w-1/3 mb-4"></div>
+              <div className="space-y-3">
+                <div className="h-3 bg-slate-200 rounded"></div>
+                <div className="h-3 bg-slate-200 rounded w-5/6"></div>
+                <div className="h-3 bg-slate-200 rounded w-4/6"></div>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-6">
+            <div className="animate-pulse">
+              <div className="h-3 bg-slate-200 rounded w-2/3 mb-3"></div>
+              <div className="space-y-2">
+                <div className="h-3 bg-slate-200 rounded"></div>
+                <div className="h-3 bg-slate-200 rounded w-3/4"></div>
+              </div>
+            </div>
+          </div>
         </div>
       ) : null}
 
