@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T03:20:49.470Z",
+  "generated_at": "2026-02-20T03:20:49.704Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -152,20 +152,6 @@
       "path": ".tickets/tickets/01KHW6EYNJV864W99AV18FC15P.md"
     },
     {
-      "id": "01KHWGYAM6JM3RPHPHKP5EA6D8",
-      "short_id": "01KHWGYA",
-      "display_id": "TK-01KHWGYA",
-      "title": "CLI support ticket events write read compact for high-frequency agent updates",
-      "state": "backlog",
-      "priority": "p1",
-      "labels": [
-        "cli",
-        "telemetry",
-        "perf"
-      ],
-      "path": ".tickets/tickets/01KHWGYAM6JM3RPHPHKP5EA6D8.md"
-    },
-    {
       "id": "01KHWGYAVFC7VSZ6A0EMFQT9K2",
       "short_id": "01KHWGYA",
       "display_id": "TK-01KHWGYA",
@@ -248,6 +234,20 @@
         "git-notes"
       ],
       "path": ".tickets/tickets/01KHWGYACVZMYF855VY5J9VM6N.md"
+    },
+    {
+      "id": "01KHWGYAM6JM3RPHPHKP5EA6D8",
+      "short_id": "01KHWGYA",
+      "display_id": "TK-01KHWGYA",
+      "title": "CLI support ticket events write read compact for high-frequency agent updates",
+      "state": "ready",
+      "priority": "p1",
+      "labels": [
+        "cli",
+        "telemetry",
+        "perf"
+      ],
+      "path": ".tickets/tickets/01KHWGYAM6JM3RPHPHKP5EA6D8.md"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",

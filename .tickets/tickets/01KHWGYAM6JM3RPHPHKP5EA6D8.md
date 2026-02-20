@@ -1,7 +1,7 @@
 ---
 id: 01KHWGYAM6JM3RPHPHKP5EA6D8
 title: CLI support ticket events write read compact for high-frequency agent updates
-state: backlog
+state: ready
 priority: p1
 labels:
   - cli
