@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Board from "@/components/board";
-import { getAccessTokenFromCookies } from "@/lib/auth";
+import { hasSessionCookie } from "@/lib/auth";
 import { buildGithubAuthPath, withSearchParams } from "@/lib/auth-return-to";
 
 interface RepoBoardPageProps {
@@ -9,11 +9,11 @@ interface RepoBoardPageProps {
 }
 
 export default async function RepoBoardPage({ params, searchParams }: RepoBoardPageProps) {
-  const token = await getAccessTokenFromCookies();
+  const hasSession = await hasSessionCookie();
   const { owner, repo } = await params;
   const resolvedSearchParams = await searchParams;
 
-  if (!token) {
+  if (!hasSession) {
     const pathname = `/space/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`;
     redirect(buildGithubAuthPath(withSearchParams(pathname, resolvedSearchParams)));
   }

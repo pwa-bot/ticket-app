@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getAccessTokenFromCookies } from "@/lib/auth";
+import { hasSessionCookie } from "@/lib/auth";
 import SettingsClient from "@/components/settings/settings-client";
 import { buildGithubAuthPath, withSearchParams } from "@/lib/auth-return-to";
 
@@ -8,10 +8,10 @@ interface SettingsPageProps {
 }
 
 export default async function SettingsPage({ searchParams }: SettingsPageProps) {
-  const token = await getAccessTokenFromCookies();
+  const hasSession = await hasSessionCookie();
   const resolvedSearchParams = await searchParams;
 
-  if (!token) {
+  if (!hasSession) {
     redirect(buildGithubAuthPath(withSearchParams("/space/settings", resolvedSearchParams)));
   }
 

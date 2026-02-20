@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import PortfolioAttentionView from "@/components/portfolio-attention-view";
-import { getAccessTokenFromCookies } from "@/lib/auth";
+import { hasSessionCookie } from "@/lib/auth";
 import { buildGithubAuthPath, withSearchParams } from "@/lib/auth-return-to";
 
 interface DashboardHomePageProps {
@@ -8,10 +8,10 @@ interface DashboardHomePageProps {
 }
 
 export default async function DashboardHomePage({ searchParams }: DashboardHomePageProps) {
-  const token = await getAccessTokenFromCookies();
+  const hasSession = await hasSessionCookie();
   const resolvedSearchParams = await searchParams;
 
-  if (!token) {
+  if (!hasSession) {
     redirect(buildGithubAuthPath(withSearchParams("/space", resolvedSearchParams)));
   }
 

@@ -32,7 +32,25 @@ test("/api/auth/github validates and honors returnTo", async () => {
   assert.match(source, /cookieNames\.oauthReturnTo/, "auth route should persist returnTo across OAuth round-trip");
   assert.match(source, /const finalReturnTo = normalizeReturnTo\(/, "auth route should compute final safe returnTo");
   assert.match(source, /toCanonicalUrl\(request, requestedReturnTo\)/, "existing sessions should be redirected to returnTo on canonical host");
+  assert.match(source, /hasSessionCookieInRequest\(request\)\s*\|\|\s*await hasSession\(\)/, "auth route should short-circuit OAuth when session cookie already exists");
   assert.match(source, /response\.cookies\.set\(cookieNames\.oauthReturnTo, "", expiredCookieOptions\(\)\)/, "oauth returnTo cookie should be cleared after login");
+});
+
+test("protected /space pages gate on session cookie presence to avoid hard-refresh auth handoff", async () => {
+  const protectedSpacePages = [
+    "app/space/page.tsx",
+    "app/space/settings/page.tsx",
+    "app/space/[owner]/[repo]/page.tsx",
+    "app/space/[owner]/[repo]/[id]/page.tsx",
+    "app/space/onboarding/page.tsx",
+    "app/space/onboarding/callback/page.tsx",
+  ];
+
+  for (const page of protectedSpacePages) {
+    const source = await readSource(page);
+    assert.match(source, /hasSessionCookie\(/, `${page} should check for session cookie presence`);
+    assert.doesNotMatch(source, /getAccessTokenFromCookies\(/, `${page} should avoid token decryption in the initial page guard`);
+  }
 });
 
 test("/api/repos stays read-only and cache-only", async () => {

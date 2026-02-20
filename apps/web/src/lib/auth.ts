@@ -124,6 +124,11 @@ export async function getAccessTokenFromCookies(): Promise<string | null> {
   return session?.token ?? null;
 }
 
+export async function hasSessionCookie(): Promise<boolean> {
+  const store = await cookies();
+  return Boolean(store.get(SESSION_COOKIE)?.value);
+}
+
 export const cookieNames = {
   session: SESSION_COOKIE,
   oauthState: OAUTH_STATE_COOKIE,

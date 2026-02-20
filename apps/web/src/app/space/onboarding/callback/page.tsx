@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { getAccessTokenFromCookies } from "@/lib/auth";
+import { hasSessionCookie } from "@/lib/auth";
 import CallbackClient from "@/components/onboarding/callback-client";
 import { buildGithubAuthPath, withSearchParams } from "@/lib/auth-return-to";
 
@@ -17,10 +17,10 @@ interface OnboardingCallbackPageProps {
 }
 
 export default async function OnboardingCallbackPage({ searchParams }: OnboardingCallbackPageProps) {
-  const token = await getAccessTokenFromCookies();
+  const hasSession = await hasSessionCookie();
   const resolvedSearchParams = await searchParams;
 
-  if (!token) {
+  if (!hasSession) {
     redirect(buildGithubAuthPath(withSearchParams("/space/onboarding/callback", resolvedSearchParams)));
   }
 

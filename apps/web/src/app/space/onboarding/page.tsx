@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getAccessTokenFromCookies } from "@/lib/auth";
+import { hasSessionCookie } from "@/lib/auth";
 import OnboardingClient from "@/components/onboarding/onboarding-client";
 import { buildGithubAuthPath, withSearchParams } from "@/lib/auth-return-to";
 
@@ -8,10 +8,10 @@ interface OnboardingPageProps {
 }
 
 export default async function OnboardingPage({ searchParams }: OnboardingPageProps) {
-  const token = await getAccessTokenFromCookies();
+  const hasSession = await hasSessionCookie();
   const resolvedSearchParams = await searchParams;
 
-  if (!token) {
+  if (!hasSession) {
     redirect(buildGithubAuthPath(withSearchParams("/space/onboarding", resolvedSearchParams)));
   }
 

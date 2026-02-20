@@ -57,6 +57,10 @@ async function hasSession(): Promise<boolean> {
   }
 }
 
+function hasSessionCookieInRequest(request: Request): boolean {
+  return Boolean(readCookieValue(request, cookieNames.session));
+}
+
 function getOnboardingCallbackReturnTo(url: URL): string {
   const params = new URLSearchParams(url.searchParams);
   params.delete("returnTo");
@@ -86,8 +90,10 @@ export async function GET(request: Request) {
 
   // If user already has a valid session and no OAuth params, redirect to requested destination.
   // Unless force=1 which means we want to re-authenticate.
-  if (!code && !installationId && !forceReauth && await hasSession()) {
-    return NextResponse.redirect(toCanonicalUrl(request, requestedReturnTo));
+  if (!code && !installationId && !forceReauth) {
+    if (hasSessionCookieInRequest(request) || await hasSession()) {
+      return NextResponse.redirect(toCanonicalUrl(request, requestedReturnTo));
+    }
   }
 
   // Case 1: Start OAuth flow
@@ -109,8 +115,8 @@ export async function GET(request: Request) {
 
   // Case 2: Returned from GitHub App install
   if (installationId && !code) {
-    // User already has a session, continue onboarding callback flow if possible
-    if (await hasSession()) {
+    // User already has a session (or at least a session cookie), continue onboarding callback flow if possible
+    if (hasSessionCookieInRequest(request) || await hasSession()) {
       return NextResponse.redirect(toCanonicalUrl(request, installationReturnTo));
     }
 
