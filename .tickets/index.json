@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T07:57:06.289Z",
+  "generated_at": "2026-02-20T07:57:24.984Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -19,20 +19,6 @@
       "display_id": "TK-01KHW6EX-2"
     },
     {
-      "id": "01KHW6EYNJV864W99AV18FC15P",
-      "short_id": "01KHW6EY",
-      "title": "Saved views v1 shareable operational queues",
-      "state": "backlog",
-      "priority": "p1",
-      "labels": [
-        "dashboard",
-        "saved-views",
-        "product"
-      ],
-      "path": ".tickets/tickets/01KHW6EYNJV864W99AV18FC15P.md",
-      "display_id": "TK-01KHW6EY-3"
-    },
-    {
       "id": "01KHS9PFF2Z37S54PZD6QGW8DJ",
       "short_id": "01KHS9PF",
       "title": "Task G - Manual refresh endpoint and job",
@@ -44,6 +30,20 @@
       ],
       "path": ".tickets/tickets/01KHS9PFF2Z37S54PZD6QGW8DJ.md",
       "display_id": "TK-01KHS9PF-3"
+    },
+    {
+      "id": "01KHW6EYNJV864W99AV18FC15P",
+      "short_id": "01KHW6EY",
+      "title": "Saved views v1 shareable operational queues",
+      "state": "ready",
+      "priority": "p1",
+      "labels": [
+        "dashboard",
+        "saved-views",
+        "product"
+      ],
+      "path": ".tickets/tickets/01KHW6EYNJV864W99AV18FC15P.md",
+      "display_id": "TK-01KHW6EY-3"
     },
     {
       "id": "01KHVQ0B6VR7M2HAWB9QPEMBED",
