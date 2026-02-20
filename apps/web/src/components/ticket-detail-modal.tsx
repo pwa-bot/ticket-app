@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
-import { usePendingChanges } from "@/lib/pending-changes";
+import { usePendingChangesSafe } from "@/lib/pending-changes";
 import PendingBadge from "@/components/pending-badge";
 import { EditableSelect, EditableText } from "@/components/editable-field";
 import type { TicketState } from "@/lib/types";
@@ -99,22 +99,22 @@ export default function TicketDetailModal({ repo, ticketId, onClose, initialData
   const [loadingBody, setLoadingBody] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const { createChange, getPendingChange } = usePendingChanges();
+  const pendingChanges = usePendingChangesSafe();
   const [owner, repoName] = repo.split("/");
 
-  const pendingChange = ticket ? getPendingChange(ticket.id) : null;
+  const pendingChange = ticket && pendingChanges ? pendingChanges.getPendingChange(ticket.id) : null;
 
   // Save a field change
   const saveChange = useCallback(async (patch: TicketChangePatch) => {
-    if (!ticket) return;
-    await createChange({
+    if (!ticket || !pendingChanges) return;
+    await pendingChanges.createChange({
       owner,
       repo: repoName,
       ticketId: ticket.id,
       patch,
       currentState: ticket.frontmatter.state,
     });
-  }, [ticket, owner, repoName, createChange]);
+  }, [ticket, owner, repoName, pendingChanges]);
 
   useEffect(() => {
     const controller = new AbortController();

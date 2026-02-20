@@ -65,7 +65,7 @@
       "short_id": "01KHW6EX",
       "display_id": "TK-01KHW6EX",
       "title": "E2E modal deep link loads ticket outside current page filter",
-      "state": "backlog",
+      "state": "done",
       "priority": "p0",
       "labels": [
         "dashboard",
