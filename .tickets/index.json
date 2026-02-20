@@ -1,109 +1,8 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T01:23:03.252Z",
+  "generated_at": "2026-02-20T02:49:52.640Z",
   "workflow": "simple-v1",
   "tickets": [
-    {
-      "id": "01KHVQ07RFJNSWWTGRF9EG0NDB",
-      "short_id": "01KHVQ07",
-      "display_id": "TK-01KHVQ07",
-      "title": "Dashboard fix Attention search and add Jump-to-ID",
-      "state": "done",
-      "priority": "p0",
-      "labels": [
-        "dashboard",
-        "search",
-        "attention",
-        "p0"
-      ],
-      "path": ".tickets/tickets/01KHVQ07RFJNSWWTGRF9EG0NDB.md"
-    },
-    {
-      "id": "01KHVX92DSSK48NP4HZ7H9WGQC",
-      "short_id": "01KHVX92",
-      "display_id": "TK-01KHVX92",
-      "title": "Fix O(n²) attention endpoint - use Map instead of find()",
-      "state": "done",
-      "priority": "p0",
-      "labels": [
-        "perf"
-      ],
-      "path": ".tickets/tickets/01KHVX92DSSK48NP4HZ7H9WGQC.md"
-    },
-    {
-      "id": "01KHW6EB9RAKEYEESTRJP0SP3E",
-      "short_id": "01KHW6EB",
-      "display_id": "TK-01KHW6EB",
-      "title": "Attention contract + reason explainability in /space",
-      "state": "done",
-      "priority": "p0",
-      "labels": [
-        "dashboard",
-        "attention",
-        "ux",
-        "trust"
-      ],
-      "path": ".tickets/tickets/01KHW6EB9RAKEYEESTRJP0SP3E.md"
-    },
-    {
-      "id": "01KHW6ERTAS4MW29ZBGXSH325X",
-      "short_id": "01KHW6ER",
-      "display_id": "TK-01KHW6ER",
-      "title": "E2E filters URL sync and browser nav correctness",
-      "state": "done",
-      "priority": "p0",
-      "labels": [
-        "dashboard",
-        "qa",
-        "e2e",
-        "filters"
-      ],
-      "path": ".tickets/tickets/01KHW6ERTAS4MW29ZBGXSH325X.md"
-    },
-    {
-      "id": "01KHW6EX837MYH0V9AN8C25930",
-      "short_id": "01KHW6EX",
-      "display_id": "TK-01KHW6EX",
-      "title": "E2E modal deep link loads ticket outside current page filter",
-      "state": "done",
-      "priority": "p0",
-      "labels": [
-        "dashboard",
-        "qa",
-        "e2e",
-        "modal"
-      ],
-      "path": ".tickets/tickets/01KHW6EX837MYH0V9AN8C25930.md"
-    },
-    {
-      "id": "01KHW6EXQC308GTC9EV697NEA4",
-      "short_id": "01KHW6EX",
-      "display_id": "TK-01KHW6EX",
-      "title": "API attention precedence and multi reason contract tests",
-      "state": "done",
-      "priority": "p0",
-      "labels": [
-        "api",
-        "attention",
-        "qa",
-        "contract"
-      ],
-      "path": ".tickets/tickets/01KHW6EXQC308GTC9EV697NEA4.md"
-    },
-    {
-      "id": "01KHW6EYE44BXJKWXY17C9MSVK",
-      "short_id": "01KHW6EY",
-      "display_id": "TK-01KHW6EY",
-      "title": "Instrumentation MVP funnel events for CLI and dashboard activation",
-      "state": "done",
-      "priority": "p0",
-      "labels": [
-        "analytics",
-        "product",
-        "dashboard"
-      ],
-      "path": ".tickets/tickets/01KHW6EYE44BXJKWXY17C9MSVK.md"
-    },
     {
       "id": "01KHS9PF0AGVDSF6G0FER0W2R7",
       "short_id": "01KHS9PF",
@@ -281,32 +180,6 @@
       "path": ".tickets/tickets/01KHT40T5MGCWRB1KQYB8M568T.md"
     },
     {
-      "id": "01KHS9PEHNNAVY89FZD943BPDV",
-      "short_id": "01KHS9PE",
-      "display_id": "TK-01KHS9PE",
-      "title": "Task C - Worker push sync index.json into Postgres",
-      "state": "in_progress",
-      "priority": "p0",
-      "labels": [
-        "worker",
-        "push"
-      ],
-      "path": ".tickets/tickets/01KHS9PEHNNAVY89FZD943BPDV.md"
-    },
-    {
-      "id": "01KHS9PES0SP0ZAJAAVQYW98E4",
-      "short_id": "01KHS9PE",
-      "display_id": "TK-01KHS9PE",
-      "title": "Task D - UI reads from DB only for board and table",
-      "state": "in_progress",
-      "priority": "p0",
-      "labels": [
-        "frontend",
-        "cache"
-      ],
-      "path": ".tickets/tickets/01KHS9PES0SP0ZAJAAVQYW98E4.md"
-    },
-    {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
       "short_id": "01KHQ0K0",
       "display_id": "TK-01KHQ0K0",
@@ -420,6 +293,32 @@
       "path": ".tickets/tickets/01KHS9PEAA0N73R7B5RDV35EVQ.md"
     },
     {
+      "id": "01KHS9PEHNNAVY89FZD943BPDV",
+      "short_id": "01KHS9PE",
+      "display_id": "TK-01KHS9PE",
+      "title": "Task C - Worker push sync index.json into Postgres",
+      "state": "done",
+      "priority": "p0",
+      "labels": [
+        "worker",
+        "push"
+      ],
+      "path": ".tickets/tickets/01KHS9PEHNNAVY89FZD943BPDV.md"
+    },
+    {
+      "id": "01KHS9PES0SP0ZAJAAVQYW98E4",
+      "short_id": "01KHS9PE",
+      "display_id": "TK-01KHS9PE",
+      "title": "Task D - UI reads from DB only for board and table",
+      "state": "done",
+      "priority": "p0",
+      "labels": [
+        "frontend",
+        "cache"
+      ],
+      "path": ".tickets/tickets/01KHS9PES0SP0ZAJAAVQYW98E4.md"
+    },
+    {
       "id": "01KHT40QGXG6EWEA41J6ZJEVTC",
       "short_id": "01KHT40Q",
       "display_id": "TK-01KHT40Q",
@@ -494,6 +393,107 @@
         "p0"
       ],
       "path": ".tickets/tickets/01KHVQ02ZX1SX13ZB6HZPK4A1N.md"
+    },
+    {
+      "id": "01KHVQ07RFJNSWWTGRF9EG0NDB",
+      "short_id": "01KHVQ07",
+      "display_id": "TK-01KHVQ07",
+      "title": "Dashboard fix Attention search and add Jump-to-ID",
+      "state": "done",
+      "priority": "p0",
+      "labels": [
+        "dashboard",
+        "search",
+        "attention",
+        "p0"
+      ],
+      "path": ".tickets/tickets/01KHVQ07RFJNSWWTGRF9EG0NDB.md"
+    },
+    {
+      "id": "01KHVX92DSSK48NP4HZ7H9WGQC",
+      "short_id": "01KHVX92",
+      "display_id": "TK-01KHVX92",
+      "title": "Fix O(n²) attention endpoint - use Map instead of find()",
+      "state": "done",
+      "priority": "p0",
+      "labels": [
+        "perf"
+      ],
+      "path": ".tickets/tickets/01KHVX92DSSK48NP4HZ7H9WGQC.md"
+    },
+    {
+      "id": "01KHW6EB9RAKEYEESTRJP0SP3E",
+      "short_id": "01KHW6EB",
+      "display_id": "TK-01KHW6EB",
+      "title": "Attention contract + reason explainability in /space",
+      "state": "done",
+      "priority": "p0",
+      "labels": [
+        "dashboard",
+        "attention",
+        "ux",
+        "trust"
+      ],
+      "path": ".tickets/tickets/01KHW6EB9RAKEYEESTRJP0SP3E.md"
+    },
+    {
+      "id": "01KHW6ERTAS4MW29ZBGXSH325X",
+      "short_id": "01KHW6ER",
+      "display_id": "TK-01KHW6ER",
+      "title": "E2E filters URL sync and browser nav correctness",
+      "state": "done",
+      "priority": "p0",
+      "labels": [
+        "dashboard",
+        "qa",
+        "e2e",
+        "filters"
+      ],
+      "path": ".tickets/tickets/01KHW6ERTAS4MW29ZBGXSH325X.md"
+    },
+    {
+      "id": "01KHW6EX837MYH0V9AN8C25930",
+      "short_id": "01KHW6EX",
+      "display_id": "TK-01KHW6EX",
+      "title": "E2E modal deep link loads ticket outside current page filter",
+      "state": "done",
+      "priority": "p0",
+      "labels": [
+        "dashboard",
+        "qa",
+        "e2e",
+        "modal"
+      ],
+      "path": ".tickets/tickets/01KHW6EX837MYH0V9AN8C25930.md"
+    },
+    {
+      "id": "01KHW6EXQC308GTC9EV697NEA4",
+      "short_id": "01KHW6EX",
+      "display_id": "TK-01KHW6EX",
+      "title": "API attention precedence and multi reason contract tests",
+      "state": "done",
+      "priority": "p0",
+      "labels": [
+        "api",
+        "attention",
+        "qa",
+        "contract"
+      ],
+      "path": ".tickets/tickets/01KHW6EXQC308GTC9EV697NEA4.md"
+    },
+    {
+      "id": "01KHW6EYE44BXJKWXY17C9MSVK",
+      "short_id": "01KHW6EY",
+      "display_id": "TK-01KHW6EY",
+      "title": "Instrumentation MVP funnel events for CLI and dashboard activation",
+      "state": "done",
+      "priority": "p0",
+      "labels": [
+        "analytics",
+        "product",
+        "dashboard"
+      ],
+      "path": ".tickets/tickets/01KHW6EYE44BXJKWXY17C9MSVK.md"
     },
     {
       "id": "01KHMG84AJMCWQCCE84328MF5G",
