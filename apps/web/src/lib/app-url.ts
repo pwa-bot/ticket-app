@@ -20,7 +20,16 @@ export function getConfiguredAppOrigin(env: NodeJS.ProcessEnv = process.env): st
 }
 
 export function getCanonicalBaseUrl(request: Request, env: NodeJS.ProcessEnv = process.env): string {
-  return getConfiguredAppOrigin(env) ?? new URL(request.url).origin;
+  const requestOrigin = new URL(request.url).origin;
+  const configuredOrigin = getConfiguredAppOrigin(env);
+
+  // Prefer request origin to avoid cross-host auth/cookie loops (e.g. localhost vs 127.0.0.1 vs custom domain).
+  // Allow explicit override only when APP_URL_FORCE=true.
+  if (env.APP_URL_FORCE === "true" && configuredOrigin) {
+    return configuredOrigin;
+  }
+
+  return requestOrigin || configuredOrigin || "http://localhost:3000";
 }
 
 export function toCanonicalUrl(request: Request, path: string, env: NodeJS.ProcessEnv = process.env): URL {
