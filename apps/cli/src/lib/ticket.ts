@@ -1,7 +1,17 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
-import { TEMPLATE_PATH, TICKETS_DIR, DEFAULT_TEMPLATE, PRIORITY_ORDER, STATE_ORDER, type TicketPriority, type TicketState } from "./constants.js";
+import {
+  BUILTIN_TEMPLATE_NAMES,
+  TEMPLATE_PATH,
+  TEMPLATES_DIR,
+  TICKETS_DIR,
+  DEFAULT_TEMPLATE,
+  PRIORITY_ORDER,
+  STATE_ORDER,
+  type TicketPriority,
+  type TicketState
+} from "./constants.js";
 import { ERROR_CODE, EXIT_CODE, TicketError } from "./errors.js";
 import { generateTicketId } from "./ulid.js";
 
@@ -10,6 +20,7 @@ export interface CreateTicketInput {
   state: TicketState;
   priority: TicketPriority;
   labels: string[];
+  template?: string;
 }
 
 export interface CreatedTicket {
@@ -39,12 +50,41 @@ function assertPriority(priority: string): asserts priority is TicketPriority {
   }
 }
 
-async function readTemplate(cwd: string): Promise<string> {
+function normalizeTemplateName(template: string): string {
+  const normalized = template.toLowerCase().trim();
+  if (!/^[a-z0-9-]+$/.test(normalized)) {
+    throw new TicketError(
+      ERROR_CODE.VALIDATION_FAILED,
+      `Invalid template '${template}'. Template names must match [a-z0-9-]+`,
+      EXIT_CODE.USAGE,
+      { template }
+    );
+  }
+  return normalized;
+}
+
+async function readTemplate(cwd: string, template?: string): Promise<{ contents: string; templateName?: string }> {
+  if (template) {
+    const templateName = normalizeTemplateName(template);
+    const templatePath = path.join(cwd, TEMPLATES_DIR, `${templateName}.md`);
+    try {
+      const contents = await fs.readFile(templatePath, "utf8");
+      return { contents, templateName };
+    } catch {
+      throw new TicketError(
+        ERROR_CODE.VALIDATION_FAILED,
+        `Template '${templateName}' not found at ${TEMPLATES_DIR}/${templateName}.md. Built-ins: ${BUILTIN_TEMPLATE_NAMES.join(", ")}`,
+        EXIT_CODE.USAGE,
+        { template: templateName, path: `${TEMPLATES_DIR}/${templateName}.md` }
+      );
+    }
+  }
+
   const templatePath = path.join(cwd, TEMPLATE_PATH);
   try {
-    return await fs.readFile(templatePath, "utf8");
+    return { contents: await fs.readFile(templatePath, "utf8") };
   } catch {
-    return DEFAULT_TEMPLATE;
+    return { contents: DEFAULT_TEMPLATE };
   }
 }
 
@@ -58,21 +98,35 @@ export async function createTicket(cwd: string, input: CreateTicketInput): Promi
   assertPriority(input.priority);
 
   const id = generateTicketId();
+  const templateResult = await readTemplate(cwd, input.template);
   const labels = [...new Set(input.labels.map((label) => label.toLowerCase().trim()).filter(Boolean))];
-  const template = await readTemplate(cwd);
+  if (templateResult.templateName) {
+    labels.push(`template:${templateResult.templateName}`);
+  }
+  const normalizedLabels = [...new Set(labels)];
 
-  const rendered = template
+  const rendered = templateResult.contents
     .replaceAll("{{id}}", id)
     .replaceAll("{{title}}", title)
     .replaceAll("{{state}}", input.state)
     .replaceAll("{{priority}}", input.priority);
 
   const parsed = matter(rendered);
+  const templateLabels = Array.isArray(parsed.data.labels)
+    ? parsed.data.labels
+      .filter((label): label is string => typeof label === "string")
+      .map((label) => label.toLowerCase().trim())
+      .filter(Boolean)
+    : [];
+
   parsed.data.id = id;
   parsed.data.title = title;
   parsed.data.state = input.state;
   parsed.data.priority = input.priority;
-  parsed.data.labels = labels;
+  parsed.data.labels = [...new Set([...templateLabels, ...normalizedLabels])];
+  if (templateResult.templateName) {
+    parsed.data.template = templateResult.templateName;
+  }
 
   const output = matter.stringify(parsed.content, parsed.data);
   const ticketsDir = path.join(cwd, TICKETS_DIR);

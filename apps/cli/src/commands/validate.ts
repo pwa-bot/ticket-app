@@ -5,11 +5,13 @@ import { ERROR_CODE, EXIT_CODE, TicketError } from "../lib/errors.js";
 import { generateIndex, loadIndexFromDisk, rebuildIndex, type TicketsIndex } from "../lib/index.js";
 import { successEnvelope, writeEnvelope } from "../lib/json.js";
 import { parseTicketDocument } from "../lib/parse.js";
+import { resolvePolicyTier } from "../lib/policy-tier.js";
 
 export interface ValidateCommandOptions {
   fix?: boolean;
   ci?: boolean;
   json?: boolean;
+  policyTier?: string;
 }
 
 const ULID_RE = /^[0-9A-HJKMNP-TV-Z]{26}$/;
@@ -21,46 +23,112 @@ function sameIndexShape(actual: TicketsIndex | null, expected: TicketsIndex): bo
   return JSON.stringify(actual.tickets) === JSON.stringify(expected.tickets);
 }
 
+interface ParsedTicketForPolicy {
+  file: string;
+  body: string;
+  frontmatter: {
+    assignee?: string;
+    reviewer?: string;
+  };
+}
+
+function hasChecklistInSection(body: string, heading: string): boolean {
+  const section = new RegExp(`(?:^|\\n)##\\s+${heading}\\s*[\\r\\n]+([\\s\\S]*?)(?=\\n##\\s+|$)`, "i");
+  const match = body.match(section);
+  if (!match) {
+    return false;
+  }
+  return /(?:^|\n)\s*-\s*\[(?: |x|X)\]/.test(match[1]);
+}
+
+function sectionContentLength(body: string, heading: string): number {
+  const section = new RegExp(`(?:^|\\n)##\\s+${heading}\\s*[\\r\\n]+([\\s\\S]*?)(?=\\n##\\s+|$)`, "i");
+  const match = body.match(section);
+  if (!match) {
+    return 0;
+  }
+  return match[1].replace(/\s+/g, " ").trim().length;
+}
+
+function runQualityChecks(tickets: ParsedTicketForPolicy[]): string[] {
+  const warnings: string[] = [];
+  for (const ticket of tickets) {
+    if (!hasChecklistInSection(ticket.body, "Acceptance Criteria")) {
+      warnings.push(`${ticket.file}: missing checklist items under 'Acceptance Criteria'`);
+    }
+    if (sectionContentLength(ticket.body, "Problem") < 24) {
+      warnings.push(`${ticket.file}: weak or missing 'Problem' section content`);
+    }
+    if (sectionContentLength(ticket.body, "Spec") < 24) {
+      warnings.push(`${ticket.file}: weak or missing 'Spec' section content`);
+    }
+  }
+  return warnings;
+}
+
+function runStrictChecks(tickets: ParsedTicketForPolicy[]): string[] {
+  const failures: string[] = [];
+  for (const ticket of tickets) {
+    if (!ticket.frontmatter.assignee) {
+      failures.push(`${ticket.file}: strict tier requires assignee`);
+    }
+    if (!ticket.frontmatter.reviewer) {
+      failures.push(`${ticket.file}: strict tier requires reviewer`);
+    }
+  }
+  return failures;
+}
+
 export async function runValidate(cwd: string, options: ValidateCommandOptions): Promise<void> {
   const fix = options.fix ?? false;
+  const policyTier = await resolvePolicyTier({ cwd, cliTier: options.policyTier });
   const ticketsDir = path.join(cwd, TICKETS_DIR);
   await fs.mkdir(ticketsDir, { recursive: true });
   const files = (await fs.readdir(ticketsDir))
     .filter((name) => name.endsWith(".md"))
     .sort((a, b) => a.localeCompare(b));
 
-  const errors: string[] = [];
+  const integrityFailures: string[] = [];
+  const parsedTickets: ParsedTicketForPolicy[] = [];
 
   for (const file of files) {
     const stem = file.replace(/\.md$/, "");
     if (!ULID_RE.test(stem)) {
-      errors.push(`${file}: filename must be a valid ULID`);
+      integrityFailures.push(`${file}: filename must be a valid ULID`);
     }
 
     const ticketPath = path.join(ticketsDir, file);
     const markdown = await fs.readFile(ticketPath, "utf8");
     try {
-      parseTicketDocument(markdown, file, stem);
+      const parsed = parseTicketDocument(markdown, file, stem);
+      parsedTickets.push({
+        file,
+        body: parsed.parsed.content,
+        frontmatter: {
+          assignee: parsed.frontmatter.assignee,
+          reviewer: parsed.frontmatter.reviewer
+        }
+      });
     } catch (error) {
       if (error instanceof TicketError) {
-        errors.push(error.message);
+        integrityFailures.push(error.message);
       } else {
         const message = error instanceof Error ? error.message : String(error);
-        errors.push(`${file}: invalid YAML frontmatter (${message})`);
+        integrityFailures.push(`${file}: invalid YAML frontmatter (${message})`);
       }
     }
   }
 
   let expectedIndex: TicketsIndex | null = null;
-  if (errors.length === 0) {
+  if (integrityFailures.length === 0) {
     try {
       expectedIndex = await generateIndex(cwd);
     } catch (error) {
       if (error instanceof TicketError) {
-        errors.push(error.message);
+        integrityFailures.push(error.message);
       } else {
         const message = error instanceof Error ? error.message : String(error);
-        errors.push(`failed to build ${INDEX_PATH} from tickets (${message})`);
+        integrityFailures.push(`failed to build ${INDEX_PATH} from tickets (${message})`);
       }
     }
   }
@@ -68,19 +136,37 @@ export async function runValidate(cwd: string, options: ValidateCommandOptions):
   const actualIndex = await loadIndexFromDisk(cwd);
   const indexStale = expectedIndex == null ? actualIndex == null : !sameIndexShape(actualIndex, expectedIndex);
   if (indexStale) {
-    if (fix && errors.length === 0) {
+    if (fix && integrityFailures.length === 0) {
       await rebuildIndex(cwd);
     } else {
-      errors.push("index.json is missing, invalid, or stale");
+      integrityFailures.push("index.json is missing, invalid, or stale");
     }
   }
 
-  if (errors.length > 0) {
+  const qualityFindings = policyTier.quality === "off" ? [] : runQualityChecks(parsedTickets);
+  const strictFindings = policyTier.strict === "off" ? [] : runStrictChecks(parsedTickets);
+
+  const warnings: string[] = [];
+  const failures: string[] = [...integrityFailures];
+
+  if (policyTier.quality === "warn") {
+    warnings.push(...qualityFindings);
+  } else if (policyTier.quality === "fail") {
+    failures.push(...qualityFindings);
+  }
+
+  if (policyTier.strict === "warn") {
+    warnings.push(...strictFindings);
+  } else if (policyTier.strict === "fail") {
+    failures.push(...strictFindings);
+  }
+
+  if (failures.length > 0) {
     throw new TicketError(
       ERROR_CODE.VALIDATION_FAILED,
-      `Validation failed:\n- ${errors.join("\n- ")}`,
+      `Validation failed:\n- ${failures.join("\n- ")}`,
       EXIT_CODE.VALIDATION_FAILED,
-      { errors, indexStatus: indexStale ? ERROR_CODE.INDEX_OUT_OF_SYNC : null }
+      { errors: failures, warnings, indexStatus: indexStale ? ERROR_CODE.INDEX_OUT_OF_SYNC : null, policyTier: policyTier.tier }
     );
   }
 
@@ -88,10 +174,20 @@ export async function runValidate(cwd: string, options: ValidateCommandOptions):
   if (options.json) {
     writeEnvelope(successEnvelope({
       valid: true,
+      policy_tier: policyTier.tier,
       fix_requested: fix,
-      fixes_applied: fixesApplied
-    }));
+      fixes_applied: fixesApplied,
+      checks: {
+        integrity: "fail",
+        quality: policyTier.quality,
+        strict: policyTier.strict
+      }
+    }, warnings));
     return;
+  }
+
+  for (const warning of warnings) {
+    console.warn(`Warning: ${warning}`);
   }
 
   if (fix) {
@@ -99,5 +195,5 @@ export async function runValidate(cwd: string, options: ValidateCommandOptions):
     return;
   }
 
-  console.log("Validation passed.");
+  console.log(`Validation passed (tier: ${policyTier.tier}).`);
 }

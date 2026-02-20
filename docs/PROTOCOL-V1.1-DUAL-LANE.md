@@ -100,6 +100,14 @@ CI MAY support an explicit strict mode that upgrades selected warnings to failur
 
 Strict mode MUST be opt-in and MUST NOT be assumed by baseline protocol conformance.
 
+Reference CLI tier presets:
+- `integrity` (default): fail integrity checks only
+- `warn`: fail integrity checks, warn quality checks
+- `quality`: fail integrity + quality checks
+- `opt-in`: fail integrity checks, warn quality + strict checks
+- `strict`: fail integrity + quality + strict checks
+- `hard`: alias of strict/full hard-fail mode
+
 ## 7. Implementation Hooks (Non-normative)
 
 Planned follow-on implementation tickets:

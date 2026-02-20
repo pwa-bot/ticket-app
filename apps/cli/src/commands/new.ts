@@ -10,6 +10,7 @@ export interface NewCommandOptions {
   priority: string;
   state: string;
   label: string[];
+  template?: string;
 }
 
 function normalizeState(state: string): TicketState {
@@ -56,7 +57,8 @@ export async function runNew(cwd: string, title: string, options: NewCommandOpti
     title: trimmedTitle,
     state,
     priority,
-    labels
+    labels,
+    template: options.template
   });
 
   await rebuildIndex(cwd);

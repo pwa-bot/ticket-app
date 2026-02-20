@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { Command } from "commander";
+import { Command, Option } from "commander";
 import { runInit } from "./commands/init.js";
 import { runNew } from "./commands/new.js";
 import { runList } from "./commands/list.js";
@@ -71,9 +71,10 @@ async function main(): Promise<void> {
     .argument("<title>", "Ticket title")
     .option("-p, --priority <priority>", "Ticket priority", "p1")
     .option("--state <state>", "Initial ticket state", "backlog")
+    .option("--template <template>", "Template name from .tickets/templates (e.g. bug, feature, chore)")
     .option("--label <label>", "Label to add", collectLabel, [])
     .option("--ci", "CI mode (accepted for consistency)")
-    .action(async (title: string, options: { priority: string; state: string; label: string[]; ci?: boolean }) => {
+    .action(async (title: string, options: { priority: string; state: string; template?: string; label: string[]; ci?: boolean }) => {
       await runNew(process.cwd(), title, options);
     });
 
@@ -177,7 +178,11 @@ async function main(): Promise<void> {
     .option("--fix", "Auto-fix supported issues")
     .option("--ci", "CI mode")
     .option("--json", "Emit a JSON envelope")
-    .action(async (options: { fix?: boolean; ci?: boolean; json?: boolean }, command: Command) => {
+    .addOption(
+      new Option("--policy-tier <tier>", "Policy tier: hard|integrity|warn|quality|opt-in|strict")
+        .choices(["hard", "integrity", "warn", "quality", "opt-in", "strict"])
+    )
+    .action(async (options: { fix?: boolean; ci?: boolean; json?: boolean; policyTier?: string }, command: Command) => {
       const global = getGlobalOptions(command);
       await runValidate(process.cwd(), { ...options, json: options.json ?? global.json ?? false });
     });

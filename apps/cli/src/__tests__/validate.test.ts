@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { runValidate } from "../commands/validate.js";
 import { EXIT_CODE, TicketError } from "../lib/errors.js";
 import { rebuildIndex } from "../lib/index.js";
@@ -9,6 +9,7 @@ import { rebuildIndex } from "../lib/index.js";
 const tempDirs: string[] = [];
 
 afterEach(async () => {
+  vi.restoreAllMocks();
   await Promise.all(tempDirs.map((dir) => fs.rm(dir, { recursive: true, force: true })));
   tempDirs.length = 0;
 });
@@ -259,5 +260,100 @@ reviewer: 123
 
     await expect(runValidate(cwd, {})).rejects.toThrow("assignee must match 'human:<slug>' or 'agent:<slug>'");
     await expect(runValidate(cwd, {})).rejects.toThrow("reviewer must match 'human:<slug>' or 'agent:<slug>'");
+  });
+
+  it("defaults to integrity tier (quality checks disabled)", async () => {
+    const cwd = await mkTempRepo();
+    const id = "01ARZ3NDEKTSV4RRFFQ69G5FAM";
+    await writeTicket(
+      cwd,
+      id,
+      `---
+id: ${id}
+title: Minimal
+state: backlog
+priority: p1
+labels: []
+---
+`
+    );
+    await rebuildIndex(cwd);
+
+    await expect(runValidate(cwd, {})).resolves.toBeUndefined();
+  });
+
+  it("warn tier surfaces quality findings without failing", async () => {
+    const cwd = await mkTempRepo();
+    const id = "01ARZ3NDEKTSV4RRFFQ69G5FAN";
+    await writeTicket(
+      cwd,
+      id,
+      `---
+id: ${id}
+title: Minimal
+state: backlog
+priority: p1
+labels: []
+---
+`
+    );
+    await rebuildIndex(cwd);
+
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    await expect(runValidate(cwd, { policyTier: "warn" })).resolves.toBeUndefined();
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("missing checklist items under 'Acceptance Criteria'"));
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("weak or missing 'Problem' section content"));
+  });
+
+  it("quality tier promotes quality findings to failures", async () => {
+    const cwd = await mkTempRepo();
+    const id = "01ARZ3NDEKTSV4RRFFQ69G5FAP";
+    await writeTicket(
+      cwd,
+      id,
+      `---
+id: ${id}
+title: Minimal
+state: backlog
+priority: p1
+labels: []
+---
+`
+    );
+    await rebuildIndex(cwd);
+
+    await expect(runValidate(cwd, { policyTier: "quality" })).rejects.toThrow("missing checklist items under 'Acceptance Criteria'");
+  });
+
+  it("strict tier fails when strict checks are missing", async () => {
+    const cwd = await mkTempRepo();
+    const id = "01ARZ3NDEKTSV4RRFFQ69G5FAQ";
+    await writeTicket(
+      cwd,
+      id,
+      `---
+id: ${id}
+title: Structured
+state: ready
+priority: p1
+labels: []
+---
+## Problem
+
+Enough detail to satisfy quality checks.
+
+## Acceptance Criteria
+
+- [ ] Something concrete
+
+## Spec
+
+Enough detail to satisfy quality checks.
+`
+    );
+    await rebuildIndex(cwd);
+
+    await expect(runValidate(cwd, { policyTier: "strict" })).rejects.toThrow("strict tier requires assignee");
+    await expect(runValidate(cwd, { policyTier: "strict" })).rejects.toThrow("strict tier requires reviewer");
   });
 });

@@ -173,6 +173,11 @@ export default function TicketDetailModal({ repo, ticketId, onClose, initialData
 
   const displayId = ticket?.display_id || `TK-${ticketId.slice(0, 8)}`;
   const fm = ticket?.frontmatter;
+  const templateValue = fm
+    ? (typeof fm.template === "string" && fm.template.trim()
+        ? fm.template.trim().toLowerCase()
+        : fm.labels?.find((label) => label.startsWith("template:"))?.slice("template:".length))
+    : undefined;
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/50" onClick={onClose}>
@@ -225,11 +230,16 @@ export default function TicketDetailModal({ repo, ticketId, onClose, initialData
                     className={`rounded border px-2 py-0.5 text-xs font-medium uppercase ${PRIORITY_COLORS[fm.priority] || "bg-slate-100"}`}
                     renderValue={(v) => v.toUpperCase()}
                   />
-                  {fm.labels?.map((label) => (
+                  {fm.labels?.filter((label) => !label.startsWith("template:")).map((label) => (
                     <span key={label} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
                       {label}
                     </span>
                   ))}
+                  {templateValue && (
+                    <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">
+                      template:{templateValue}
+                    </span>
+                  )}
                 </div>
               )}
             </div>

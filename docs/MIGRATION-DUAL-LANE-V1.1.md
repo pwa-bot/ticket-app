@@ -134,6 +134,11 @@ Suggested policy matrix:
 - Warning: quality heuristics, optional metadata hygiene
 - Opt-in strict: stronger governance gates
 
+CLI/config controls:
+- Config: `.tickets/config.yml` -> `policy.tier: integrity|warn|quality|opt-in|strict|hard`
+- Env override: `TICKET_POLICY_TIER`
+- Per-run override: `ticket validate --ci --policy-tier <tier>`
+
 Exit criteria:
 - Existing repositories pass default CI without new breaking requirements.
 - Strict mode is explicit and documented.

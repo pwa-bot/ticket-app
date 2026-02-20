@@ -3,7 +3,17 @@ import path from "node:path";
 import { autoCommit } from "../lib/git.js";
 import { rebuildIndex } from "../lib/index.js";
 import { successEnvelope, writeEnvelope } from "../lib/json.js";
-import { CONFIG_PATH, DEFAULT_CONFIG, DEFAULT_TEMPLATE, INDEX_PATH, TEMPLATE_PATH, TICKETS_DIR, TICKETS_ROOT } from "../lib/constants.js";
+import {
+  BUILTIN_TEMPLATES,
+  CONFIG_PATH,
+  DEFAULT_CONFIG,
+  DEFAULT_TEMPLATE,
+  INDEX_PATH,
+  TEMPLATE_PATH,
+  TEMPLATES_DIR,
+  TICKETS_DIR,
+  TICKETS_ROOT
+} from "../lib/constants.js";
 
 async function writeIfMissing(filePath: string, contents: string): Promise<boolean> {
   try {
@@ -33,17 +43,19 @@ export async function runInit(cwd: string, options: InitCommandOptions = {}): Pr
   const ticketsDirPath = path.join(cwd, TICKETS_DIR);
   const configPath = path.join(cwd, CONFIG_PATH);
   const templatePath = path.join(cwd, TEMPLATE_PATH);
+  const templatesDirPath = path.join(cwd, TEMPLATES_DIR);
   const indexPath = path.join(cwd, INDEX_PATH);
 
-  const [hasRoot, hasTicketsDir, hasConfig, hasTemplate, hasIndex] = await Promise.all([
+  const [hasRoot, hasTicketsDir, hasConfig, hasTemplate, hasTemplatesDir, hasIndex] = await Promise.all([
     pathExists(rootPath),
     pathExists(ticketsDirPath),
     pathExists(configPath),
     pathExists(templatePath),
+    pathExists(templatesDirPath),
     pathExists(indexPath)
   ]);
 
-  const alreadyInitialized = hasRoot && hasTicketsDir && hasConfig && hasTemplate && hasIndex;
+  const alreadyInitialized = hasRoot && hasTicketsDir && hasConfig && hasTemplate && hasTemplatesDir && hasIndex;
   const warnings = alreadyInitialized ? ["Ticket system already initialized."] : [];
 
   if (alreadyInitialized) {
@@ -57,9 +69,17 @@ export async function runInit(cwd: string, options: InitCommandOptions = {}): Pr
 
   await fs.mkdir(rootPath, { recursive: true });
   await fs.mkdir(ticketsDirPath, { recursive: true });
+  await fs.mkdir(templatesDirPath, { recursive: true });
 
   const wroteConfig = await writeIfMissing(configPath, DEFAULT_CONFIG);
   const wroteTemplate = await writeIfMissing(templatePath, DEFAULT_TEMPLATE);
+  const builtInTemplateWrites = await Promise.all(
+    Object.entries(BUILTIN_TEMPLATES).map(async ([name, contents]) => {
+      const filePath = path.join(cwd, TEMPLATES_DIR, `${name}.md`);
+      const wrote = await writeIfMissing(filePath, contents);
+      return { name, wrote, filePath };
+    })
+  );
 
   let generatedIndexCount: number | null = null;
   if (!hasIndex) {
@@ -70,6 +90,9 @@ export async function runInit(cwd: string, options: InitCommandOptions = {}): Pr
   const filesToCommit: string[] = [];
   if (wroteConfig) filesToCommit.push(configPath);
   if (wroteTemplate) filesToCommit.push(templatePath);
+  for (const templateWrite of builtInTemplateWrites) {
+    if (templateWrite.wrote) filesToCommit.push(templateWrite.filePath);
+  }
   if (!hasIndex) filesToCommit.push(indexPath);
 
   if (filesToCommit.length > 0) {
@@ -84,6 +107,9 @@ export async function runInit(cwd: string, options: InitCommandOptions = {}): Pr
   const created = [] as string[];
   if (wroteConfig) created.push(CONFIG_PATH);
   if (wroteTemplate) created.push(TEMPLATE_PATH);
+  for (const templateWrite of builtInTemplateWrites) {
+    if (templateWrite.wrote) created.push(`${TEMPLATES_DIR}/${templateWrite.name}.md`);
+  }
   if (!hasIndex) created.push(INDEX_PATH);
 
   if (options.json) {

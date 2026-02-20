@@ -86,6 +86,9 @@ Body
     await expect(fs.readFile(configPath, "utf8")).resolves.toBe(existingConfig);
     await expect(fs.readFile(ticketPath, "utf8")).resolves.toBe(existingTicket);
     await expect(fs.access(path.join(cwd, ".tickets/template.md"))).resolves.toBeUndefined();
+    await expect(fs.access(path.join(cwd, ".tickets/templates/bug.md"))).resolves.toBeUndefined();
+    await expect(fs.access(path.join(cwd, ".tickets/templates/feature.md"))).resolves.toBeUndefined();
+    await expect(fs.access(path.join(cwd, ".tickets/templates/chore.md"))).resolves.toBeUndefined();
     await expect(fs.access(path.join(cwd, ".tickets/index.json"))).resolves.toBeUndefined();
 
     const indexRaw = await fs.readFile(path.join(cwd, ".tickets/index.json"), "utf8");
@@ -115,5 +118,18 @@ Body
     expect(payload.data.created).toEqual([]);
     expect(payload.data.already_initialized).toBe(true);
     expect(payload.warnings).toEqual(["Ticket system already initialized."]);
+  });
+
+  it("creates built-in templates on first init", async () => {
+    const cwd = await mkTempRepo();
+    await runInit(cwd);
+
+    const bug = await fs.readFile(path.join(cwd, ".tickets/templates/bug.md"), "utf8");
+    const feature = await fs.readFile(path.join(cwd, ".tickets/templates/feature.md"), "utf8");
+    const chore = await fs.readFile(path.join(cwd, ".tickets/templates/chore.md"), "utf8");
+
+    expect(bug).toContain("template: bug");
+    expect(feature).toContain("template: feature");
+    expect(chore).toContain("template: chore");
   });
 });

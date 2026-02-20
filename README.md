@@ -60,7 +60,7 @@ Commands:
 - `ticket show <id>` — Show ticket details
 - `ticket move <id> <state>` — Change state
 - `ticket edit <id>` — Edit metadata
-- `ticket validate` — Check for errors
+- `ticket validate` — Check for errors (`--policy-tier` controls governance enforcement)
 - `ticket events write <event>` — Append telemetry lane events
 - `ticket events read` — Read telemetry lane events (`--compact` for one-line output)
 - `ticket events compact` — Build/apply telemetry compaction snapshots (`--apply` required to write)
@@ -69,6 +69,9 @@ Commands:
 Telemetry lane (optional, non-authoritative) can be configured in `.tickets/config.yml`:
 
 ```yaml
+policy:
+  tier: integrity          # hard | integrity | warn | quality | opt-in | strict
+
 telemetry:
   backend: notes            # off | notes | event_ref | http
   notes_ref: refs/notes/ticket-events
@@ -77,6 +80,20 @@ telemetry:
   read_fallback: true
 ```
 
+Policy tier selection precedence:
+- `ticket validate --policy-tier <tier>`
+- `TICKET_POLICY_TIER`
+- `.tickets/config.yml` (`policy.tier` or `policy_tier`)
+- default: `integrity`
+
+Tier behavior:
+- `integrity` (default): fail integrity checks only
+- `warn`: fail integrity checks, warn on quality checks
+- `quality`: fail integrity + quality checks
+- `opt-in`: fail integrity checks, warn on quality + strict checks
+- `strict`: fail integrity + quality + strict checks
+- `hard`: alias of `strict` (full hard-fail mode)
+
 Env overrides:
 - `TICKET_TELEMETRY_BACKEND`
 - `TICKET_TELEMETRY_NOTES_REF`
@@ -84,6 +101,7 @@ Env overrides:
 - `TICKET_TELEMETRY_WRITE_FALLBACK`
 - `TICKET_TELEMETRY_READ_FALLBACK`
 - `TICKET_APP_TELEMETRY_URL` (legacy HTTP sink; default backend becomes `http` if set)
+- `TICKET_POLICY_TIER`
 
 Backfill noisy history into compact snapshots:
 ```bash
