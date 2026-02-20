@@ -17,6 +17,7 @@ import type {
 import type { AttentionReasonDetail } from "@/lib/attention-contract";
 import type { SpaceIndexResponse, SpaceIndexTicket } from "@/app/api/space/index/route";
 import { trackWebEvent } from "@/lib/telemetry";
+import { fetchWithQueryCache, readFreshQueryCache, readQueryCache } from "@/lib/space-query-cache";
 
 function prKey(repo: string, ticketId: string): string {
   return `${repo}:${ticketId}`;
@@ -190,12 +191,23 @@ export default function PortfolioAttentionView() {
   const [attentionData, setAttentionData] = useState<AttentionResponse | null>(null);
   const [indexData, setIndexData] = useState<SpaceIndexResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [jumpValue, setJumpValue] = useState("");
   const [jumpError, setJumpError] = useState<string | null>(null);
   const hasTrackedView = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const requestGenRef = useRef(0);
+  const attentionDataRef = useRef<AttentionResponse | null>(null);
+  const indexDataRef = useRef<SpaceIndexResponse | null>(null);
+
+  useEffect(() => {
+    attentionDataRef.current = attentionData;
+  }, [attentionData]);
+
+  useEffect(() => {
+    indexDataRef.current = indexData;
+  }, [indexData]);
 
   const selectedRepos = useMemo(() => {
     if (!repoParam) {
@@ -205,7 +217,9 @@ export default function PortfolioAttentionView() {
     return new Set(repoParam.split(",").map((repo) => repo.trim()).filter(Boolean));
   }, [repoParam]);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (options?: { hardRefresh?: boolean }) => {
+    const hardRefresh = options?.hardRefresh ?? false;
+
     // Cancel any in-flight request from a previous invocation.
     abortControllerRef.current?.abort();
     const controller = new AbortController();
@@ -214,35 +228,77 @@ export default function PortfolioAttentionView() {
     // Capture a generation token so late-arriving responses can be ignored.
     const gen = ++requestGenRef.current;
 
-    setLoading(true);
+    const params = new URLSearchParams();
+    if (repoParam) {
+      params.set("repos", repoParam);
+    }
+
+    const query = params.toString();
+    const endpoint = activeTab === "tickets" ? "index" : "attention";
+    const url = `/api/space/${endpoint}${query ? `?${query}` : ""}`;
+    const cacheKey = `${endpoint}:${query || "all"}`;
+
     setError(null);
 
-    try {
-      const params = new URLSearchParams();
-      if (repoParam) {
-        params.set("repos", repoParam);
-      }
-
+    if (!hardRefresh) {
       if (activeTab === "tickets") {
-        const url = `/api/space/index${params.toString() ? `?${params.toString()}` : ""}`;
-        const res = await fetch(url, { cache: "no-store", signal: controller.signal });
-        if (!res.ok) {
-          throw new Error(`Failed to load tickets (${res.status})`);
+        const cached = readQueryCache<SpaceIndexResponse>(cacheKey);
+        if (cached) {
+          setIndexData(cached);
         }
+      } else {
+        const cached = readQueryCache<AttentionResponse>(cacheKey);
+        if (cached) {
+          setAttentionData(cached);
+        }
+      }
+    }
 
-        const json = (await res.json()) as SpaceIndexResponse;
-        // Discard if a newer request has already taken over.
+    const hasCurrentData = activeTab === "tickets" ? !!indexDataRef.current : !!attentionDataRef.current;
+    const hasFreshCache =
+      activeTab === "tickets"
+        ? !!readFreshQueryCache<SpaceIndexResponse>(cacheKey, 15_000)
+        : !!readFreshQueryCache<AttentionResponse>(cacheKey, 15_000);
+
+    const blockView = hardRefresh || (!hasCurrentData && !hasFreshCache);
+    setLoading(blockView);
+    setRefreshing(!blockView);
+
+    try {
+      if (activeTab === "tickets") {
+        const fetcher = async (): Promise<SpaceIndexResponse> => {
+          const res = await fetch(url, {
+            cache: hardRefresh ? "no-store" : "default",
+            signal: controller.signal,
+          });
+          if (!res.ok) {
+            throw new Error(`Failed to load tickets (${res.status})`);
+          }
+
+          return (await res.json()) as SpaceIndexResponse;
+        };
+
+        const json = await fetchWithQueryCache<SpaceIndexResponse>(cacheKey, fetcher, {
+          force: hardRefresh,
+        });
         if (gen !== requestGenRef.current) return;
         setIndexData(json);
       } else {
-        const url = `/api/space/attention${params.toString() ? `?${params.toString()}` : ""}`;
-        const res = await fetch(url, { cache: "no-store", signal: controller.signal });
-        if (!res.ok) {
-          throw new Error(`Failed to load attention data (${res.status})`);
-        }
+        const fetcher = async (): Promise<AttentionResponse> => {
+          const res = await fetch(url, {
+            cache: hardRefresh ? "no-store" : "default",
+            signal: controller.signal,
+          });
+          if (!res.ok) {
+            throw new Error(`Failed to load attention data (${res.status})`);
+          }
 
-        const json = (await res.json()) as AttentionResponse;
-        // Discard if a newer request has already taken over.
+          return (await res.json()) as AttentionResponse;
+        };
+
+        const json = await fetchWithQueryCache<AttentionResponse>(cacheKey, fetcher, {
+          force: hardRefresh,
+        });
         if (gen !== requestGenRef.current) return;
         setAttentionData(json);
       }
@@ -252,15 +308,19 @@ export default function PortfolioAttentionView() {
       if (gen !== requestGenRef.current) return;
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
-      // Only clear the loading flag if this is still the active request.
+      // Only clear flags if this is still the active request.
       if (gen === requestGenRef.current) {
         setLoading(false);
+        setRefreshing(false);
       }
     }
   }, [activeTab, repoParam]);
 
   useEffect(() => {
     void load();
+    return () => {
+      abortControllerRef.current?.abort();
+    };
   }, [load]);
 
   useEffect(() => {
@@ -461,13 +521,14 @@ export default function PortfolioAttentionView() {
                 ? `${filteredAttentionItems.length} items needing attention`
                 : `${filteredIndexTickets.length} tickets`}
             {loadedAt ? <span className="ml-2 text-slate-400">· cached {new Date(loadedAt).toLocaleString()}</span> : null}
+            {refreshing ? <span className="ml-2 text-slate-400">· refreshing…</span> : null}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <SavedViewsDropdown repo={null} basePath="/space" />
           <button
             type="button"
-            onClick={() => void load()}
+            onClick={() => void load({ hardRefresh: true })}
             disabled={loading}
             className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
           >
