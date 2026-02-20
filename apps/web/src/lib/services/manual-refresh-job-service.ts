@@ -216,6 +216,19 @@ function mapRepo(row: typeof schema.repos.$inferSelect): RefreshRepoRecord {
   };
 }
 
+export function getFirstReturningRow<T>(rows: T[], operation: string): T {
+  if (!Array.isArray(rows) || rows.length === 0) {
+    throw new Error(`Failed to ${operation}`);
+  }
+
+  const row = rows[0];
+  if (!row) {
+    throw new Error(`Failed to ${operation}`);
+  }
+
+  return row;
+}
+
 export function createDbManualRefreshStore(): ManualRefreshStore {
   return {
     async findRepoByFullName(fullName) {
@@ -235,7 +248,7 @@ export function createDbManualRefreshStore(): ManualRefreshStore {
     },
 
     async insertQueuedJob(input) {
-      const [row] = await db
+      const rows = (await db
         .insert(schema.manualRefreshJobs)
         .values({
           id: input.id,
@@ -249,17 +262,9 @@ export function createDbManualRefreshStore(): ManualRefreshStore {
           createdAt: input.now,
           updatedAt: input.now,
         })
-        .returning();
+        .returning()) as typeof schema.manualRefreshJobs.$inferSelect[];
 
-      if (!row || row.length === 0) {
-        throw new Error("Failed to insert job");
-      }
-      
-      const insertedRow = row[0] as typeof schema.manualRefreshJobs.$inferSelect;
-      if (!insertedRow) {
-        throw new Error("Failed to insert job");
-      }
-      
+      const insertedRow = getFirstReturningRow(rows, "insert job");
       return mapJob(insertedRow);
     },
 
@@ -295,7 +300,7 @@ export function createDbManualRefreshStore(): ManualRefreshStore {
 
       const claimed: RefreshJobRecord[] = [];
       for (const row of queued) {
-        const [updated] = await db
+        const updatedRows = (await db
           .update(schema.manualRefreshJobs)
           .set({
             status: "running",
@@ -304,10 +309,10 @@ export function createDbManualRefreshStore(): ManualRefreshStore {
             updatedAt: nowTs,
           })
           .where(and(eq(schema.manualRefreshJobs.id, row.id), eq(schema.manualRefreshJobs.status, "queued")))
-          .returning();
+          .returning()) as typeof schema.manualRefreshJobs.$inferSelect[];
 
-        if (Array.isArray(updated) && updated.length > 0) {
-          claimed.push(mapJob(updated[0] as typeof schema.manualRefreshJobs.$inferSelect));
+        if (updatedRows.length > 0) {
+          claimed.push(mapJob(updatedRows[0] as typeof schema.manualRefreshJobs.$inferSelect));
         }
       }
 
