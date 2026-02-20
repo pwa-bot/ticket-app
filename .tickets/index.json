@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T23:27:52.286Z",
+  "generated_at": "2026-02-20T23:37:16.861Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -128,20 +128,6 @@
       ],
       "path": ".tickets/tickets/01KHYK09CZ428DT3D7SFXKW02F.md",
       "display_id": "TK-01KHYK09-2"
-    },
-    {
-      "id": "01KHYK086MC5KPMBJZ9C0DCDNS",
-      "short_id": "01KHYK08",
-      "title": "P1 Add per-repo sync locks and idempotency keys for webhook refresh races",
-      "state": "in_progress",
-      "priority": "p1",
-      "labels": [
-        "reliability",
-        "sync",
-        "webhooks"
-      ],
-      "path": ".tickets/tickets/01KHYK086MC5KPMBJZ9C0DCDNS.md",
-      "display_id": "TK-01KHYK08"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
@@ -937,6 +923,20 @@
       ],
       "path": ".tickets/tickets/01KHWJNQWDNXQN0CWXMDPDQM17.md",
       "display_id": "TK-01KHWJNQ"
+    },
+    {
+      "id": "01KHYK086MC5KPMBJZ9C0DCDNS",
+      "short_id": "01KHYK08",
+      "title": "P1 Add per-repo sync locks and idempotency keys for webhook refresh races",
+      "state": "done",
+      "priority": "p1",
+      "labels": [
+        "reliability",
+        "sync",
+        "webhooks"
+      ],
+      "path": ".tickets/tickets/01KHYK086MC5KPMBJZ9C0DCDNS.md",
+      "display_id": "TK-01KHYK08"
     },
     {
       "id": "01KHMG86G7ZPTKKE8PWBTVYRYZ",
