@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T22:37:19.795Z",
+  "generated_at": "2026-02-20T22:47:46.886Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -184,21 +184,6 @@
       ],
       "path": ".tickets/tickets/01KHYK09CZ428DT3D7SFXKW02F.md",
       "display_id": "TK-01KHYK09-2"
-    },
-    {
-      "id": "01KHYK00DHXBT8J9ATD1G0JM4B",
-      "short_id": "01KHYK00",
-      "title": "P0 Replace client-stored GitHub token with opaque server session",
-      "state": "in_progress",
-      "priority": "p0",
-      "labels": [
-        "security",
-        "auth",
-        "session",
-        "architecture"
-      ],
-      "path": ".tickets/tickets/01KHYK00DHXBT8J9ATD1G0JM4B.md",
-      "display_id": "TK-01KHYK00"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
@@ -542,6 +527,21 @@
       ],
       "path": ".tickets/tickets/01KHWT95ZWQX2FCQXKEVZ85AD8.md",
       "display_id": "TK-01KHWT95"
+    },
+    {
+      "id": "01KHYK00DHXBT8J9ATD1G0JM4B",
+      "short_id": "01KHYK00",
+      "title": "P0 Replace client-stored GitHub token with opaque server session",
+      "state": "done",
+      "priority": "p0",
+      "labels": [
+        "security",
+        "auth",
+        "session",
+        "architecture"
+      ],
+      "path": ".tickets/tickets/01KHYK00DHXBT8J9ATD1G0JM4B.md",
+      "display_id": "TK-01KHYK00"
     },
     {
       "id": "01KHMG84AJMCWQCCE84328MF5G",
