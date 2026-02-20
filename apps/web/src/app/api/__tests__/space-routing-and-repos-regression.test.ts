@@ -35,22 +35,22 @@ test("/api/auth/github validates and honors returnTo", async () => {
   assert.match(source, /response\.cookies\.set\(cookieNames\.oauthReturnTo, "", expiredCookieOptions\(\)\)/, "oauth returnTo cookie should be cleared after login");
 });
 
-test("/api/repos is cache-first by default and only does expensive GitHub syncs when needed", async () => {
+test("/api/repos stays read-only and cache-only", async () => {
   const source = await readSource("app/api/repos/route.ts");
 
-  assert.match(source, /const refresh = shouldRefresh\(request\)/, "should gate refresh behavior behind an explicit refresh flag");
-  assert.match(source, /if \(refresh\) \{[\s\S]*syncUserInstallationsFromGithub\(userId, token\)/, "should only sync installations when refresh is requested");
-  assert.match(source, /INSTALLATION_REHYDRATE_TTL_MS/, "default path should support stale-installation rehydration");
-  assert.match(source, /MAX_STALE_INSTALLATION_REHYDRATES_PER_REQUEST/, "default path should cap stale hydration work per request");
+  assert.match(source, /Cache-only repository list/, "repos GET should document cache-only behavior");
+  assert.doesNotMatch(source, /fetch\(/, "repos GET should not call GitHub/network");
+  assert.doesNotMatch(source, /hydrateInstallationRepos\(/, "repos GET should not hydrate on read");
+  assert.doesNotMatch(source, /\.insert\(/, "repos GET should not write to DB");
+  assert.doesNotMatch(source, /\.update\(/, "repos GET should not write to DB");
+  assert.doesNotMatch(source, /\.delete\(/, "repos GET should not write to DB");
 });
 
-test("refresh flows hydrate repos for personal installations so repo list can include newly installed repos", async () => {
-  const reposRouteSource = await readSource("app/api/repos/route.ts");
+test("explicit refresh remains the sync trigger for installation hydration", async () => {
   const refreshRouteSource = await readSource("app/api/github/installations/refresh/route.ts");
   const helperSource = await readSource("lib/github/hydrate-installation-repos.ts");
 
   assert.match(helperSource, /\/user\/installations\/\$\{githubInstallationId\}\/repositories/, "hydration helper should use GitHub installation repositories endpoint");
-  assert.match(reposRouteSource, /hydrateInstallationRepos\(/, "repos route should hydrate via shared helper");
   assert.match(refreshRouteSource, /hydrateInstallationRepos\(/, "installations refresh endpoint should hydrate via shared helper");
   assert.match(refreshRouteSource, /hydratedRepoCount/, "refresh response should report hydration work");
 });
@@ -59,8 +59,30 @@ test("/api/github/installations stays cache-first and does not trigger backgroun
   const source = await readSource("app/api/github/installations/route.ts");
 
   assert.doesNotMatch(source, /api\.github\.com\/user\/installations/, "installations GET should not call GitHub directly");
+  assert.doesNotMatch(source, /fetch\(/, "installations GET should not perform network reads");
+  assert.doesNotMatch(source, /\.insert\(/, "installations GET should not write to DB");
+  assert.doesNotMatch(source, /\.update\(/, "installations GET should not write to DB");
+  assert.doesNotMatch(source, /\.delete\(/, "installations GET should not write to DB");
   assert.match(source, /Use POST \/api\/github\/installations\/refresh for explicit, rate-safe refresh\./, "installations GET should document explicit refresh path");
   assert.match(source, /db\.query\.installations\.findMany/, "installations GET should read from DB snapshot");
+});
+
+test("passive /api/space GET endpoints stay read-only and avoid GitHub/network calls", async () => {
+  const passiveSpaceRoutes = [
+    "app/api/space/index/route.ts",
+    "app/api/space/tickets/route.ts",
+    "app/api/space/attention/route.ts",
+    "app/api/space/repos/[owner]/[repo]/board/route.ts",
+  ];
+
+  for (const routePath of passiveSpaceRoutes) {
+    const source = await readSource(routePath);
+    assert.match(source, /export async function GET\(/, `${routePath} should expose GET`);
+    assert.doesNotMatch(source, /fetch\(/, `${routePath} should not perform network reads`);
+    assert.doesNotMatch(source, /\.insert\(/, `${routePath} should not write to DB`);
+    assert.doesNotMatch(source, /\.update\(/, `${routePath} should not write to DB`);
+    assert.doesNotMatch(source, /\.delete\(/, `${routePath} should not write to DB`);
+  }
 });
 
 test("repo navigation uses Next Link components for in-app routing", async () => {
