@@ -1,7 +1,7 @@
 ---
 id: 01KHYK086MC5KPMBJZ9C0DCDNS
 title: P1 Add per-repo sync locks and idempotency keys for webhook refresh races
-state: backlog
+state: ready
 priority: p1
 labels:
   - reliability
