@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { NextRequest } from "next/server";
 import { apiError, apiSuccess } from "@/lib/api/response";
 import { cookieNames, destroySessionById, getSessionIdFromRequest } from "@/lib/auth";
-import { normalizeReturnTo } from "@/lib/auth-return-to";
+import { createOAuthStateBinding, normalizeReturnTo } from "@/lib/auth-return-to";
 import { getCanonicalBaseUrl } from "@/lib/app-url";
 import { expiredCookieOptions, oauthStateCookieOptions } from "@/lib/security/cookies";
 import { CSRF_COOKIE_NAME } from "@/lib/security/csrf";
@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
   const requestedReturnTo = normalizeReturnTo(
     bodyReturnTo ?? new URL(request.url).searchParams.get("returnTo"),
   );
+  const stateBinding = createOAuthStateBinding(state, requestedReturnTo);
 
   // Go directly to GitHub, bypassing our auth endpoint
   const authorizeUrl = new URL("https://github.com/login/oauth/authorize");
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
   response.cookies.set(CSRF_COOKIE_NAME, "", expiredCookieOptions("strict"));
 
   // Set OAuth state + return destination for callback validation
-  response.cookies.set(cookieNames.oauthState, state, oauthStateCookieOptions());
+  response.cookies.set(cookieNames.oauthState, stateBinding, oauthStateCookieOptions());
   response.cookies.set(cookieNames.oauthReturnTo, requestedReturnTo, oauthStateCookieOptions());
 
   return response;

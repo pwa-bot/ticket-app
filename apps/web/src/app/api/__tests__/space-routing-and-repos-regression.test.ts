@@ -26,8 +26,11 @@ test("/api/auth/github validates and honors returnTo", async () => {
   const source = await readSource("app/api/auth/github/route.ts");
 
   assert.match(source, /normalizeReturnTo\(/, "auth route should sanitize requested returnTo values");
+  assert.match(source, /createOAuthStateBinding\(/, "auth route should bind returnTo to oauth state");
+  assert.match(source, /validateOAuthStateBinding\(/, "auth route should validate oauth state binding");
   assert.match(source, /cookieNames\.oauthReturnTo/, "auth route should persist returnTo across OAuth round-trip");
-  assert.match(source, /const finalReturnTo = normalizeReturnTo\(/, "auth route should compute final safe returnTo");
+  assert.match(source, /const finalReturnTo = cookieReturnTo;/, "auth callback should use only cookie-bound returnTo");
+  assert.doesNotMatch(source, /url\.searchParams\.get\("returnTo"\)\s*\?\?\s*cookieReturnTo/, "auth callback should not allow query returnTo override");
   assert.match(source, /toCanonicalUrl\(request, requestedReturnTo\)/, "existing sessions should be redirected to returnTo on canonical host");
   assert.match(source, /hasSessionCookieInRequest\(request\)\s*\|\|\s*await hasSession\(\)/, "auth route should short-circuit OAuth when session cookie already exists");
   assert.match(source, /response\.cookies\.set\(cookieNames\.oauthReturnTo, "", expiredCookieOptions\(\)\)/, "oauth returnTo cookie should be cleared after login");
@@ -117,5 +120,6 @@ test("/api/auth routes use canonical base url and preserve returnTo in reconnect
   assert.match(githubSource, /toCanonicalUrl\(request, redirectTo\)/, "post-login redirects should stay on canonical host");
 
   assert.match(reconnectSource, /getCanonicalBaseUrl\(request\)/, "reconnect redirect_uri should use canonical base url");
+  assert.match(reconnectSource, /createOAuthStateBinding\(/, "reconnect should bind returnTo to oauth state");
   assert.match(reconnectSource, /cookieNames\.oauthReturnTo/, "reconnect flow should preserve returnTo across OAuth callback");
 });
