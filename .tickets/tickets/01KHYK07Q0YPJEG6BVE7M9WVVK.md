@@ -1,7 +1,7 @@
 ---
 id: 01KHYK07Q0YPJEG6BVE7M9WVVK
 title: P0 Harden OAuth callback state binding and returnTo allowlist
-state: ready
+state: in_progress
 priority: p0
 labels:
   - security
