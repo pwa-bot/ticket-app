@@ -1,7 +1,7 @@
 ---
 id: 01KHVX92N5768VHV0DTKNEB9YA
 title: Extract webhook handler into service module with unit tests
-state: in_progress
+state: done
 priority: p1
 labels:
   - refactor
