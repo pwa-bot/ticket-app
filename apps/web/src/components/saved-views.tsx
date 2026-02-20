@@ -6,6 +6,7 @@ import {
   type SavedView,
   deleteView,
   getViewsForRepo,
+  renameView,
   saveView,
 } from "@/lib/saved-views";
 
@@ -20,6 +21,7 @@ export function SavedViewsDropdown({ repo, basePath }: SavedViewsDropdownProps) 
   const [views, setViews] = useState<SavedView[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [editingView, setEditingView] = useState<SavedView | null>(null);
 
   // Load views on mount and when repo changes
   useEffect(() => {
@@ -58,6 +60,16 @@ export function SavedViewsDropdown({ repo, basePath }: SavedViewsDropdownProps) 
       setShowSaveModal(false);
     },
     [currentQuery, repo]
+  );
+
+  const handleRenameView = useCallback(
+    (name: string) => {
+      if (!editingView) return;
+      renameView(editingView.id, name);
+      setViews(getViewsForRepo(repo));
+      setEditingView(null);
+    },
+    [editingView, repo]
   );
 
   const handleCopyShareLink = useCallback(() => {
@@ -115,16 +127,32 @@ export function SavedViewsDropdown({ repo, basePath }: SavedViewsDropdownProps) 
                     >
                       {view.name}
                     </button>
-                    <button
-                      type="button"
-                      onClick={(e) => handleDeleteView(e, view.id)}
-                      className="ml-2 hidden text-slate-400 hover:text-red-500 group-hover:block"
-                      title="Delete view"
-                    >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
+                    <div className="ml-2 hidden items-center gap-1 group-hover:flex">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingView(view);
+                          setIsOpen(false);
+                        }}
+                        className="text-slate-400 hover:text-slate-600"
+                        title="Rename view"
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5h2M5 19h2m8-14 4 4M5 19l4-1 9-9-3-3-9 9-1 4z" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteView(e, view.id)}
+                        className="text-slate-400 hover:text-red-500"
+                        title="Delete view"
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 ))}
               </>
@@ -155,8 +183,18 @@ export function SavedViewsDropdown({ repo, basePath }: SavedViewsDropdownProps) 
 
       {showSaveModal && (
         <SaveViewModal
+          mode="save"
           onSave={handleSaveView}
           onClose={() => setShowSaveModal(false)}
+        />
+      )}
+
+      {editingView && (
+        <SaveViewModal
+          mode="rename"
+          initialName={editingView.name}
+          onSave={handleRenameView}
+          onClose={() => setEditingView(null)}
         />
       )}
 
@@ -172,12 +210,14 @@ export function SavedViewsDropdown({ repo, basePath }: SavedViewsDropdownProps) 
 }
 
 interface SaveViewModalProps {
+  mode: "save" | "rename";
+  initialName?: string;
   onSave: (name: string) => void;
   onClose: () => void;
 }
 
-function SaveViewModal({ onSave, onClose }: SaveViewModalProps) {
-  const [name, setName] = useState("");
+function SaveViewModal({ mode, initialName, onSave, onClose }: SaveViewModalProps) {
+  const [name, setName] = useState(initialName ?? "");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -189,7 +229,7 @@ function SaveViewModal({ onSave, onClose }: SaveViewModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">
-        <h3 className="text-lg font-semibold text-slate-900">Save view</h3>
+        <h3 className="text-lg font-semibold text-slate-900">{mode === "save" ? "Save view" : "Rename view"}</h3>
         <form onSubmit={handleSubmit} className="mt-4">
           <input
             type="text"
@@ -212,7 +252,7 @@ function SaveViewModal({ onSave, onClose }: SaveViewModalProps) {
               disabled={!name.trim()}
               className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-slate-300"
             >
-              Save
+              {mode === "save" ? "Save" : "Rename"}
             </button>
           </div>
         </form>

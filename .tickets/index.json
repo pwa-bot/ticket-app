@@ -1,23 +1,8 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T01:18:21.256Z",
+  "generated_at": "2026-02-20T01:21:04.244Z",
   "workflow": "simple-v1",
   "tickets": [
-    {
-      "id": "01KHT40QS0ATEZA86AEW9E94R9",
-      "short_id": "01KHT40Q",
-      "display_id": "TK-01KHT40Q",
-      "title": "Saved views and shareable filter links",
-      "state": "backlog",
-      "priority": "p0",
-      "labels": [
-        "dashboard",
-        "saved-views"
-      ],
-      "assignee": "agent:openclaw",
-      "reviewer": "human:morgan",
-      "path": ".tickets/tickets/01KHT40QS0ATEZA86AEW9E94R9.md"
-    },
     {
       "id": "01KHVQ02ZX1SX13ZB6HZPK4A1N",
       "short_id": "01KHVQ02",
@@ -463,6 +448,21 @@
       "assignee": "agent:openclaw",
       "reviewer": "human:morgan",
       "path": ".tickets/tickets/01KHT40QGXG6EWEA41J6ZJEVTC.md"
+    },
+    {
+      "id": "01KHT40QS0ATEZA86AEW9E94R9",
+      "short_id": "01KHT40Q",
+      "display_id": "TK-01KHT40Q",
+      "title": "Saved views and shareable filter links",
+      "state": "done",
+      "priority": "p0",
+      "labels": [
+        "dashboard",
+        "saved-views"
+      ],
+      "assignee": "agent:openclaw",
+      "reviewer": "human:morgan",
+      "path": ".tickets/tickets/01KHT40QS0ATEZA86AEW9E94R9.md"
     },
     {
       "id": "01KHT40R161HJ71E5QEKP02SM8",

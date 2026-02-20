@@ -1,7 +1,7 @@
 ---
 id: 01KHT40QS0ATEZA86AEW9E94R9
 title: Saved views and shareable filter links
-state: backlog
+state: done
 priority: p0
 labels:
   - dashboard
@@ -16,12 +16,12 @@ Supervisors need one-click switching between common queries. URL params alone ar
 
 ## Acceptance Criteria
 
-- [ ] View selector dropdown on portfolio and repo dashboard
-- [ ] Save current filters as a named view (repo-scoped by default)
-- [ ] Storage: localStorage for v1
-- [ ] "Copy link" produces shareable URL with query params
-- [ ] Manage views: rename, delete
-- [ ] Views apply consistently across board and table
+- [x] View selector dropdown on portfolio and repo dashboard
+- [x] Save current filters as a named view (repo-scoped by default)
+- [x] Storage: localStorage for v1
+- [x] "Copy link" produces shareable URL with query params
+- [x] Manage views: rename, delete
+- [x] Views apply consistently across board and table
 
 ## Cut
 

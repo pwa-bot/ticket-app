@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import AttentionTable from "@/components/attention-table";
+import { SavedViewsDropdown } from "@/components/saved-views";
 import TicketDetailModal from "@/components/ticket-detail-modal";
 import type { LinkedPrSummary } from "@/components/pr-status-badge";
 import type { AttentionRow, CiStatus, MergeReadiness } from "@/lib/attention";
@@ -307,6 +308,7 @@ export default function PortfolioAttentionView() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <SavedViewsDropdown repo={null} basePath="/space" />
           <button
             type="button"
             onClick={() => void load()}
