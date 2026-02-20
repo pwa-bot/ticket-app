@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T00:16:07.511Z",
+  "generated_at": "2026-02-20T00:16:12.049Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -89,6 +89,21 @@
         "filters"
       ],
       "path": ".tickets/tickets/01KHW6ERTAS4MW29ZBGXSH325X.md"
+    },
+    {
+      "id": "01KHW6EX837MYH0V9AN8C25930",
+      "short_id": "01KHW6EX",
+      "display_id": "TK-01KHW6EX",
+      "title": "E2E modal deep link loads ticket outside current page filter",
+      "state": "backlog",
+      "priority": "p0",
+      "labels": [
+        "dashboard",
+        "qa",
+        "e2e",
+        "modal"
+      ],
+      "path": ".tickets/tickets/01KHW6EX837MYH0V9AN8C25930.md"
     },
     {
       "id": "01KHS9PF0AGVDSF6G0FER0W2R7",
