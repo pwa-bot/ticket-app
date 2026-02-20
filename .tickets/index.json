@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T23:57:33.105Z",
+  "generated_at": "2026-02-20T23:57:33.344Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -105,7 +105,7 @@
       "id": "01KHYK08P2R9Z43ET50CVTFRGF",
       "short_id": "01KHYK08",
       "title": "P1 Add refresh endpoint quotas and backoff per user install repo",
-      "state": "ready",
+      "state": "in_progress",
       "priority": "p1",
       "labels": [
         "reliability",
