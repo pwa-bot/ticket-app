@@ -121,8 +121,28 @@ export default function OnboardingClient() {
 
   const hasInstallations = installations.length > 0;
 
+  const currentStep = useMemo(() => {
+    if (!hasInstallations) return 1;
+    if (enabledCount === 0) return 2;
+    return 3;
+  }, [hasInstallations, enabledCount]);
+
   return (
     <div className="space-y-8">
+      {/* Progress Indicator */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-medium text-slate-900">Setup Progress</span>
+          <div className="flex-1 bg-slate-200 rounded-full h-2">
+            <div 
+              className="bg-green-500 h-2 rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${(currentStep / 3) * 100}%` }}
+            />
+          </div>
+          <span className="text-sm text-slate-600">{currentStep}/3</span>
+        </div>
+      </div>
+
       {/* Header */}
       <header className="space-y-2">
         <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
