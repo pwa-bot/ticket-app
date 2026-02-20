@@ -61,7 +61,10 @@ Commands:
 - `ticket move <id> <state>` — Change state
 - `ticket edit <id>` — Edit metadata
 - `ticket validate` — Check for errors
-- `ticket telemetry-compact` — Build/apply telemetry compaction snapshots (`--apply` required to write)
+- `ticket events write <event>` — Append telemetry lane events
+- `ticket events read` — Read telemetry lane events (`--compact` for one-line output)
+- `ticket events compact` — Build/apply telemetry compaction snapshots (`--apply` required to write)
+- `ticket telemetry-compact` — Legacy alias for `ticket events compact`
 
 Telemetry lane (optional, non-authoritative) can be configured in `.tickets/config.yml`:
 
@@ -85,10 +88,10 @@ Env overrides:
 Backfill noisy history into compact snapshots:
 ```bash
 # dry-run (default)
-ticket telemetry-compact
+ticket events compact
 
 # explicit apply mode
-ticket telemetry-compact --apply
+ticket events compact --apply
 ```
 
 ## License

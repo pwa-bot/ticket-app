@@ -102,10 +102,10 @@ Use the compaction command to collapse noisy historical telemetry into compact s
 Commands:
 ```bash
 # Preview only (non-destructive)
-ticket telemetry-compact
+ticket events compact
 
 # Explicit write mode
-ticket telemetry-compact --apply
+ticket events compact --apply
 ```
 
 Verification commands:

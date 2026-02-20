@@ -13,6 +13,7 @@ import { runBranch } from "./commands/branch.js";
 import { runValidate } from "./commands/validate.js";
 import { runInstallHooks } from "./commands/install-hooks.js";
 import { runTelemetryCompact } from "./commands/telemetry-compact.js";
+import { runEventsCompact, runEventsRead, runEventsWrite } from "./commands/events.js";
 import { EXIT_CODE, TicketError } from "./lib/errors.js";
 import { failureEnvelope, writeEnvelope } from "./lib/json.js";
 import { setNoCommitMode, setQuietMode } from "./lib/output.js";
@@ -38,19 +39,19 @@ async function main(): Promise<void> {
     .option("--json", "Emit a JSON envelope")
     .option("-q, --quiet", "Suppress success output")
     .option("--no-commit", "Skip auto-commit (for dev/testing)")
-    .hook("preAction", (thisCommand, actionCommand) => {
+    .hook("preAction", async (thisCommand, actionCommand) => {
       const opts = thisCommand.optsWithGlobals<GlobalCliOptions>();
       setQuietMode(opts.quiet ?? false);
       setNoCommitMode(opts.noCommit ?? false);
 
       const commandName = actionCommand.name();
-      void emitCliTelemetry("cli_activation_command_started", {
+      await emitCliTelemetry("cli_activation_command_started", {
         command: commandName,
         args: actionCommand.args.length,
       });
     })
-    .hook("postAction", (_thisCommand, actionCommand) => {
-      void emitCliTelemetry("cli_activation_command_succeeded", {
+    .hook("postAction", async (_thisCommand, actionCommand) => {
+      await emitCliTelemetry("cli_activation_command_succeeded", {
         command: actionCommand.name(),
       });
     });
@@ -198,13 +199,49 @@ async function main(): Promise<void> {
 
   program
     .command("telemetry-compact")
-    .description("Backfill telemetry history into compact snapshots (dry-run by default)")
+    .description("Backfill telemetry history into compact snapshots (legacy alias: prefer `ticket events compact`)")
     .option("--apply", "Apply compaction plan and rewrite telemetry refs")
     .action(async (options: { apply?: boolean }) => {
       await runTelemetryCompact(process.cwd(), options);
     });
 
-  // TODO(TK-01KHWGYAM6): add `ticket events` read/write commands for high-frequency agent chatter.
+  const events = program
+    .command("events")
+    .description("Read, write, and compact telemetry lane events");
+
+  events
+    .command("write")
+    .description("Append a telemetry event to the configured backend")
+    .argument("<event>", "Event name")
+    .option("--id <id>", "Explicit event id (defaults to generated id)")
+    .option("--at <timestamp>", "Event timestamp (ISO-8601)")
+    .option("--ticket <ticket>", "Attach ticket identifier as properties.ticket_id")
+    .option("--prop <key=value>", "Attach event property", collectLabel, [])
+    .option("--json", "Emit a JSON envelope")
+    .action(async (eventName: string, options: { id?: string; at?: string; ticket?: string; prop?: string[]; json?: boolean }, command: Command) => {
+      const global = getGlobalOptions(command);
+      await runEventsWrite(process.cwd(), eventName, { ...options, json: options.json ?? global.json ?? false });
+    });
+
+  events
+    .command("read")
+    .description("Read telemetry events from the configured backend")
+    .option("--id <id>", "Read a single event by id")
+    .option("--limit <n>", "Return only the most recent N events")
+    .option("--compact", "Render one compact line per event")
+    .option("--json", "Emit a JSON envelope")
+    .action(async (options: { id?: string; limit?: string; compact?: boolean; json?: boolean }, command: Command) => {
+      const global = getGlobalOptions(command);
+      await runEventsRead(process.cwd(), { ...options, json: options.json ?? global.json ?? false });
+    });
+
+  events
+    .command("compact")
+    .description("Backfill telemetry history into compact snapshots (dry-run by default)")
+    .option("--apply", "Apply compaction plan and rewrite telemetry refs")
+    .action(async (options: { apply?: boolean }) => {
+      await runEventsCompact(process.cwd(), options);
+    });
 
   await program.parseAsync(process.argv);
 }
