@@ -1,21 +1,8 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T07:17:05.609Z",
+  "generated_at": "2026-02-20T07:17:29.358Z",
   "workflow": "simple-v1",
   "tickets": [
-    {
-      "id": "01KHS9PF7Q5KP7EQDSVS8QQM6Q",
-      "short_id": "01KHS9PF",
-      "title": "Task F - Checks cache worker Phase C",
-      "state": "backlog",
-      "priority": "p1",
-      "labels": [
-        "worker",
-        "checks"
-      ],
-      "path": ".tickets/tickets/01KHS9PF7Q5KP7EQDSVS8QQM6Q.md",
-      "display_id": "TK-01KHS9PF-2"
-    },
     {
       "id": "01KHT40SXFYEQ5Z9MCXQFZ6AA9",
       "short_id": "01KHT40S",
@@ -100,6 +87,19 @@
       ],
       "path": ".tickets/tickets/01KHS9PFF2Z37S54PZD6QGW8DJ.md",
       "display_id": "TK-01KHS9PF-3"
+    },
+    {
+      "id": "01KHS9PF7Q5KP7EQDSVS8QQM6Q",
+      "short_id": "01KHS9PF",
+      "title": "Task F - Checks cache worker Phase C",
+      "state": "ready",
+      "priority": "p1",
+      "labels": [
+        "worker",
+        "checks"
+      ],
+      "path": ".tickets/tickets/01KHS9PF7Q5KP7EQDSVS8QQM6Q.md",
+      "display_id": "TK-01KHS9PF-2"
     },
     {
       "id": "01KHVQ0B6VR7M2HAWB9QPEMBED",
