@@ -392,9 +392,32 @@ export default function PortfolioAttentionView() {
     replaceUrl(params);
   }
 
+  function openSingleRepoBoard() {
+    if (!singleSelectedRepo) {
+      return;
+    }
+
+    window.location.assign(
+      `/space/${encodeURIComponent(singleSelectedRepo.owner)}/${encodeURIComponent(singleSelectedRepo.repo)}`,
+    );
+  }
+
   const allRepos = (attentionData?.repos ?? indexData?.repos ?? []) as EnabledRepoSummary[];
   const allRepoNames = useMemo(() => new Set(allRepos.map((repo) => repo.fullName)), [allRepos]);
   const activeRepos = selectedRepos ?? allRepoNames;
+  const singleSelectedRepo = useMemo(() => {
+    const repos = Array.from(activeRepos);
+    if (repos.length !== 1) {
+      return null;
+    }
+
+    const [owner, repo] = repos[0].split("/");
+    if (!owner || !repo) {
+      return null;
+    }
+
+    return { fullName: repos[0], owner, repo };
+  }, [activeRepos]);
 
   function toggleRepo(fullName: string) {
     const working = selectedRepos ? new Set(selectedRepos) : new Set(allRepos.map((repo) => repo.fullName));
@@ -573,25 +596,46 @@ export default function PortfolioAttentionView() {
         </div>
       </header>
 
-      <div className="mb-4 inline-flex rounded-lg border border-slate-300 bg-white p-1" data-testid="tab-switcher">
-        <button
-          type="button"
-          onClick={() => setQueryParam("tab", "attention")}
-          className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-            activeTab === "attention" ? "bg-slate-800 text-white" : "text-slate-700 hover:bg-slate-100"
-          }`}
-        >
-          Attention
-        </button>
-        <button
-          type="button"
-          onClick={() => setQueryParam("tab", "tickets")}
-          className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-            activeTab === "tickets" ? "bg-slate-800 text-white" : "text-slate-700 hover:bg-slate-100"
-          }`}
-        >
-          All tickets
-        </button>
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="inline-flex rounded-lg border border-slate-300 bg-white p-1" data-testid="tab-switcher">
+          <button
+            type="button"
+            onClick={() => setQueryParam("tab", "attention")}
+            className={`rounded-md px-3 py-1.5 text-sm font-medium ${
+              activeTab === "attention" ? "bg-slate-800 text-white" : "text-slate-700 hover:bg-slate-100"
+            }`}
+          >
+            Attention
+          </button>
+          <button
+            type="button"
+            onClick={() => setQueryParam("tab", "tickets")}
+            className={`rounded-md px-3 py-1.5 text-sm font-medium ${
+              activeTab === "tickets" ? "bg-slate-800 text-white" : "text-slate-700 hover:bg-slate-100"
+            }`}
+          >
+            All tickets
+          </button>
+        </div>
+
+        <div className="inline-flex rounded-lg border border-slate-300 bg-white p-1" data-testid="board-table-toggle">
+          <button
+            type="button"
+            className="rounded-md bg-slate-800 px-3 py-1.5 text-sm font-medium text-white"
+            title="Portfolio table view"
+          >
+            Table
+          </button>
+          <button
+            type="button"
+            onClick={openSingleRepoBoard}
+            disabled={!singleSelectedRepo}
+            className="rounded-md px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+            title={singleSelectedRepo ? `Open write-enabled board for ${singleSelectedRepo.fullName}` : "Select exactly one repo to open board view"}
+          >
+            Board (write)
+          </button>
+        </div>
       </div>
 
       <div className="mb-4 flex flex-wrap items-start gap-4 rounded-xl border border-slate-200 bg-white p-4">
