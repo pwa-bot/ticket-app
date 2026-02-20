@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T06:02:35.915Z",
+  "generated_at": "2026-02-20T06:06:49.388Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -165,19 +165,6 @@
       "path": ".tickets/tickets/01KHS9PFF2Z37S54PZD6QGW8DJ.md"
     },
     {
-      "id": "01KHWT95ZWQX2FCQXKEVZ85AD8",
-      "short_id": "01KHWT95",
-      "display_id": "TK-01KHWT95",
-      "title": "Guardrail require explicit confirmation before spawning sub-agents",
-      "state": "ready",
-      "priority": "p0",
-      "labels": [
-        "orchestration",
-        "reliability"
-      ],
-      "path": ".tickets/tickets/01KHWT95ZWQX2FCQXKEVZ85AD8.md"
-    },
-    {
       "id": "01KHWGY6QMV26C1242E9GTYBJ8",
       "short_id": "01KHWGY6",
       "display_id": "TK-01KHWGY6",
@@ -190,6 +177,19 @@
         "git"
       ],
       "path": ".tickets/tickets/01KHWGY6QMV26C1242E9GTYBJ8.md"
+    },
+    {
+      "id": "01KHWT95ZWQX2FCQXKEVZ85AD8",
+      "short_id": "01KHWT95",
+      "display_id": "TK-01KHWT95",
+      "title": "Guardrail require explicit confirmation before spawning sub-agents",
+      "state": "in_progress",
+      "priority": "p0",
+      "labels": [
+        "orchestration",
+        "reliability"
+      ],
+      "path": ".tickets/tickets/01KHWT95ZWQX2FCQXKEVZ85AD8.md"
     },
     {
       "id": "01KHVQ0B6VR7M2HAWB9QPEMBED",
