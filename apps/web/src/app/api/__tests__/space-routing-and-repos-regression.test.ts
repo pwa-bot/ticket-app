@@ -7,17 +7,14 @@ async function readSource(relativePath: string): Promise<string> {
   return readFile(path.resolve("src", relativePath), "utf8");
 }
 
-test("unauthenticated /space routes redirect to /api/auth/github with returnTo", async () => {
-  const protectedSpacePages = [
-    "app/space/page.tsx",
+test("auth redirect guards are limited to onboarding/settings pages", async () => {
+  const guardedPages = [
     "app/space/settings/page.tsx",
-    "app/space/[owner]/[repo]/page.tsx",
-    "app/space/[owner]/[repo]/[id]/page.tsx",
     "app/space/onboarding/page.tsx",
     "app/space/onboarding/callback/page.tsx",
   ];
 
-  for (const page of protectedSpacePages) {
+  for (const page of guardedPages) {
     const source = await readSource(page);
     assert.match(source, /buildGithubAuthPath\(/, `${page} should build auth redirect with returnTo`);
     assert.match(source, /withSearchParams\(/, `${page} should preserve query params in returnTo`);
@@ -36,20 +33,17 @@ test("/api/auth/github validates and honors returnTo", async () => {
   assert.match(source, /response\.cookies\.set\(cookieNames\.oauthReturnTo, "", expiredCookieOptions\(\)\)/, "oauth returnTo cookie should be cleared after login");
 });
 
-test("protected /space pages gate on session cookie presence to avoid hard-refresh auth handoff", async () => {
-  const protectedSpacePages = [
+test("primary /space pages do not hard-redirect to GitHub auth", async () => {
+  const nonGuardedPages = [
     "app/space/page.tsx",
-    "app/space/settings/page.tsx",
     "app/space/[owner]/[repo]/page.tsx",
     "app/space/[owner]/[repo]/[id]/page.tsx",
-    "app/space/onboarding/page.tsx",
-    "app/space/onboarding/callback/page.tsx",
   ];
 
-  for (const page of protectedSpacePages) {
+  for (const page of nonGuardedPages) {
     const source = await readSource(page);
-    assert.match(source, /hasSessionCookie\(/, `${page} should check for session cookie presence`);
-    assert.doesNotMatch(source, /getAccessTokenFromCookies\(/, `${page} should avoid token decryption in the initial page guard`);
+    assert.doesNotMatch(source, /buildGithubAuthPath\(/, `${page} should not auto-redirect into OAuth during normal navigation`);
+    assert.doesNotMatch(source, /hasSessionCookie\(/, `${page} should not enforce session-cookie guard in server page shell`);
   }
 });
 
