@@ -14,6 +14,7 @@ import {
   type CiStatus,
   type MergeReadiness,
 } from "@/lib/attention";
+import type { AttentionReasonDetail } from "@/app/api/space/attention/route";
 import type { TicketChangePatch } from "@ticketdotapp/core";
 
 interface AttentionTableProps {
@@ -26,6 +27,7 @@ interface AttentionTableProps {
   ciMap: Record<string, CiStatus>;
   showPrCi?: boolean;
   reasonMap?: Record<string, string[]>;
+  reasonDetailsMap?: Record<string, AttentionReasonDetail[]>;
   mergeReadinessMap?: Record<string, MergeReadiness>;
   reasonLabels?: Record<string, string>;
 }
@@ -105,6 +107,7 @@ export default function AttentionTable({
   ciMap,
   showPrCi = true,
   reasonMap,
+  reasonDetailsMap,
   mergeReadinessMap,
   reasonLabels = {},
 }: AttentionTableProps) {
@@ -173,6 +176,7 @@ export default function AttentionTable({
                   const isPending = pendingTicketIds.has(row.ticket.id);
                   const canEdit = !!onChangeField && !isPending;
                   const reasons = reasonMap?.[ticketKey] ?? [];
+                  const reasonDetails = reasonDetailsMap?.[ticketKey] ?? [];
                   const mergeReadiness = mergeReadinessMap?.[ticketKey];
 
                   return (
@@ -209,6 +213,7 @@ export default function AttentionTable({
                                 <span
                                   key={`${ticketKey}:${reason}`}
                                   className="rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-xs text-slate-700"
+                                  title={reasonDetails.find((detail) => detail.code === reason)?.description ?? ""}
                                 >
                                   {reasonLabels[reason] ?? reason}
                                 </span>
@@ -217,6 +222,9 @@ export default function AttentionTable({
                           ) : (
                             <span className="text-slate-400">—</span>
                           )}
+                          {reasonDetails.length > 0 ? (
+                            <p className="mt-1 text-xs text-slate-500">{reasonDetails[0].description}</p>
+                          ) : null}
                         </td>
                       ) : null}
                       {showMergeReadiness ? (

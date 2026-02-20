@@ -9,7 +9,12 @@ import TicketDetailModal from "@/components/ticket-detail-modal";
 import type { LinkedPrSummary } from "@/components/pr-status-badge";
 import type { AttentionRow, CiStatus, MergeReadiness } from "@/lib/attention";
 import type { Actor } from "@/lib/types";
-import type { AttentionItem, AttentionResponse, EnabledRepoSummary } from "@/app/api/space/attention/route";
+import type {
+  AttentionItem,
+  AttentionReasonDetail,
+  AttentionResponse,
+  EnabledRepoSummary,
+} from "@/app/api/space/attention/route";
 import type { SpaceTicketsResponse } from "@/app/api/space/tickets/route";
 
 const TICKETS_PAGE_SIZE = 100;
@@ -97,6 +102,14 @@ function itemToReasonMap(items: AttentionItem[]): Record<string, string[]> {
   return map;
 }
 
+function itemToReasonDetailsMap(items: AttentionItem[]): Record<string, AttentionReasonDetail[]> {
+  const map: Record<string, AttentionReasonDetail[]> = {};
+  for (const item of items) {
+    map[prKey(item.repoFullName, item.ticketId)] = item.reasonDetails;
+  }
+  return map;
+}
+
 function itemToMergeReadinessMap(items: AttentionItem[]): Record<string, MergeReadiness> {
   const map: Record<string, MergeReadiness> = {};
   for (const item of items) {
@@ -104,14 +117,6 @@ function itemToMergeReadinessMap(items: AttentionItem[]): Record<string, MergeRe
   }
   return map;
 }
-
-const REASON_LABELS: Record<string, string> = {
-  blocked: "Blocked",
-  ci_failing: "CI failing",
-  stale_in_progress: "Stale (>24h)",
-  pr_waiting_review: "Open PR",
-  pending_pr: "Pending change",
-};
 
 function filterItemsBySearch(items: AttentionItem[], search: string): AttentionItem[] {
   if (!search) {
@@ -311,6 +316,17 @@ export default function PortfolioAttentionView() {
     () => (activeTab === "attention" ? itemToMergeReadinessMap(filteredAttentionItems) : {}),
     [activeTab, filteredAttentionItems],
   );
+  const reasonDetailsMap = useMemo(
+    () => (activeTab === "attention" ? itemToReasonDetailsMap(filteredAttentionItems) : {}),
+    [activeTab, filteredAttentionItems],
+  );
+  const reasonLabels = useMemo(() => {
+    const labels: Record<string, string> = {};
+    for (const reason of attentionData?.reasonCatalog ?? []) {
+      labels[reason.code] = reason.label;
+    }
+    return labels;
+  }, [attentionData?.reasonCatalog]);
 
   const loadedAt = (activeTab === "tickets" ? ticketsData?.loadedAt : attentionData?.loadedAt) ?? null;
 
@@ -632,8 +648,9 @@ export default function PortfolioAttentionView() {
           ciMap={ciMap}
           showPrCi={activeTab === "attention"}
           reasonMap={activeTab === "attention" ? reasonMap : undefined}
+          reasonDetailsMap={activeTab === "attention" ? reasonDetailsMap : undefined}
           mergeReadinessMap={activeTab === "attention" ? mergeReadinessMap : undefined}
-          reasonLabels={REASON_LABELS}
+          reasonLabels={reasonLabels}
         />
       ) : null}
 

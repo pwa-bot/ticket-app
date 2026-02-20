@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq, inArray, and, ne, sql } from "drizzle-orm";
+import { eq, inArray, and, ne } from "drizzle-orm";
 import { db, schema } from "@/db/client";
 import { requireSession } from "@/lib/auth";
 import type { CiStatus, MergeReadiness } from "@/lib/attention";
@@ -8,6 +8,13 @@ import { assertNoUnauthorizedRepos } from "@/lib/security/repo-access";
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 type AttentionReason = "pending_pr" | "pr_waiting_review" | "ci_failing" | "blocked" | "stale_in_progress";
+
+export interface AttentionReasonDetail {
+  code: AttentionReason;
+  label: string;
+  description: string;
+  rank: number;
+}
 
 export interface AttentionPrSummary {
   prNumber: number;
@@ -36,6 +43,8 @@ export interface AttentionItem {
   createdAt?: string | null;
   cachedAt: string;
   reasons: AttentionReason[];
+  reasonDetails: AttentionReasonDetail[];
+  primaryReason: AttentionReason;
   prs: AttentionPrSummary[];
   mergeReadiness: MergeReadiness;
   hasPendingChange: boolean;
@@ -46,12 +55,56 @@ export interface EnabledRepoSummary {
   owner: string;
   repo: string;
   totalTickets: number;
+  attentionTickets: number;
+}
+
+export interface AttentionTotals {
+  reposEnabled: number;
+  reposSelected: number;
+  ticketsTotal: number;
+  ticketsAttention: number;
 }
 
 export interface AttentionResponse {
   items: AttentionItem[];
   repos: EnabledRepoSummary[];
+  totals: AttentionTotals;
+  reasonCatalog: AttentionReasonDetail[];
   loadedAt: string;
+}
+
+const ATTENTION_REASON_META: Record<AttentionReason, Omit<AttentionReasonDetail, "code">> = {
+  blocked: {
+    label: "Blocked",
+    description: "Ticket state is blocked and needs unblocking work.",
+    rank: 0,
+  },
+  ci_failing: {
+    label: "CI failing",
+    description: "At least one linked open PR has failing checks.",
+    rank: 1,
+  },
+  stale_in_progress: {
+    label: "Stale (>24h)",
+    description: "Ticket is in progress and cache data is older than 24 hours.",
+    rank: 2,
+  },
+  pr_waiting_review: {
+    label: "Open PR",
+    description: "Ticket has an open linked PR that likely needs reviewer attention.",
+    rank: 3,
+  },
+  pending_pr: {
+    label: "Pending change",
+    description: "A pending ticket-change PR exists and has not merged yet.",
+    rank: 4,
+  },
+};
+
+function toReasonDetails(reasons: AttentionReason[]): AttentionReasonDetail[] {
+  return Array.from(new Set(reasons))
+    .map((reason) => ({ code: reason, ...ATTENTION_REASON_META[reason] }))
+    .sort((a, b) => a.rank - b.rank);
 }
 
 function ticketLookupKey(repoFullName: string, ticketId: string): string {
@@ -125,7 +178,18 @@ export async function GET(req: NextRequest) {
   });
 
   if (userInstalls.length === 0) {
-    return NextResponse.json({ items: [], repos: [], loadedAt: new Date().toISOString() } satisfies AttentionResponse);
+    return NextResponse.json({
+      items: [],
+      repos: [],
+      totals: {
+        reposEnabled: 0,
+        reposSelected: 0,
+        ticketsTotal: 0,
+        ticketsAttention: 0,
+      },
+      reasonCatalog: toReasonDetails(Object.keys(ATTENTION_REASON_META) as AttentionReason[]),
+      loadedAt: new Date().toISOString(),
+    } satisfies AttentionResponse);
   }
 
   const installationIds = userInstalls.map((ui) => ui.installationId);
@@ -146,31 +210,25 @@ export async function GET(req: NextRequest) {
     ? repos.filter((r) => filterSet.has(r.fullName))
     : repos;
 
-  const enabledRepoFullNames = repos.map((r) => r.fullName);
-  const repoTicketCounts = enabledRepoFullNames.length > 0
-    ? await db.select({
-      repoFullName: schema.tickets.repoFullName,
-      total: sql<number>`count(*)`,
-    })
-      .from(schema.tickets)
-      .where(inArray(schema.tickets.repoFullName, enabledRepoFullNames))
-      .groupBy(schema.tickets.repoFullName)
-    : [];
-
-  const ticketCountsByRepo = new Map(repoTicketCounts.map((row) => [row.repoFullName, Number(row.total)]));
-
-  // Build enabled repo summaries for selector
-  const enabledRepos: EnabledRepoSummary[] = repos.map((r) => ({
-    fullName: r.fullName,
-    owner: r.owner,
-    repo: r.repo,
-    totalTickets: ticketCountsByRepo.get(r.fullName) ?? 0,
-  }));
-
   if (targetRepos.length === 0) {
+    const enabledRepos: EnabledRepoSummary[] = repos.map((r) => ({
+      fullName: r.fullName,
+      owner: r.owner,
+      repo: r.repo,
+      totalTickets: 0,
+      attentionTickets: 0,
+    }));
+
     return NextResponse.json({
       items: [],
       repos: enabledRepos,
+      totals: {
+        reposEnabled: repos.length,
+        reposSelected: 0,
+        ticketsTotal: 0,
+        ticketsAttention: 0,
+      },
+      reasonCatalog: toReasonDetails(Object.keys(ATTENTION_REASON_META) as AttentionReason[]),
       loadedAt: new Date().toISOString(),
     } satisfies AttentionResponse);
   }
@@ -242,8 +300,12 @@ export async function GET(req: NextRequest) {
 
   // Process tickets and determine attention
   const items: AttentionItem[] = [];
+  const totalByRepo = new Map<string, number>();
+  const attentionByRepo = new Map<string, number>();
 
   for (const ticket of tickets) {
+    totalByRepo.set(ticket.repoFullName, (totalByRepo.get(ticket.repoFullName) ?? 0) + 1);
+
     const ticketPrs = prsByShortId.get(`${ticket.repoFullName}:${ticket.shortId}`) ?? [];
     const hasPendingChange = pendingTicketSet.has(`${ticket.repoFullName}:${ticket.id}`);
     const mergeReadiness = deriveMergeReadiness(ticketPrs);
@@ -283,6 +345,10 @@ export async function GET(req: NextRequest) {
     if (reasons.length === 0) {
       continue;
     }
+    const reasonDetails = toReasonDetails(reasons);
+    const orderedReasons = reasonDetails.map((reason) => reason.code);
+
+    attentionByRepo.set(ticket.repoFullName, (attentionByRepo.get(ticket.repoFullName) ?? 0) + 1);
 
     items.push({
       repoFullName: ticket.repoFullName,
@@ -298,7 +364,9 @@ export async function GET(req: NextRequest) {
       reviewer: ticket.reviewer,
       createdAt: ticket.createdAt?.toISOString() ?? null,
       cachedAt: ticket.cachedAt.toISOString(),
-      reasons,
+      reasons: orderedReasons,
+      reasonDetails,
+      primaryReason: orderedReasons[0],
       prs: ticketPrs,
       mergeReadiness,
       hasPendingChange,
@@ -306,13 +374,6 @@ export async function GET(req: NextRequest) {
   }
 
   // Sort: blocked first, then stale_in_progress, then priority, then age
-  const reasonOrder: Record<AttentionReason, number> = {
-    blocked: 0,
-    ci_failing: 1,
-    stale_in_progress: 2,
-    pr_waiting_review: 3,
-    pending_pr: 4,
-  };
   const priorityOrder: Record<string, number> = { p0: 0, p1: 1, p2: 2, p3: 3 };
   const mergeReadinessOrder: Record<MergeReadiness, number> = {
     CONFLICT: 0,
@@ -323,8 +384,8 @@ export async function GET(req: NextRequest) {
   };
 
   items.sort((a, b) => {
-    const aReason = Math.min(...a.reasons.map((r) => reasonOrder[r]));
-    const bReason = Math.min(...b.reasons.map((r) => reasonOrder[r]));
+    const aReason = ATTENTION_REASON_META[a.primaryReason].rank;
+    const bReason = ATTENTION_REASON_META[b.primaryReason].rank;
     if (aReason !== bReason) return aReason - bReason;
 
     const aReadiness = mergeReadinessOrder[a.mergeReadiness];
@@ -338,9 +399,24 @@ export async function GET(req: NextRequest) {
     return (a.createdAt ?? "").localeCompare(b.createdAt ?? "");
   });
 
+  const enabledRepos: EnabledRepoSummary[] = repos.map((r) => ({
+    fullName: r.fullName,
+    owner: r.owner,
+    repo: r.repo,
+    totalTickets: totalByRepo.get(r.fullName) ?? 0,
+    attentionTickets: attentionByRepo.get(r.fullName) ?? 0,
+  }));
+
   return NextResponse.json({
     items,
     repos: enabledRepos,
+    totals: {
+      reposEnabled: repos.length,
+      reposSelected: targetRepos.length,
+      ticketsTotal: tickets.length,
+      ticketsAttention: items.length,
+    },
+    reasonCatalog: toReasonDetails(Object.keys(ATTENTION_REASON_META) as AttentionReason[]),
     loadedAt: new Date().toISOString(),
   } satisfies AttentionResponse);
 }
