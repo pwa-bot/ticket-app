@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T22:33:53.569Z",
+  "generated_at": "2026-02-20T22:34:55.048Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -129,6 +129,20 @@
       ],
       "path": ".tickets/tickets/01KHYK09MJSB6HPX303CYRN4K0.md",
       "display_id": "TK-01KHYK09-3"
+    },
+    {
+      "id": "01KHYK25NRH89N01K73KR1K1CK",
+      "short_id": "01KHYK25",
+      "title": "QA signaling v1 in ticket spec and markdown contract",
+      "state": "backlog",
+      "priority": "p1",
+      "labels": [
+        "qa",
+        "process",
+        "spec"
+      ],
+      "path": ".tickets/tickets/01KHYK25NRH89N01K73KR1K1CK.md",
+      "display_id": "TK-01KHYK25"
     },
     {
       "id": "01KHYK095CXZEQB50WYR9ZGSWG",
