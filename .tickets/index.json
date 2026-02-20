@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T22:33:51.598Z",
+  "generated_at": "2026-02-20T22:33:51.846Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -45,6 +45,20 @@
       ],
       "path": ".tickets/tickets/01KHYK07Q0YPJEG6BVE7M9WVVK.md",
       "display_id": "TK-01KHYK07-2"
+    },
+    {
+      "id": "01KHYK07YQ9E86TPP8DHCNC82D",
+      "short_id": "01KHYK07",
+      "title": "P0 Add server-side authorization guards to all cache-backed space APIs",
+      "state": "backlog",
+      "priority": "p0",
+      "labels": [
+        "security",
+        "authorization",
+        "api"
+      ],
+      "path": ".tickets/tickets/01KHYK07YQ9E86TPP8DHCNC82D.md",
+      "display_id": "TK-01KHYK07-3"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
