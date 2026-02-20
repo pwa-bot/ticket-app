@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T07:27:29.191Z",
+  "generated_at": "2026-02-20T07:27:33.176Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -77,7 +77,7 @@
       "id": "01KHT40SXFYEQ5Z9MCXQFZ6AA9",
       "short_id": "01KHT40S",
       "title": "Slack integration v1 (digest + deep links + review reminders)",
-      "state": "ready",
+      "state": "in_progress",
       "priority": "p1",
       "labels": [
         "slack",

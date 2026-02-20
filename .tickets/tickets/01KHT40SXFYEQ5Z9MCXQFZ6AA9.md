@@ -1,7 +1,7 @@
 ---
 id: 01KHT40SXFYEQ5Z9MCXQFZ6AA9
 title: Slack integration v1 (digest + deep links + review reminders)
-state: ready
+state: in_progress
 priority: p1
 labels:
   - slack
