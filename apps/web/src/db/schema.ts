@@ -285,6 +285,74 @@ export const webhookDeliveries = pgTable(
   })
 );
 
+// ============================================================================
+// Slack Integration Tables (v1.3)
+// ============================================================================
+
+/**
+ * Per-user Slack workspace connection (v1 supports one active workspace per user).
+ */
+export const slackWorkspaces = pgTable(
+  "slack_workspaces",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    teamId: text("team_id").notNull(),
+    teamName: text("team_name").notNull(),
+    botUserId: text("bot_user_id"),
+    botTokenEncrypted: text("bot_token_encrypted").notNull(),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    userIdx: uniqueIndex("slack_workspaces_user_uidx").on(t.userId),
+    teamIdx: index("slack_workspaces_team_idx").on(t.teamId),
+  })
+);
+
+/**
+ * Channel routing for Slack notifications.
+ * scope=portfolio applies to all repos; scope=repo applies to a single repo.
+ */
+export const slackNotificationChannels = pgTable(
+  "slack_notification_channels",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    scope: text("scope").notNull(), // portfolio|repo
+    repoFullName: text("repo_full_name"),
+    channelId: text("channel_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    userScopeRepoIdx: uniqueIndex("slack_notification_channels_user_scope_repo_uidx").on(t.userId, t.scope, t.repoFullName),
+    userIdx: index("slack_notification_channels_user_idx").on(t.userId),
+  })
+);
+
+/**
+ * Sent events for dedupe + rate limiting.
+ */
+export const slackNotificationEvents = pgTable(
+  "slack_notification_events",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    teamId: text("team_id").notNull(),
+    channelId: text("channel_id").notNull(),
+    eventType: text("event_type").notNull(), // digest|review_reminder
+    dedupeKey: text("dedupe_key").notNull(),
+    sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    dedupeIdx: uniqueIndex("slack_notification_events_dedupe_uidx").on(t.dedupeKey),
+    channelSentIdx: index("slack_notification_events_channel_sent_idx").on(t.channelId, t.sentAt),
+    userSentIdx: index("slack_notification_events_user_sent_idx").on(t.userId, t.sentAt),
+  })
+);
+
 // Type exports
 export type Repo = typeof repos.$inferSelect;
 export type NewRepo = typeof repos.$inferInsert;
