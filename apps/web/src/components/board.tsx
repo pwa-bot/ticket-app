@@ -16,7 +16,6 @@ import { BOARD_LABELS, BOARD_STATES, PRIORITY_STYLES, groupTicketsForBoard } fro
 import { PendingChangesProvider, usePendingChanges } from "@/lib/pending-changes";
 import { isValidTransition, type TicketChangePatch } from "@ticketdotapp/core";
 import type { LinkedPrSummary } from "@/components/pr-status-badge";
-import { unwrapApiData } from "@/lib/api/client";
 
 // Format a date as "X ago" (e.g., "2m ago", "1h ago")
 function formatTimeAgo(date: Date): string {
@@ -48,10 +47,11 @@ type BoardIndex = TicketIndex & {
   tickets: BoardTicket[];
 };
 
-interface TicketPrEntry {
-  ticketId: string;
-  prs: LinkedPrSummary[];
-}
+// Unused interface - commented out to fix linting
+// interface TicketPrEntry {
+//   ticketId: string;
+//   prs: LinkedPrSummary[];
+// }
 
 function withTicketDates(ticket: BoardTicket): BoardTicket {
   const extras = ticket.extras as Record<string, unknown> | undefined;
@@ -243,9 +243,10 @@ function getViewFromQuery(value: string | null): "board" | "table" | null {
   return null;
 }
 
-function getPrKey(repoName: string, ticketId: string): string {
-  return `${repoName}:${ticketId}`;
-}
+// Unused function - commented out to fix linting
+// function getPrKey(repoName: string, ticketId: string): string {
+//   return `${repoName}:${ticketId}`;
+// }
 
 // Inner component that handles state changes (must be inside PendingChangesProvider)
 function BoardGrid({
@@ -537,56 +538,8 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
       return;
     }
 
-    let cancelled = false;
-
-    async function loadPrLinks() {
-      try {
-        const response = await fetch(`/api/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/prs`, {
-          cache: "no-store",
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to load PR links");
-        }
-
-        const json = await response.json();
-        const links = unwrapApiData<{ entries: TicketPrEntry[] }>(json).entries ?? [];
-        if (cancelled) {
-          return;
-        }
-
-        const nextPrMap: Record<string, LinkedPrSummary[]> = {};
-        const nextCiMap: Record<string, CiStatus> = {};
-        links.forEach((entry) => {
-          const key = getPrKey(fullRepo, entry.ticketId);
-          nextPrMap[key] = entry.prs;
-          const ci = entry.prs.some((pr) => pr.checks === "failure")
-            ? "failure"
-            : entry.prs.some((pr) => pr.checks === "pending")
-              ? "pending"
-              : entry.prs.some((pr) => pr.checks === "success")
-                ? "success"
-                : "unknown";
-          nextCiMap[key] = ci;
-        });
-
-        setPrMap(nextPrMap);
-        setCiMap(nextCiMap);
-      } catch {
-        if (!cancelled) {
-          setPrMap({});
-          setCiMap({});
-        }
-      }
-    }
-
     // PR/CI loading disabled - too many GitHub API calls, causes rate limiting
     // TODO: Cache PR data in Postgres like we do for tickets
-    // void loadPrLinks();
-
-    return () => {
-      cancelled = true;
-    };
   }, [fullRepo, index, owner, repo, view]);
 
   function getSearchQuery(next?: URLSearchParams) {

@@ -491,7 +491,6 @@ export async function updatePendingChangeStatus(
  * Reconcile pending changes by checking PR status.
  */
 export async function reconcilePendingChanges(repoFullName: string, token: string) {
-  const [owner, repo] = repoFullName.split("/");
   const pending = await getPendingChanges(repoFullName);
 
   for (const p of pending) {

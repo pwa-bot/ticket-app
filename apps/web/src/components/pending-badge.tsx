@@ -1,6 +1,6 @@
 "use client";
 
-import type { PendingChange, PendingChangeStatus, TicketChangePatch } from "@ticketdotapp/core";
+import type { PendingChange, PendingChangeStatus } from "@ticketdotapp/core";
 
 interface PendingBadgeProps {
   change: PendingChange;

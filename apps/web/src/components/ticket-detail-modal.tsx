@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { usePendingChangesSafe } from "@/lib/pending-changes";
 import { getApiErrorMessage } from "@/lib/api/client";
@@ -75,7 +74,6 @@ const PRIORITY_COLORS: Record<string, string> = {
 };
 
 export default function TicketDetailModal({ repo, ticketId, onClose, initialData }: TicketDetailModalProps) {
-  const router = useRouter();
   // Initialize with data from board index if available
   const [ticket, setTicket] = useState<TicketDetail | null>(
     initialData ? {

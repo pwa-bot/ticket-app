@@ -83,11 +83,12 @@ export function SavedViewsDropdown({ repo, basePath }: SavedViewsDropdownProps) 
     copyTimeoutRef.current = setTimeout(() => setCopyLinkCopied(false), 2000);
   }, []);
 
-  const handleCopyShareLink = useCallback(() => {
-    const url = buildShareUrl(basePath, currentQuery);
-    void navigator.clipboard.writeText(url).then(() => triggerCopiedFeedback());
-    setIsOpen(false);
-  }, [basePath, currentQuery, triggerCopiedFeedback]);
+  // Unused function - commented out to fix linting
+  // const handleCopyShareLink = useCallback(() => {
+  //   const url = buildShareUrl(basePath, currentQuery);
+  //   void navigator.clipboard.writeText(url).then(() => triggerCopiedFeedback());
+  //   setIsOpen(false);
+  // }, [basePath, currentQuery, triggerCopiedFeedback]);
 
   const handleOpenShareDialog = useCallback(() => {
     setIsOpen(false);

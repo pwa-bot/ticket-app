@@ -84,28 +84,27 @@ export default function RepoSelector() {
     [installations]
   );
   
-  const repoOwners = useMemo(() => {
-    const owners = new Map<string, { count: number; hasApp: boolean }>();
-    for (const repo of repos) {
-      const owner = repo.full_name.split("/")[0];
-      if (!owner) continue;
-      const existing = owners.get(owner) || { count: 0, hasApp: false };
-      existing.count++;
-      existing.hasApp = installationLogins.has(owner.toLowerCase());
-      owners.set(owner, existing);
-    }
-    return owners;
-  }, [repos, installationLogins]);
+  // Unused computed value - commented out to fix linting
+  // const repoOwners = useMemo(() => {
+  //   const owners = new Map<string, { count: number; hasApp: boolean }>();
+  //   for (const repo of repos) {
+  //     const owner = repo.full_name.split("/")[0];
+  //     if (!owner) continue;
+  //     const existing = owners.get(owner) || { count: 0, hasApp: false };
+  //     existing.count++;
+  //     existing.hasApp = installationLogins.has(owner.toLowerCase());
+  //     owners.set(owner, existing);
+  //   }
+  //   return owners;
+  // }, [repos, installationLogins]);
 
-  const ownersNeedingInstall = useMemo(() => 
-    Array.from(repoOwners.entries())
-      .filter(([_, info]) => !info.hasApp)
-      .map(([owner]) => owner),
-    [repoOwners]
-  );
-
-  const hasAnyInstallation = installations.length > 0;
-  const hasMismatch = hasAnyInstallation && ownersNeedingInstall.length > 0;
+  // Unused computed value - commented out to fix linting
+  // const ownersNeedingInstall = useMemo(() => 
+  //   Array.from(repoOwners.entries())
+  //     .filter(([, info]) => !info.hasApp)
+  //     .map(([owner]) => owner),
+  //   [repoOwners]
+  // );
 
   function toggleRepo(fullName: string) {
     setSelected((current) => {
