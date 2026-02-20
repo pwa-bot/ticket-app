@@ -13,6 +13,8 @@ This specification is released into the public domain. You can use it for any pu
 - `PROTOCOL.md` — The full specification
 - `schemas/` — JSON schemas (coming soon)
 - `LICENSE` — CC0 license text
+- `../docs/PROTOCOL-V1.1-DUAL-LANE.md` — v1.1 dual-lane addendum (draft)
+- `../docs/MIGRATION-DUAL-LANE-V1.1.md` — migration guide for existing repos
 
 ## Implementing
 

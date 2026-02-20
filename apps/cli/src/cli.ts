@@ -195,6 +195,10 @@ async function main(): Promise<void> {
       await runRebuildIndex(process.cwd());
     });
 
+  // TODO(TK-01KHWGYACV): add telemetry-lane storage plumbing (git notes primary, ref fallback).
+  // TODO(TK-01KHWGYAM6): add `ticket events` read/write commands for high-frequency agent chatter.
+  // TODO(TK-01KHWGYAM6): add compaction tooling/commands for telemetry lane retention control.
+
   await program.parseAsync(process.argv);
 }
 
