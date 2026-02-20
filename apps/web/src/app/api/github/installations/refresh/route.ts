@@ -1,8 +1,10 @@
 import { eq, inArray } from "drizzle-orm";
+import { NextRequest } from "next/server";
 import { db, schema } from "@/db/client";
 import { apiError, apiSuccess } from "@/lib/api/response";
 import { destroySessionById, requireSession } from "@/lib/auth";
 import { hydrateInstallationRepos } from "@/lib/github/hydrate-installation-repos";
+import { applyMutationGuards } from "@/lib/security/mutation-guard";
 
 interface GithubInstallation {
   id: number;
@@ -18,8 +20,18 @@ interface GithubInstallation {
  * Also force-hydrates repository cache for each installation so newly-installed
  * personal repos become visible immediately in /api/repos.
  */
-export async function POST() {
+export async function POST(request: NextRequest) {
   const { userId, token, sessionId } = await requireSession();
+  const guard = applyMutationGuards({
+    request,
+    bucket: "github-installations-refresh",
+    identity: userId,
+    limit: 15,
+    windowMs: 60_000,
+  });
+  if (guard) {
+    return guard;
+  }
 
   try {
     const recentInstallations = await db.query.userInstallations.findMany({

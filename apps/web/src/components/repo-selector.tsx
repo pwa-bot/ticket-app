@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { RateLimitError, isRateLimitError } from "@/components/rate-limit-error";
+import { reconnectWithPost } from "@/lib/auth-actions";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { shouldShowReconnectCta } from "@/lib/auth-errors";
 
@@ -159,12 +160,15 @@ export default function RepoSelector() {
           }
         </p>
         {isAuthError && (
-          <a
-            href="/api/auth/reconnect?returnTo=%2Fspace"
+          <button
+            type="button"
+            onClick={() => {
+              void reconnectWithPost("/space");
+            }}
             className="mt-4 inline-block rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
           >
             Reconnect GitHub
-          </a>
+          </button>
         )}
       </div>
     );

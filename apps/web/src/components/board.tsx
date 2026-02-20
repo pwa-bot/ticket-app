@@ -11,6 +11,7 @@ import PendingBadge from "@/components/pending-badge";
 import { SavedViewsDropdown } from "@/components/saved-views";
 import { AutoMergeToggle } from "@/components/auto-merge-toggle";
 import { RateLimitError } from "@/components/rate-limit-error";
+import { logoutWithPost } from "@/lib/auth-actions";
 import { getCreatedTimestamp, priorityRank, type AttentionRow, type CiStatus } from "@/lib/attention";
 import { BOARD_LABELS, BOARD_STATES, PRIORITY_STYLES, groupTicketsForBoard } from "@/lib/utils";
 import { PendingChangesProvider, usePendingChanges } from "@/lib/pending-changes";
@@ -679,13 +680,15 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           </Link>
-          <Link
-            href="/api/auth/logout"
-            prefetch={false}
+          <button
+            type="button"
+            onClick={() => {
+              void logoutWithPost();
+            }}
             className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white"
           >
             Log out
-          </Link>
+          </button>
         </div>
       </header>
 

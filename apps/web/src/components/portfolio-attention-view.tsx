@@ -17,6 +17,7 @@ import type {
 import type { AttentionReasonDetail } from "@/lib/attention-contract";
 import type { SpaceIndexResponse, SpaceIndexTicket } from "@/app/api/space/index/route";
 import { trackWebEvent } from "@/lib/telemetry";
+import { logoutWithPost, reconnectWithPost } from "@/lib/auth-actions";
 import { fetchWithQueryCache, readFreshQueryCache, readQueryCache } from "@/lib/space-query-cache";
 
 function prKey(repo: string, ticketId: string): string {
@@ -494,9 +495,9 @@ export default function PortfolioAttentionView() {
   }, [attentionData?.reasonCatalog]);
 
   const loadedAt = (activeTab === "tickets" ? indexData?.loadedAt : attentionData?.loadedAt) ?? null;
-  const reconnectHref = typeof window !== "undefined"
-    ? `/api/auth/reconnect?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`
-    : "/api/auth/reconnect?returnTo=%2Fspace";
+  const reconnectReturnTo = typeof window !== "undefined"
+    ? `${window.location.pathname}${window.location.search}`
+    : "/space";
 
   const attentionTotals = attentionData?.totals;
   const reposEnabled = attentionTotals?.reposEnabled ?? allRepos.length;
@@ -586,13 +587,15 @@ export default function PortfolioAttentionView() {
           >
             Settings
           </Link>
-          <Link
-            href="/api/auth/logout"
-            prefetch={false}
+          <button
+            type="button"
+            onClick={() => {
+              void logoutWithPost();
+            }}
             className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white"
           >
             Log out
-          </Link>
+          </button>
         </div>
       </header>
 
@@ -775,7 +778,11 @@ export default function PortfolioAttentionView() {
           {(error.includes("401") || error.includes("403")) ? (
             <div className="mt-2">
               <a
-                href={reconnectHref}
+                href={reconnectReturnTo}
+                onClick={(event) => {
+                  event.preventDefault();
+                  void reconnectWithPost(reconnectReturnTo);
+                }}
                 className="inline-block rounded-md bg-red-100 px-3 py-1.5 text-sm font-medium text-red-800 hover:bg-red-200"
               >
                 Reconnect GitHub

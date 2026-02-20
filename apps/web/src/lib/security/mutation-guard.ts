@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { assertCsrf } from "@/lib/security/csrf";
+import { apiError } from "@/lib/api/response";
+import { hasTrustedOrigin, hasValidCsrfToken, isCsrfProtectionEnabled } from "@/lib/security/csrf";
 import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/security/rate-limit";
 
 interface MutationGuardInput {
@@ -29,6 +30,13 @@ export function applyMutationGuards({
     return rateLimitResponse(result);
   }
 
-  assertCsrf(request);
+  if (!hasTrustedOrigin(request)) {
+    return apiError("Forbidden", { status: 403 });
+  }
+
+  if (isCsrfProtectionEnabled() && !hasValidCsrfToken(request)) {
+    return apiError("Forbidden", { status: 403 });
+  }
+
   return null;
 }

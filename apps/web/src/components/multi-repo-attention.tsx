@@ -13,6 +13,7 @@ import {
   type AttentionTicket,
   type CiStatus,
 } from "@/lib/attention";
+import { logoutWithPost } from "@/lib/auth-actions";
 import type { Priority, TicketIndex, TicketState } from "@ticketdotapp/core";
 import { BOARD_LABELS, BOARD_STATES } from "@/lib/utils";
 import { unwrapApiData } from "@/lib/api/client";
@@ -319,13 +320,15 @@ export default function MultiRepoAttention({ repos }: MultiRepoAttentionProps) {
           >
             Change repos
           </Link>
-          <Link
-            href="/api/auth/logout"
-            prefetch={false}
+          <button
+            type="button"
+            onClick={() => {
+              void logoutWithPost();
+            }}
             className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white"
           >
             Log out
-          </Link>
+          </button>
         </div>
       </header>
 

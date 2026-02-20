@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { reconnectWithPost, logoutWithPost } from "@/lib/auth-actions";
+import { csrfFetch } from "@/lib/security/csrf-client";
 import { getApiErrorMessage } from "@/lib/api/client";
 
 type Installation = {
@@ -81,7 +83,7 @@ export default function SettingsClient() {
     setRefreshError(null);
     setShowReconnectCta(false);
     try {
-      const res = await fetch("/api/github/installations/refresh", { method: "POST" });
+      const res = await csrfFetch("/api/github/installations/refresh", { method: "POST" });
       const json = await res.json();
       console.log("[Settings] Refresh response:", json);
       if (json.ok) {
@@ -105,6 +107,7 @@ export default function SettingsClient() {
   }
 
   const hasInstallations = installations.length > 0;
+  const currentPath = "/space/settings";
 
   return (
     <div className="space-y-8">
@@ -236,7 +239,11 @@ export default function SettingsClient() {
                   {showReconnectCta && (
                     <div className="mt-2">
                       <a
-                        href="/api/auth/reconnect?returnTo=%2Fspace%2Fsettings"
+                        href={currentPath}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          void reconnectWithPost(currentPath);
+                        }}
                         className="text-sm font-medium text-red-800 underline hover:text-red-900"
                       >
                         Reconnect GitHub account →
@@ -256,12 +263,15 @@ export default function SettingsClient() {
           <h2 className="font-medium text-slate-900">Account</h2>
         </div>
         <div className="p-6">
-          <a
-            href="/api/auth/logout"
+          <button
+            type="button"
+            onClick={() => {
+              void logoutWithPost();
+            }}
             className="rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
           >
             Log out
-          </a>
+          </button>
         </div>
       </section>
     </div>

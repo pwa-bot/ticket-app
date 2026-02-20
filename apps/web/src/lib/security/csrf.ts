@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { apiError } from "@/lib/api/response";
+import { getCanonicalBaseUrl } from "@/lib/app-url";
 import { createOpaqueToken, shouldUseSecureCookies } from "@/lib/security/cookies";
 
 export const CSRF_COOKIE_NAME = "ticket_app_csrf";
@@ -58,5 +59,37 @@ export function assertCsrf(request: NextRequest): void {
 
   if (!hasValidCsrfToken(request)) {
     throw apiError("Forbidden", { status: 403 });
+  }
+}
+
+function readRequestOrigin(request: Request): string | null {
+  const originHeader = request.headers.get("origin");
+  if (originHeader) {
+    return originHeader;
+  }
+
+  const refererHeader = request.headers.get("referer");
+  if (!refererHeader) {
+    return null;
+  }
+
+  try {
+    return new URL(refererHeader).origin;
+  } catch {
+    return null;
+  }
+}
+
+export function hasTrustedOrigin(request: Request, env: NodeJS.ProcessEnv = process.env): boolean {
+  const requestOrigin = readRequestOrigin(request);
+  if (!requestOrigin) {
+    return false;
+  }
+
+  try {
+    const expectedOrigin = new URL(getCanonicalBaseUrl(request, env)).origin;
+    return requestOrigin === expectedOrigin;
+  } catch {
+    return false;
   }
 }

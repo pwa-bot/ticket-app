@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { reconnectWithPost } from "@/lib/auth-actions";
 
 interface RateLimitErrorProps {
   error: string;
@@ -88,12 +89,15 @@ export function RateLimitError({ error, onRetry }: RateLimitErrorProps) {
             )
           ) : null}
           {authError ? (
-            <Link
-              href="/api/auth/reconnect?returnTo=%2Fspace"
+            <button
+              type="button"
+              onClick={() => {
+                void reconnectWithPost("/space");
+              }}
               className="rounded-md bg-red-100 px-3 py-1.5 text-sm font-medium text-red-800 hover:bg-red-200"
             >
               Reconnect GitHub
-            </Link>
+            </button>
           ) : null}
         </div>
       </div>
