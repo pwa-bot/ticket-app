@@ -35,14 +35,21 @@ test("/api/auth/github validates and honors returnTo", async () => {
   assert.match(source, /response\.cookies\.set\(cookieNames\.oauthReturnTo, "", expiredCookieOptions\(\)\)/, "oauth returnTo cookie should be cleared after login");
 });
 
-test("/api/repos self-heals stale user_installations and returns repos across refreshed links", async () => {
+test("/api/repos is cache-first by default and does not unconditionally call GitHub installations API", async () => {
   const source = await readSource("app/api/repos/route.ts");
 
-  assert.match(source, /fetch\(["']https:\/\/api\.github\.com\/user\/installations["']/, "should refresh installations from GitHub user/installations endpoint");
-  assert.match(source, /Authorization:\s*`Bearer \$\{token\}`/, "should call GitHub with the signed-in user token");
-  assert.match(source, /insert\(schema\.userInstallations\)[\s\S]*onConflictDoNothing\(\)/, "should upsert user_installations links to recover from stale mappings");
-  assert.match(source, /const userInstallations = await db\.query\.userInstallations\.findMany/, "should load user installation links after refresh");
-  assert.match(source, /const repos = await db\.query\.repos\.findMany\([\s\S]*inArray\(schema\.repos\.installationId, installationIds\)/, "should include repos from all installation IDs linked to the user");
+  assert.match(source, /const refresh = shouldRefresh\(request\)/, "should gate refresh behavior behind an explicit refresh flag");
+  assert.match(source, /if \(refresh\) \{[\s\S]*syncUserInstallationsFromGithub\(userId, token\)/, "should only sync installations when refresh is requested");
+  assert.match(source, /installationsToHydrate = refresh[\s\S]*: installationIds\.filter\(\(id\) => !installationsWithRepos\.has\(id\)\)/, "default path should hydrate only installations with zero cached repos");
+});
+
+test("refresh flows hydrate repos for personal installations so repo list can include newly installed repos", async () => {
+  const reposRouteSource = await readSource("app/api/repos/route.ts");
+  const refreshRouteSource = await readSource("app/api/github/installations/refresh/route.ts");
+
+  assert.match(reposRouteSource, /\/user\/installations\/\$\{githubInstallationId\}\/repositories/, "repos route should support hydration from GitHub installation repositories endpoint");
+  assert.match(refreshRouteSource, /hydrateReposForInstallation\(/, "installations refresh endpoint should hydrate repos");
+  assert.match(refreshRouteSource, /hydratedRepoCount/, "refresh response should report hydration work");
 });
 
 test("repo navigation uses Next Link components for in-app routing", async () => {
