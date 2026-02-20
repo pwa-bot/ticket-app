@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T22:37:15.493Z",
+  "generated_at": "2026-02-20T22:37:19.795Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -189,7 +189,7 @@
       "id": "01KHYK00DHXBT8J9ATD1G0JM4B",
       "short_id": "01KHYK00",
       "title": "P0 Replace client-stored GitHub token with opaque server session",
-      "state": "ready",
+      "state": "in_progress",
       "priority": "p0",
       "labels": [
         "security",
