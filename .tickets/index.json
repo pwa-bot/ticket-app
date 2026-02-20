@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T07:57:24.984Z",
+  "generated_at": "2026-02-20T07:57:28.262Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -32,20 +32,6 @@
       "display_id": "TK-01KHS9PF-3"
     },
     {
-      "id": "01KHW6EYNJV864W99AV18FC15P",
-      "short_id": "01KHW6EY",
-      "title": "Saved views v1 shareable operational queues",
-      "state": "ready",
-      "priority": "p1",
-      "labels": [
-        "dashboard",
-        "saved-views",
-        "product"
-      ],
-      "path": ".tickets/tickets/01KHW6EYNJV864W99AV18FC15P.md",
-      "display_id": "TK-01KHW6EY-3"
-    },
-    {
       "id": "01KHVQ0B6VR7M2HAWB9QPEMBED",
       "short_id": "01KHVQ0B",
       "title": "Dashboard wire All tickets view (board/table)",
@@ -58,6 +44,20 @@
       ],
       "path": ".tickets/tickets/01KHVQ0B6VR7M2HAWB9QPEMBED.md",
       "display_id": "TK-01KHVQ0B"
+    },
+    {
+      "id": "01KHW6EYNJV864W99AV18FC15P",
+      "short_id": "01KHW6EY",
+      "title": "Saved views v1 shareable operational queues",
+      "state": "in_progress",
+      "priority": "p1",
+      "labels": [
+        "dashboard",
+        "saved-views",
+        "product"
+      ],
+      "path": ".tickets/tickets/01KHW6EYNJV864W99AV18FC15P.md",
+      "display_id": "TK-01KHW6EY-3"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
