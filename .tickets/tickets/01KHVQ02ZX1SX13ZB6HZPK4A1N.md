@@ -1,7 +1,7 @@
 ---
 id: 01KHVQ02ZX1SX13ZB6HZPK4A1N
 title: Dashboard add totals and repo counts to attention endpoint; fix empty states
-state: backlog
+state: done
 priority: p0
 labels:
   - dashboard
@@ -21,17 +21,17 @@ The `/space` Attention page feels broken because:
 
 ## Acceptance Criteria
 
-- [ ] Update `AttentionResponse` to include totals:
+- [x] Update `AttentionResponse` to include totals:
   - `totals.reposEnabled`, `totals.reposSelected`, `totals.ticketsTotal`, `totals.ticketsAttention`
-- [ ] Include per-repo counts in `repos[]` returned by `/api/space/attention`:
+- [x] Include per-repo counts in `repos[]` returned by `/api/space/attention`:
   - `totalTickets`, `attentionTickets`
   - Compute from existing `tickets` + `items` in the handler (no extra DB calls required).
-- [ ] Update `PortfolioAttentionView` empty-state logic to show exactly one of:
+- [x] Update `PortfolioAttentionView` empty-state logic to show exactly one of:
   - no repos enabled
   - no tickets at all
   - all clear (ticketsTotal > 0 && ticketsAttention === 0)
   - no results (attention exists but filters/search hide)
-- [ ] Eliminate double-empty-state rendering (parent owns empties).
+- [x] Eliminate double-empty-state rendering (parent owns empties).
 
 ## Spec
 
