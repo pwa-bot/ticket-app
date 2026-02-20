@@ -39,6 +39,23 @@ Exit criteria:
 2. Keep canonical write behavior unchanged.
 3. If notes are unavailable, mirror to fallback event ref/branch.
 
+Recommended `.tickets/config.yml` block:
+```yaml
+telemetry:
+  backend: notes
+  notes_ref: refs/notes/ticket-events
+  event_ref: refs/tickets/events
+  write_fallback: true
+  read_fallback: true
+```
+
+Optional runtime overrides:
+- `TICKET_TELEMETRY_BACKEND`
+- `TICKET_TELEMETRY_NOTES_REF`
+- `TICKET_TELEMETRY_EVENT_REF`
+- `TICKET_TELEMETRY_WRITE_FALLBACK`
+- `TICKET_TELEMETRY_READ_FALLBACK`
+
 Verification commands:
 ```bash
 # List available notes refs

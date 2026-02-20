@@ -62,6 +62,25 @@ Commands:
 - `ticket edit <id>` — Edit metadata
 - `ticket validate` — Check for errors
 
+Telemetry lane (optional, non-authoritative) can be configured in `.tickets/config.yml`:
+
+```yaml
+telemetry:
+  backend: notes            # off | notes | event_ref | http
+  notes_ref: refs/notes/ticket-events
+  event_ref: refs/tickets/events
+  write_fallback: true
+  read_fallback: true
+```
+
+Env overrides:
+- `TICKET_TELEMETRY_BACKEND`
+- `TICKET_TELEMETRY_NOTES_REF`
+- `TICKET_TELEMETRY_EVENT_REF`
+- `TICKET_TELEMETRY_WRITE_FALLBACK`
+- `TICKET_TELEMETRY_READ_FALLBACK`
+- `TICKET_APP_TELEMETRY_URL` (legacy HTTP sink; default backend becomes `http` if set)
+
 ## License
 
 - **Protocol** (`/protocol/`): [CC0 1.0](./protocol/LICENSE) — Public domain, use freely

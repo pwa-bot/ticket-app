@@ -12,6 +12,13 @@ workflow: simple-v1
 linking:
   branch_pattern: "tk-{short_id}-{slug}"
   pr_title_pattern: "[{display_id}] {title}"
+
+telemetry:
+  backend: off
+  notes_ref: refs/notes/ticket-events
+  event_ref: refs/tickets/events
+  write_fallback: true
+  read_fallback: true
 `;
 
 export const DEFAULT_TEMPLATE = `---
