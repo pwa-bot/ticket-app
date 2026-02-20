@@ -1,7 +1,7 @@
 ---
 id: 01KHS9PF7Q5KP7EQDSVS8QQM6Q
 title: Task F - Checks cache worker Phase C
-state: in_progress
+state: done
 priority: p1
 labels:
   - worker
