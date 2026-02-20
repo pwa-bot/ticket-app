@@ -1,7 +1,7 @@
 ---
 id: 01KHWGYAVFC7VSZ6A0EMFQT9K2
 title: Policy tiers hard protocol checks warn execution quality opt-in strict
-state: backlog
+state: ready
 priority: p1
 labels:
   - governance
