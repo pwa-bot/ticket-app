@@ -80,10 +80,14 @@ export function validateOAuthStateBinding(input: {
   }
 
   if (!signature) {
-    return true;
+    return false; // Signature required for security
   }
 
-  // Signature optional in v1; if present, accept only exact state match.
+  // Validate signature matches expected format
+  if (!/^[a-f0-9]{64}$/i.test(signature)) {
+    return false;
+  }
+
   return true;
 }
 
