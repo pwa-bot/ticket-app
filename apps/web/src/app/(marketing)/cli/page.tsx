@@ -90,7 +90,7 @@ git push`}
       <section className="border-t border-border">
         <div className="mx-auto max-w-6xl px-6 py-16">
           <h2 className="mb-4 text-xl font-semibold">
-            Commands you'll use daily
+            Commands you&apos;ll use daily
           </h2>
           <div className="max-w-lg">
             <CodeCard label="Terminal">

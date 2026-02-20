@@ -168,7 +168,7 @@ export default function OnboardingClient() {
       {!hasInstallations && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
           <p className="text-sm text-amber-800">
-            <strong>No GitHub App installation found.</strong> Click "Install App" above to get started.
+            <strong>No GitHub App installation found.</strong> Click &quot;Install App&quot; above to get started.
           </p>
         </div>
       )}

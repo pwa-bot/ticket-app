@@ -109,7 +109,7 @@ export default function PricingPage() {
       {/* Hero */}
       <section className="mx-auto max-w-6xl px-6 pb-16 pt-24">
         <h1 className="max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
-          Pricing that doesn't punish agents
+          Pricing that doesn&apos;t punish agents
         </h1>
         <p className="mt-4 max-w-2xl text-lg text-muted">
           The protocol is CC0. The CLI is open source. Pay only when you want

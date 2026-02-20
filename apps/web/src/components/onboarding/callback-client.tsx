@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 
 export default function CallbackClient() {
@@ -69,12 +70,12 @@ export default function CallbackClient() {
       {status === "error" && (
         <div className="mt-2 space-y-3">
           <p className="text-sm text-red-600">{error}</p>
-          <a
+          <Link
             href="/space/onboarding"
             className="inline-block rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
           >
             Try again
-          </a>
+          </Link>
         </div>
       )}
     </div>

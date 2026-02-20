@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import AttentionTable from "@/components/attention-table";
 import { SavedViewsDropdown } from "@/components/saved-views";
@@ -290,8 +291,15 @@ export default function PortfolioAttentionView() {
 
   const loadedAt = (activeTab === "tickets" ? ticketsData?.loadedAt : attentionData?.loadedAt) ?? null;
 
-  const hasAttentionItems = visibleAttentionItems.length > 0;
-  const noAttentionMatches = hasAttentionItems && filteredAttentionItems.length === 0;
+  const attentionTotals = attentionData?.totals;
+  const reposEnabled = attentionTotals?.reposEnabled ?? allRepos.length;
+  const ticketsTotal = attentionTotals?.ticketsTotal ?? 0;
+  const ticketsAttention = attentionTotals?.ticketsAttention ?? 0;
+  const showNoReposEnabled = activeTab === "attention" && !loading && !error && reposEnabled === 0;
+  const showNoTickets = activeTab === "attention" && !loading && !error && reposEnabled > 0 && ticketsTotal === 0;
+  const showAllClear = activeTab === "attention" && !loading && !error && ticketsTotal > 0 && ticketsAttention === 0;
+  const showNoResults =
+    activeTab === "attention" && !loading && !error && ticketsAttention > 0 && filteredAttentionItems.length === 0;
 
   return (
     <div className="mx-auto max-w-7xl">
@@ -317,18 +325,18 @@ export default function PortfolioAttentionView() {
           >
             {loading ? "Loading…" : "Refresh"}
           </button>
-          <a
+          <Link
             href="/space/settings"
             className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white"
           >
             Settings
-          </a>
-          <a
+          </Link>
+          <Link
             href="/api/auth/logout"
             className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white"
           >
             Log out
-          </a>
+          </Link>
         </div>
       </header>
 
@@ -426,20 +434,34 @@ export default function PortfolioAttentionView() {
         </div>
       ) : null}
 
-      {!loading && !error && allRepos.length === 0 ? (
+      {showNoReposEnabled ? (
         <div className="rounded-xl border border-slate-200 bg-white p-8 text-center">
           <p className="text-sm font-medium text-slate-700">No enabled repositories found.</p>
           <p className="mt-1 text-sm text-slate-500">
             Enable a repository in{" "}
-            <a href="/space/settings" className="text-blue-600 underline">
+            <Link href="/space/settings" className="text-blue-600 underline">
               Settings
-            </a>{" "}
+            </Link>{" "}
             to see tickets.
           </p>
         </div>
       ) : null}
 
-      {!loading && !error && activeTab === "attention" && !hasAttentionItems && allRepos.length > 0 ? (
+      {showNoTickets ? (
+        <div className="rounded-xl border border-slate-200 bg-white p-6">
+          <h2 className="text-lg font-semibold text-slate-900">No tickets found yet</h2>
+          <p className="mt-2 text-sm text-slate-600">
+            Your enabled repositories are connected, but no tickets are currently indexed.
+          </p>
+          <div className="mt-5">
+            <Link href="/space/settings" className="text-sm font-medium text-blue-600 underline">
+              Open settings
+            </Link>
+          </div>
+        </div>
+      ) : null}
+
+      {showAllClear ? (
         <div className="rounded-xl border border-slate-200 bg-white p-6">
           <h2 className="text-lg font-semibold text-slate-900">No attention items right now</h2>
           <p className="mt-2 text-sm text-slate-600">Attention items are created when tickets are:</p>
@@ -459,7 +481,7 @@ export default function PortfolioAttentionView() {
                   key={repo.fullName}
                   className="rounded-full border border-slate-300 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700"
                 >
-                  {repo.fullName}: {repo.totalTickets}
+                  {repo.fullName}: {repo.attentionTickets}/{repo.totalTickets}
                 </span>
               ))}
             </div>
@@ -477,9 +499,9 @@ export default function PortfolioAttentionView() {
         </div>
       ) : null}
 
-      {!loading && !error && activeTab === "attention" && noAttentionMatches ? (
+      {showNoResults ? (
         <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
-          No attention items match "{searchQuery}".
+          No attention items match <span className="font-medium">{searchQuery}</span>.
         </div>
       ) : null}
 

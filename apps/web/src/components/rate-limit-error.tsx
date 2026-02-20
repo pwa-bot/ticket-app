@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 interface RateLimitErrorProps {
   error: string;
@@ -44,7 +45,7 @@ export function RateLimitError({ error, onRetry }: RateLimitErrorProps) {
         <div className="flex-1">
           <h3 className="font-medium text-amber-900">GitHub is asking us to slow down</h3>
           <p className="mt-1 text-sm text-amber-700">
-            We've made too many requests. This usually resolves in a few minutes.
+            We&apos;ve made too many requests. This usually resolves in a few minutes.
           </p>
           
           <div className="mt-3 flex flex-wrap gap-2">
@@ -57,12 +58,12 @@ export function RateLimitError({ error, onRetry }: RateLimitErrorProps) {
               </button>
             )}
             
-            <a
+            <Link
                 href="/space/settings"
                 className="rounded-md bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-700"
               >
                 Install GitHub App for faster sync →
-              </a>
+              </Link>
           </div>
 
           <p className="mt-3 text-xs text-amber-600">
@@ -150,12 +151,12 @@ export function SyncError({
             )}
             
             {isRateLimit && (
-              <a
+              <Link
                 href="/space/settings"
                 className="rounded-md bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-700"
               >
                 Install GitHub App →
-              </a>
+              </Link>
             )}
           </div>
         </div>

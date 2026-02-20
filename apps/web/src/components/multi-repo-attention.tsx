@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import AttentionTable from "@/components/attention-table";
 import TicketDetailModal from "@/components/ticket-detail-modal";
@@ -310,12 +311,12 @@ export default function MultiRepoAttention({ repos }: MultiRepoAttentionProps) {
           >
             {refreshing ? "Refreshing..." : "Refresh"}
           </button>
-          <a
+          <Link
             href="/space"
             className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white"
           >
             Change repos
-          </a>
+          </Link>
           <a
             href="/api/auth/logout"
             className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white"

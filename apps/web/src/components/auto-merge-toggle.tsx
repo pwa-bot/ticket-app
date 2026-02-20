@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   getRepoAutoMergeSetting,
   loadAutoMergeSettings,
@@ -13,39 +13,31 @@ interface AutoMergeToggleProps {
 }
 
 export function AutoMergeToggle({ repo }: AutoMergeToggleProps) {
+  const initialSettings = loadAutoMergeSettings();
   const [isOpen, setIsOpen] = useState(false);
-  const [globalEnabled, setGlobalEnabled] = useState(true);
-  const [repoSetting, setRepoSetting] = useState<{ value: boolean; source: "global" | "repo" }>({
-    value: true,
-    source: "global",
-  });
+  const [globalEnabled, setGlobalEnabled] = useState(initialSettings.globalDefault);
+  const [repoSettingsVersion, setRepoSettingsVersion] = useState(0);
 
-  // Load settings on mount
-  useEffect(() => {
-    const settings = loadAutoMergeSettings();
-    setGlobalEnabled(settings.globalDefault);
-    setRepoSetting(getRepoAutoMergeSetting(repo));
-  }, [repo]);
+  const repoSetting = useMemo(
+    () => getRepoAutoMergeSetting(repo),
+    [repo, repoSettingsVersion],
+  );
 
   const handleGlobalChange = useCallback((enabled: boolean) => {
     setGlobalAutoMerge(enabled);
     setGlobalEnabled(enabled);
-    // Update repo setting display if it's using global
-    if (repoSetting.source === "global") {
-      setRepoSetting({ value: enabled, source: "global" });
-    }
-  }, [repoSetting.source]);
+    setRepoSettingsVersion((value) => value + 1);
+  }, []);
 
   const handleRepoChange = useCallback((value: "global" | "enabled" | "disabled") => {
     if (value === "global") {
       setRepoAutoMergeOverride(repo, null);
-      setRepoSetting({ value: globalEnabled, source: "global" });
     } else {
       const enabled = value === "enabled";
       setRepoAutoMergeOverride(repo, enabled);
-      setRepoSetting({ value: enabled, source: "repo" });
     }
-  }, [repo, globalEnabled]);
+    setRepoSettingsVersion((current) => current + 1);
+  }, [repo]);
 
   const currentStatus = repoSetting.value ? "Auto-merge on" : "Auto-merge off";
 

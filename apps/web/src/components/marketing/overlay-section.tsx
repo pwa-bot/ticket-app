@@ -12,7 +12,7 @@ export function OverlaySection() {
     <section className="border-t border-border">
       <div className="mx-auto max-w-6xl px-6 py-20">
         <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          A clean view over what's already in Git.
+          A clean view over what&apos;s already in Git.
         </h2>
         <p className="mt-4 max-w-2xl text-muted">
           The dashboard reads{" "}

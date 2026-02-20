@@ -2,6 +2,7 @@
 
 import type { Priority, TicketIndex, TicketIndexEntry, TicketState } from "@/lib/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import AttentionTable from "@/components/attention-table";
 import TicketDetailModal from "@/components/ticket-detail-modal";
@@ -683,13 +684,13 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
           >
             {refreshing ? "Refreshing..." : "Refresh"}
           </button>
-          <a
+          <Link
             href="/space"
             className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white"
           >
             ← Repos
-          </a>
-          <a
+          </Link>
+          <Link
             href="/space/settings"
             className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white inline-flex items-center gap-1.5"
           >
@@ -697,7 +698,7 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-          </a>
+          </Link>
           <a
             href="/api/auth/logout"
             className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white"

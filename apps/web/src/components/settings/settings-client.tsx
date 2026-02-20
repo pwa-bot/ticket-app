@@ -102,7 +102,7 @@ export default function SettingsClient() {
                 The GitHub App enables <strong>webhooks</strong> — when you push changes, your board updates automatically.
               </p>
               <p>
-                Without the app, boards still work. You'll just need to refresh manually to see changes.
+                Without the app, boards still work. You&apos;ll just need to refresh manually to see changes.
               </p>
             </div>
           </details>
