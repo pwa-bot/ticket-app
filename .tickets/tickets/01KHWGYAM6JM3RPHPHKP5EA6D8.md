@@ -1,7 +1,7 @@
 ---
 id: 01KHWGYAM6JM3RPHPHKP5EA6D8
 title: 'Phase B: CLI support for ticket events write/read/compact'
-state: in_progress
+state: done
 priority: p1
 labels:
   - cli

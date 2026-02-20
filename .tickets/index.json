@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T04:55:37.656Z",
+  "generated_at": "2026-02-20T05:00:30.368Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -220,20 +220,6 @@
         "git"
       ],
       "path": ".tickets/tickets/01KHWGY6QMV26C1242E9GTYBJ8.md"
-    },
-    {
-      "id": "01KHWGYAM6JM3RPHPHKP5EA6D8",
-      "short_id": "01KHWGYA",
-      "display_id": "TK-01KHWGYA",
-      "title": "Phase B: CLI support for ticket events write/read/compact",
-      "state": "in_progress",
-      "priority": "p1",
-      "labels": [
-        "cli",
-        "telemetry",
-        "perf"
-      ],
-      "path": ".tickets/tickets/01KHWGYAM6JM3RPHPHKP5EA6D8.md"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
@@ -741,6 +727,20 @@
         "git-notes"
       ],
       "path": ".tickets/tickets/01KHWGYACVZMYF855VY5J9VM6N.md"
+    },
+    {
+      "id": "01KHWGYAM6JM3RPHPHKP5EA6D8",
+      "short_id": "01KHWGYA",
+      "display_id": "TK-01KHWGYA",
+      "title": "Phase B: CLI support for ticket events write/read/compact",
+      "state": "done",
+      "priority": "p1",
+      "labels": [
+        "cli",
+        "telemetry",
+        "perf"
+      ],
+      "path": ".tickets/tickets/01KHWGYAM6JM3RPHPHKP5EA6D8.md"
     },
     {
       "id": "01KHWGYB2SYQVJZYQSKTJ6NWFT",
