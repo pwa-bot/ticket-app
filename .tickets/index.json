@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T22:33:52.839Z",
+  "generated_at": "2026-02-20T22:33:53.083Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -115,6 +115,20 @@
       ],
       "path": ".tickets/tickets/01KHYK08XSFYB8G5WTG1PE0TH8.md",
       "display_id": "TK-01KHYK08-4"
+    },
+    {
+      "id": "01KHYK095CXZEQB50WYR9ZGSWG",
+      "short_id": "01KHYK09",
+      "title": "P2 Audit webhook signature verification and replay protection metrics",
+      "state": "backlog",
+      "priority": "p2",
+      "labels": [
+        "security",
+        "webhooks",
+        "audit"
+      ],
+      "path": ".tickets/tickets/01KHYK095CXZEQB50WYR9ZGSWG.md",
+      "display_id": "TK-01KHYK09"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
