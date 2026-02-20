@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { getApiErrorMessage } from "@/lib/api/client";
 
 type Installation = {
   installationId: number;
@@ -88,7 +89,7 @@ export default function OnboardingClient() {
       });
       
       const json = await res.json();
-      if (!json.ok) throw new Error(json.error ?? "Failed to update");
+      if (!json.ok) throw new Error(getApiErrorMessage(json, "Failed to update"));
       
       // Optimistic update
       setRepos((prev) =>

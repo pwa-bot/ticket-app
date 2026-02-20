@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { apiError, apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
 
 const WEB_EVENTS = new Set([
@@ -21,11 +22,11 @@ export async function POST(req: NextRequest) {
   try {
     payload = (await req.json()) as TelemetryPayload;
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return apiError("Invalid JSON", { status: 400 });
   }
 
   if (!payload?.event || !WEB_EVENTS.has(payload.event)) {
-    return NextResponse.json({ error: "Invalid telemetry event" }, { status: 400 });
+    return apiError("Invalid telemetry event", { status: 400 });
   }
 
   // MVP sink: structured server logs. Replace with DB/warehouse sink in follow-up.
@@ -40,5 +41,5 @@ export async function POST(req: NextRequest) {
     }),
   );
 
-  return NextResponse.json({ ok: true });
+  return apiSuccess({ tracked: true });
 }

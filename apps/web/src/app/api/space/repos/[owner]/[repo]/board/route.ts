@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { db, schema } from "@/db/client";
+import { apiError, apiSuccess } from "@/lib/api/response";
 import { requireRepoAccess } from "@/lib/security/repo-access";
 
 interface Params {
@@ -25,7 +26,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   ]);
 
   if (!repo) {
-    return NextResponse.json({ error: "Repo not found" }, { status: 404 });
+    return apiError("Repo not found", { status: 404 });
   }
 
   const ticketToPrs: Record<string, Array<{
@@ -53,7 +54,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
     });
   }
 
-  return NextResponse.json({
+  return apiSuccess({
     index: {
       format_version: 1,
       tickets: tickets.map((t) => ({

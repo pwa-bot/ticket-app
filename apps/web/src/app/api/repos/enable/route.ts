@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { eq, and } from "drizzle-orm";
 import { db, schema } from "@/db/client";
+import { apiError, apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
 import { syncRepo } from "@/db/sync";
 import { getInstallationOctokit } from "@/lib/github-app";
@@ -20,7 +21,7 @@ export async function POST(req: NextRequest) {
   const { owner, repo, enabled } = body as { owner?: string; repo?: string; enabled?: boolean };
 
   if (!owner || !repo || typeof enabled !== "boolean") {
-    return NextResponse.json({ error: "owner, repo, and enabled are required" }, { status: 400 });
+    return apiError("owner, repo, and enabled are required", { status: 400 });
   }
 
   const fullName = `${owner}/${repo}`;
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (!(await hasRepoAccess(userId, fullName))) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiError("Forbidden", { status: 403 });
   }
 
   // Find the repo
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (!repoRow) {
-    return NextResponse.json({ error: "Repo not found" }, { status: 404 });
+    return apiError("Repo not found", { status: 404 });
   }
 
   // Verify user has access via installation
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (!userInstallation) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return apiError("Forbidden", { status: 403 });
     }
   }
 
@@ -92,5 +93,5 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true });
+  return apiSuccess({ enabled });
 }

@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
+import { apiError } from "@/lib/api/response";
 import { cookieNames, encryptToken, isUnauthorizedResponse, requireSession } from "@/lib/auth";
 import { db, schema } from "@/db/client";
 import {
@@ -39,7 +40,7 @@ export async function GET(request: Request) {
   const clientSecret = process.env.GITHUB_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
-    return NextResponse.json({ error: "Missing GitHub OAuth environment variables" }, { status: 500 });
+    return apiError("Missing GitHub OAuth environment variables", { status: 500 });
   }
 
   const url = new URL(request.url);
@@ -110,7 +111,7 @@ export async function GET(request: Request) {
     ?.split("=")[1];
 
   if (!state || !expectedState || state !== expectedState) {
-    return NextResponse.json({ error: "Invalid OAuth state" }, { status: 400 });
+    return apiError("Invalid OAuth state", { status: 400 });
   }
 
   // Exchange code for token
@@ -131,13 +132,13 @@ export async function GET(request: Request) {
   });
 
   if (!tokenResponse.ok) {
-    return NextResponse.json({ error: "Failed to complete OAuth exchange" }, { status: 502 });
+    return apiError("Failed to complete OAuth exchange", { status: 502 });
   }
 
   const tokenData = (await tokenResponse.json()) as { access_token?: string; error?: string };
 
   if (!tokenData.access_token || tokenData.error) {
-    return NextResponse.json({ error: tokenData.error ?? "OAuth did not return an access token" }, { status: 400 });
+    return apiError(tokenData.error ?? "OAuth did not return an access token", { status: 400 });
   }
 
   // Fetch user info from GitHub
@@ -149,7 +150,7 @@ export async function GET(request: Request) {
   });
 
   if (!userResponse.ok) {
-    return NextResponse.json({ error: "Failed to fetch user info" }, { status: 502 });
+    return apiError("Failed to fetch user info", { status: 502 });
   }
 
   const githubUser = (await userResponse.json()) as { id: number; login: string; email?: string };

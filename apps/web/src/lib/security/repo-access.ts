@@ -1,6 +1,6 @@
 import { and, eq, inArray } from "drizzle-orm";
-import { NextResponse } from "next/server";
 import { db, schema } from "@/db/client";
+import { apiError } from "@/lib/api/response";
 import { requireSession, type SessionData } from "@/lib/auth";
 
 interface AccessibleRepoFilter {
@@ -36,7 +36,7 @@ export function assertNoUnauthorizedRepos(requested: Set<string>, accessible: It
   const unauthorized = findUnauthorizedRepos(requested, accessible);
 
   if (unauthorized.length > 0) {
-    throw NextResponse.json({ error: "Forbidden", repos: unauthorized }, { status: 403 });
+    throw apiError("Forbidden", { status: 403, legacy: { repos: unauthorized } });
   }
 }
 
@@ -62,7 +62,7 @@ export async function requireRepoAccess(owner: string, repo: string): Promise<{ 
 
   const allowed = await hasRepoAccess(session.userId, fullName);
   if (!allowed) {
-    throw NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    throw apiError("Forbidden", { status: 403 });
   }
 
   return { session, fullName };

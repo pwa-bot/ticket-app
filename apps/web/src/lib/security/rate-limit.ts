@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { apiError } from "@/lib/api/response";
 
 interface BucketState {
   count: number;
@@ -69,17 +70,15 @@ export function getClientIp(request: NextRequest): string {
 }
 
 export function rateLimitResponse(result: RateLimitResult): NextResponse {
-  return NextResponse.json(
-    { error: "Too many requests" },
-    {
-      status: 429,
-      headers: {
-        "Retry-After": String(result.retryAfterSeconds),
-        "X-RateLimit-Remaining": String(result.remaining),
-        "X-RateLimit-Reset": String(Math.floor(result.resetAt / 1000)),
-      },
+  return apiError("Too many requests", {
+    status: 429,
+    code: "unknown",
+    headers: {
+      "Retry-After": String(result.retryAfterSeconds),
+      "X-RateLimit-Remaining": String(result.remaining),
+      "X-RateLimit-Reset": String(Math.floor(result.resetAt / 1000)),
     },
-  );
+  });
 }
 
 export function pruneRateLimitStore(now = Date.now()) {

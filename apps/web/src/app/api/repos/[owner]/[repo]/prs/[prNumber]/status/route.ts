@@ -4,9 +4,10 @@
  */
 
 import { and, eq } from "drizzle-orm";
-import { NextRequest, NextResponse } from "next/server";
-import type { ApiEnvelope, PrStatusResponse } from "@ticketdotapp/core";
+import { NextRequest } from "next/server";
+import type { PrStatusResponse } from "@ticketdotapp/core";
 import { db, schema } from "@/db/client";
+import { apiError, apiSuccess } from "@/lib/api/response";
 import { isAuthFailureResponse } from "@/lib/auth";
 import { createOctokit } from "@/lib/github/client";
 import { applyMutationGuards } from "@/lib/security/mutation-guard";
@@ -29,11 +30,7 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
   const prNum = Number(prNumber);
 
   if (Number.isNaN(prNum) || prNum <= 0) {
-    const resp: ApiEnvelope<PrStatusResponse> = {
-      ok: false,
-      error: { code: "unknown", message: "PR number must be a positive integer" },
-    };
-    return NextResponse.json(resp, { status: 400 });
+    return apiError("PR number must be a positive integer", { status: 400 });
   }
 
   const row = await db.query.ticketPrs.findFirst({
@@ -41,11 +38,7 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
   });
 
   if (!row) {
-    const resp: ApiEnvelope<PrStatusResponse> = {
-      ok: false,
-      error: { code: "unknown", message: "PR status not found in cache" },
-    };
-    return NextResponse.json(resp, { status: 404 });
+    return apiError("PR status not found in cache", { status: 404 });
   }
 
   const data: PrStatusResponse = {
@@ -61,7 +54,7 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
     },
   };
 
-  return NextResponse.json({ ok: true, data } satisfies ApiEnvelope<PrStatusResponse>);
+  return apiSuccess(data, { legacyTopLevel: false });
 }
 
 export async function PATCH(_req: NextRequest, { params }: RouteParams) {
@@ -83,11 +76,7 @@ export async function PATCH(_req: NextRequest, { params }: RouteParams) {
     const prNum = Number(prNumber);
 
     if (Number.isNaN(prNum) || prNum <= 0) {
-      const resp: ApiEnvelope<{ closed: boolean }> = {
-        ok: false,
-        error: { code: "unknown", message: "PR number must be a positive integer" },
-      };
-      return NextResponse.json(resp, { status: 400 });
+      return apiError("PR number must be a positive integer", { status: 400 });
     }
 
     const octokit = createOctokit(token);
@@ -104,21 +93,15 @@ export async function PATCH(_req: NextRequest, { params }: RouteParams) {
       .set({ state: "closed", merged: false, updatedAt: new Date() })
       .where(and(eq(schema.ticketPrs.repoFullName, fullName), eq(schema.ticketPrs.prNumber, prNum)));
 
-    return NextResponse.json({ ok: true, data: { closed: true } } satisfies ApiEnvelope<{ closed: boolean }>);
+    return apiSuccess({ closed: true }, { legacyTopLevel: false });
   } catch (e: unknown) {
     if (isAuthFailureResponse(e)) {
       return e;
     }
     const err = e as { status?: number; message?: string };
-    return NextResponse.json(
-      {
-        ok: false,
-        error: {
-          code: typeof err.status === "number" ? "github_permission_denied" : "unknown",
-          message: err.message ?? "Unknown error",
-        },
-      } satisfies ApiEnvelope<{ closed: boolean }>,
-      { status: typeof err.status === "number" ? err.status : 500 }
-    );
+    return apiError(err.message ?? "Unknown error", {
+      status: typeof err.status === "number" ? err.status : 500,
+      code: typeof err.status === "number" ? "github_permission_denied" : "unknown",
+    });
   }
 }

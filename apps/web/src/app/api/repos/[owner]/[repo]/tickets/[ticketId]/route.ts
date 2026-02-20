@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { eq, and } from "drizzle-orm";
+import { apiError, apiSuccess } from "@/lib/api/response";
 import { isAuthFailureResponse } from "@/lib/auth";
 import { getCachedBlob, upsertBlob, getRepo } from "@/db/sync";
 import { db, schema } from "@/db/client";
@@ -29,7 +30,7 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
     });
 
     if (!ticket) {
-      return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
+      return apiError("Ticket not found", { status: 404 });
     }
 
     // Try to get markdown from blob cache
@@ -57,12 +58,9 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
 
       if (!fileRes.ok) {
         if (fileRes.status === 404) {
-          return NextResponse.json({ error: "Ticket file not found in repo" }, { status: 404 });
+          return apiError("Ticket file not found in repo", { status: 404 });
         }
-        return NextResponse.json(
-          { error: `GitHub API error: ${fileRes.status}` },
-          { status: 500 }
-        );
+        return apiError(`GitHub API error: ${fileRes.status}`, { status: 500 });
       }
 
       const fileData = await fileRes.json() as { sha: string; content: string };
@@ -83,7 +81,7 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
         );
     }
 
-    return NextResponse.json({
+    return apiSuccess({
       ticket: {
         id: ticket.id,
         shortId: ticket.shortId,
@@ -104,9 +102,6 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
       return error;
     }
     console.error("[ticket-detail] Error:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
-    );
+    return apiError(error instanceof Error ? error.message : "Unknown error", { status: 500 });
   }
 }

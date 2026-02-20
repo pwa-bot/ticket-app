@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db/client";
+import { apiError, apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
 
 /**
@@ -25,10 +25,7 @@ export async function POST() {
     if (!response.ok) {
       const text = await response.text();
       console.error("[refresh installations] GitHub API error:", response.status, text);
-      return NextResponse.json(
-        { error: `GitHub API error: ${response.status}` },
-        { status: 502 },
-      );
+      return apiError(`GitHub API error: ${response.status}`, { status: 502 });
     }
 
     const data = (await response.json()) as {
@@ -82,16 +79,12 @@ export async function POST() {
       registered.push({ installationId: inst.id, accountLogin, accountType });
     }
 
-    return NextResponse.json({
-      ok: true,
+    return apiSuccess({
       installations: registered,
       count: registered.length,
     });
   } catch (error) {
     console.error("[refresh installations] Error:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 },
-    );
+    return apiError(error instanceof Error ? error.message : "Unknown error", { status: 500 });
   }
 }

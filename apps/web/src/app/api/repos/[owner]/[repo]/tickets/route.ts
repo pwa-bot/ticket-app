@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { db, schema } from "@/db/client";
+import { apiSuccess } from "@/lib/api/response";
 import { requireRepoAccess } from "@/lib/security/repo-access";
 
 interface RouteParams {
@@ -17,7 +18,7 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
     db.query.pendingChanges.findMany({ where: eq(schema.pendingChanges.repoFullName, fullName) }),
   ]);
 
-  return NextResponse.json({
+  return apiSuccess({
     tickets,
     pendingChanges: pending,
     source: "postgres_cache",

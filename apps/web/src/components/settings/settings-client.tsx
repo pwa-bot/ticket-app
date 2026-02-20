@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { getApiErrorMessage } from "@/lib/api/client";
 
 type Installation = {
   installationId: number;
@@ -56,7 +57,7 @@ export default function SettingsClient() {
           setRefreshError("No installations found. Make sure you've installed the GitHub App on your account.");
         }
       } else {
-        setRefreshError(json.error ?? "Failed to refresh. Try logging out and back in.");
+        setRefreshError(getApiErrorMessage(json, "Failed to refresh. Try logging out and back in."));
       }
     } catch (err) {
       console.error("[Settings] Refresh error:", err);

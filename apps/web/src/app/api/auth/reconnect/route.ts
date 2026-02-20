@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
+import { apiError } from "@/lib/api/response";
 import { cookieNames } from "@/lib/auth";
 import { expiredCookieOptions, oauthStateCookieOptions } from "@/lib/security/cookies";
 import { CSRF_COOKIE_NAME } from "@/lib/security/csrf";
@@ -17,7 +18,7 @@ export async function GET(request: Request) {
   const clientId = process.env.GITHUB_CLIENT_ID;
   
   if (!clientId) {
-    return NextResponse.json({ error: "Missing GITHUB_CLIENT_ID" }, { status: 500 });
+    return apiError("Missing GITHUB_CLIENT_ID", { status: 500 });
   }
 
   const state = randomBytes(16).toString("hex");

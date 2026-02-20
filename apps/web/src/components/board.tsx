@@ -16,6 +16,7 @@ import { BOARD_LABELS, BOARD_STATES, PRIORITY_STYLES, groupTicketsForBoard } fro
 import { PendingChangesProvider, usePendingChanges } from "@/lib/pending-changes";
 import { isValidTransition, type TicketChangePatch } from "@ticketdotapp/core";
 import type { LinkedPrSummary } from "@/components/pr-status-badge";
+import { unwrapApiData } from "@/lib/api/client";
 
 // Format a date as "X ago" (e.g., "2m ago", "1h ago")
 function formatTimeAgo(date: Date): string {
@@ -523,7 +524,8 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
           throw new Error("Failed to load PR links");
         }
 
-        const links = (await response.json()) as TicketPrEntry[];
+        const json = await response.json();
+        const links = unwrapApiData<{ entries: TicketPrEntry[] }>(json).entries ?? [];
         if (cancelled) {
           return;
         }

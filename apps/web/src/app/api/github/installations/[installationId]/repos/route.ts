@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { eq, and } from "drizzle-orm";
 import { db, schema } from "@/db/client";
+import { apiError, apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
 import { getInstallationOctokit } from "@/lib/github-app";
 import { randomBytes } from "node:crypto";
@@ -28,7 +29,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const githubInstallationId = parseInt(installationIdStr, 10);
 
   if (isNaN(githubInstallationId)) {
-    return NextResponse.json({ error: "Invalid installation ID" }, { status: 400 });
+    return apiError("Invalid installation ID", { status: 400 });
   }
 
   // Verify user has access to this installation
@@ -37,7 +38,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   });
 
   if (!installation) {
-    return NextResponse.json({ error: "Installation not found" }, { status: 404 });
+    return apiError("Installation not found", { status: 404 });
   }
 
   const userInstallation = await db.query.userInstallations.findFirst({
@@ -48,7 +49,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   });
 
   if (!userInstallation) {
-    return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    return apiError("Access denied", { status: 403 });
   }
 
   try {
@@ -130,12 +131,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
       })
     );
 
-    return NextResponse.json({ repos: reposWithStatus });
+    return apiSuccess({ repos: reposWithStatus });
   } catch (error) {
     console.error("[list installation repos] Error:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to list repos" },
-      { status: 500 }
-    );
+    return apiError(error instanceof Error ? error.message : "Failed to list repos", { status: 500 });
   }
 }

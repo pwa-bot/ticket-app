@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db/client";
+import { apiError, apiSuccess } from "@/lib/api/response";
 import { syncRepo } from "@/db/sync";
 import { applyMutationGuards } from "@/lib/security/mutation-guard";
 import { requireRepoAccess } from "@/lib/security/repo-access";
@@ -36,7 +37,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
   });
 
   if (!repo) {
-    return NextResponse.json({ error: "Repo not found" }, { status: 404 });
+    return apiError("Repo not found", { status: 404 });
   }
 
   // Mark as syncing
@@ -68,10 +69,9 @@ export async function POST(_req: NextRequest, { params }: Params) {
         })
         .where(eq(schema.repoSyncState.repoId, repo.id));
 
-      return NextResponse.json({
-        ok: false,
-        error: result.error,
-        errorCode: result.errorCode,
+      return apiError(result.error ?? "Sync failed", {
+        status: 500,
+        legacy: { errorCode: result.errorCode },
       });
     }
 
@@ -90,8 +90,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
     // Also store snapshot if we have the index data
     // (The existing syncRepo function already stores in tickets table)
 
-    return NextResponse.json({
-      ok: true,
+    return apiSuccess({
       changed: result.changed,
       syncedAt: new Date().toISOString(),
     });
@@ -105,9 +104,6 @@ export async function POST(_req: NextRequest, { params }: Params) {
       })
       .where(eq(schema.repoSyncState.repoId, repo.id));
 
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Sync failed" },
-      { status: 500 }
-    );
+    return apiError(error instanceof Error ? error.message : "Sync failed", { status: 500 });
   }
 }

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { usePendingChangesSafe } from "@/lib/pending-changes";
+import { getApiErrorMessage } from "@/lib/api/client";
 import PendingBadge from "@/components/pending-badge";
 import { EditableSelect, EditableText } from "@/components/editable-field";
 import type { TicketState } from "@/lib/types";
@@ -131,7 +132,7 @@ export default function TicketDetailModal({ repo, ticketId, onClose, initialData
 
         if (!response.ok) {
           const data = await response.json().catch(() => ({}));
-          throw new Error(data.error || "Failed to load ticket detail");
+          throw new Error(getApiErrorMessage(data, "Failed to load ticket detail"));
         }
 
         const data = (await response.json()) as TicketDetail;

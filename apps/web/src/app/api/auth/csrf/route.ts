@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { apiError, apiSuccess } from "@/lib/api/response";
 import { isAuthFailureResponse, requireSession } from "@/lib/auth";
 import {
   CSRF_COOKIE_NAME,
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
 
     const existingToken = req.cookies.get(CSRF_COOKIE_NAME)?.value;
     const csrfToken = existingToken ?? issueCsrfToken();
-    const response = NextResponse.json({ csrfToken, enforced: isCsrfProtectionEnabled() });
+    const response = apiSuccess({ csrfToken, enforced: isCsrfProtectionEnabled() });
 
     if (!existingToken) {
       setCsrfCookie(response, csrfToken);
@@ -25,6 +26,6 @@ export async function GET(req: NextRequest) {
       return error;
     }
 
-    return NextResponse.json({ error: "Failed to issue CSRF token" }, { status: 500 });
+    return apiError("Failed to issue CSRF token", { status: 500 });
   }
 }

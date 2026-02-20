@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { apiError } from "@/lib/api/response";
 import { createOpaqueToken, shouldUseSecureCookies } from "@/lib/security/cookies";
 
 export const CSRF_COOKIE_NAME = "ticket_app_csrf";
@@ -56,6 +57,6 @@ export function assertCsrf(request: NextRequest): void {
   }
 
   if (!hasValidCsrfToken(request)) {
-    throw NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    throw apiError("Forbidden", { status: 403 });
   }
 }

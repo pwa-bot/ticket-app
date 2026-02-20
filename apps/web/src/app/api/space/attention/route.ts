@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { eq, inArray, and, ne } from "drizzle-orm";
 import { db, schema } from "@/db/client";
+import { apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
 import type { CiStatus, MergeReadiness } from "@/lib/attention";
 import { compareAttentionItems, getReasonCatalog, toReasonDetails, type AttentionReason } from "@/lib/attention-contract";
@@ -137,7 +138,7 @@ export async function GET(req: NextRequest) {
   });
 
   if (userInstalls.length === 0) {
-    return NextResponse.json({
+    return apiSuccess({
       items: [],
       repos: [],
       totals: {
@@ -178,7 +179,7 @@ export async function GET(req: NextRequest) {
       attentionTickets: 0,
     }));
 
-    return NextResponse.json({
+    return apiSuccess({
       items: [],
       repos: enabledRepos,
       totals: {
@@ -343,7 +344,7 @@ export async function GET(req: NextRequest) {
     attentionTickets: attentionByRepo.get(r.fullName) ?? 0,
   }));
 
-  return NextResponse.json({
+  return apiSuccess({
     items,
     repos: enabledRepos,
     totals: {

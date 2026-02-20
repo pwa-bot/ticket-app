@@ -1,6 +1,6 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { apiError } from "@/lib/api/response";
 import { isDevAuthBypassEnabled } from "@/lib/security/auth-bypass";
 
 const SESSION_COOKIE = "ticket_app_session";
@@ -101,7 +101,7 @@ export async function getSession(): Promise<SessionData | null> {
 export async function requireSession(): Promise<SessionData> {
   const session = await getSession();
   if (!session?.token || !session?.userId) {
-    throw NextResponse.json({ error: UNAUTHORIZED_MESSAGE }, { status: 401 });
+    throw apiError(UNAUTHORIZED_MESSAGE, { status: 401 });
   }
   return {
     userId: session.userId,

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { apiError, apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
 import { getTicketById } from "@/lib/github";
 import { hasRepoAccess } from "@/lib/security/repo-access";
@@ -15,21 +15,18 @@ export async function GET(request: Request, { params }: Params) {
   const repo = url.searchParams.get("repo");
 
   if (!repo) {
-    return NextResponse.json({ error: "Missing repo query parameter" }, { status: 400 });
+    return apiError("Missing repo query parameter", { status: 400 });
   }
 
   const [owner, repoName] = repo.split("/");
   if (!owner || !repoName || !(await hasRepoAccess(userId, `${owner}/${repoName}`))) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiError("Forbidden", { status: 403 });
   }
 
   try {
     const ticket = await getTicketById(token, repo, id);
-    return NextResponse.json(ticket);
+    return apiSuccess(ticket);
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to load ticket" },
-      { status: 500 },
-    );
+    return apiError(error instanceof Error ? error.message : "Failed to load ticket", { status: 500 });
   }
 }

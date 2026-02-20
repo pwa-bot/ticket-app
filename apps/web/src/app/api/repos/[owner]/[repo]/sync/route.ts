@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { apiError, apiSuccess } from "@/lib/api/response";
 import { isAuthFailureResponse } from "@/lib/auth";
 import { syncRepo, getRepo, reconcilePendingChanges } from "@/db/sync";
 import { applyMutationGuards } from "@/lib/security/mutation-guard";
@@ -42,16 +43,16 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     const result = await syncRepo(fullName, session.token, force);
 
     if (!result.success) {
-      return NextResponse.json(
-        { error: result.error, errorCode: result.errorCode },
-        { status: 500 }
-      );
+      return apiError(result.error ?? "Sync failed", {
+        status: 500,
+        legacy: { errorCode: result.errorCode },
+      });
     }
 
     // Also reconcile pending changes
     await reconcilePendingChanges(fullName, session.token);
 
-    return NextResponse.json({
+    return apiSuccess({
       success: true,
       changed: result.changed,
       ticketCount: result.ticketCount,
@@ -63,10 +64,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       return error;
     }
     console.error("[sync] Error:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
-    );
+    return apiError(error instanceof Error ? error.message : "Unknown error", { status: 500 });
   }
 }
 
@@ -83,13 +81,13 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     const repoRow = await getRepo(fullName);
 
     if (!repoRow) {
-      return NextResponse.json({
+      return apiSuccess({
         synced: false,
         message: "Repo not synced yet",
       });
     }
 
-    return NextResponse.json({
+    return apiSuccess({
       synced: true,
       syncStatus: repoRow.syncStatus,
       lastSyncedAt: repoRow.lastSyncedAt?.toISOString(),
@@ -101,9 +99,6 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       return error;
     }
     console.error("[sync] Error:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
-    );
+    return apiError(error instanceof Error ? error.message : "Unknown error", { status: 500 });
   }
 }

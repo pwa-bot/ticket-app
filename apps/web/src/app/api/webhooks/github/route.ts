@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { and, eq, inArray, notInArray } from "drizzle-orm";
 import { db, schema } from "@/db/client";
 import { upsertBlob, upsertTicketFromIndexEntry } from "@/db/sync";
+import { apiError, apiSuccess, readLegacyErrorMessage } from "@/lib/api/response";
 import { getInstallationOctokit } from "@/lib/github-app";
 import { createGithubWebhookService, type GithubWebhookStore } from "@/lib/services/github-webhook-service";
 
@@ -152,15 +153,19 @@ export async function POST(req: NextRequest) {
       deliveryId: req.headers.get("x-github-delivery"),
     });
 
-    return NextResponse.json(response.body, { status: response.status });
+    if (response.status >= 400) {
+      return apiError(readLegacyErrorMessage(response.body, "webhook_failed"), {
+        status: response.status,
+        legacy: typeof response.body === "object" && response.body ? (response.body as Record<string, unknown>) : {},
+      });
+    }
+
+    return apiSuccess(response.body, { status: response.status });
   } catch (error) {
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "webhook_failed" },
-      { status: 500 },
-    );
+    return apiError(error instanceof Error ? error.message : "webhook_failed", { status: 500 });
   }
 }
 
 export async function GET() {
-  return NextResponse.json({ ok: true, service: "github-webhook" });
+  return apiSuccess({ service: "github-webhook" });
 }

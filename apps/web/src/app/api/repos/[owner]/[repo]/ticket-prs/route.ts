@@ -5,9 +5,8 @@
  */
 
 import { eq } from "drizzle-orm";
-import { NextResponse } from "next/server";
-import type { ApiEnvelope } from "@ticketdotapp/core";
 import { db, schema } from "@/db/client";
+import { apiSuccess } from "@/lib/api/response";
 import { requireRepoAccess } from "@/lib/security/repo-access";
 
 type TicketPrInfo = {
@@ -29,8 +28,6 @@ type TicketPrInfo = {
 interface RouteParams {
   params: Promise<{ owner: string; repo: string }>;
 }
-
-type TicketPrsResponse = { prs: TicketPrInfo[] };
 
 function mapStatus(row: {
   merged: boolean | null;
@@ -65,6 +62,5 @@ export async function GET(_req: Request, { params }: RouteParams) {
     }),
   }));
 
-  const resp: ApiEnvelope<TicketPrsResponse> = { ok: true, data: { prs } };
-  return NextResponse.json(resp);
+  return apiSuccess({ prs });
 }

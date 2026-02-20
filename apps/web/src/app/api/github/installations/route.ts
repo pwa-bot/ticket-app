@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db/client";
+import { apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
 
 /**
@@ -78,7 +78,7 @@ export async function GET() {
   });
 
   if (userInstallations.length === 0) {
-    return NextResponse.json({ installations: [] });
+    return apiSuccess({ installations: [] });
   }
 
   const installationIds = userInstallations.map((ui) => ui.installationId);
@@ -97,5 +97,5 @@ export async function GET() {
     }
   }
 
-  return NextResponse.json({ installations });
+  return apiSuccess({ installations });
 }

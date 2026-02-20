@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
+import { getApiErrorMessage } from "@/lib/api/client";
 
 export default function CallbackClient() {
   const searchParams = useSearchParams();
@@ -31,7 +32,7 @@ export default function CallbackClient() {
         const json = await res.json();
         
         if (!json.ok) {
-          throw new Error(json.error ?? "Failed to register installation");
+          throw new Error(getApiErrorMessage(json, "Failed to register installation"));
         }
 
         setStatus("done");

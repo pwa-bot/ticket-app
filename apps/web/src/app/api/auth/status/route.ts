@@ -1,13 +1,13 @@
-import { NextResponse } from "next/server";
 import { isUnauthorizedResponse, requireSession } from "@/lib/auth";
+import { apiSuccess } from "@/lib/api/response";
 
 export async function GET() {
   try {
     await requireSession();
-    return NextResponse.json({ authenticated: true });
+    return apiSuccess({ authenticated: true });
   } catch (error) {
     if (isUnauthorizedResponse(error)) {
-      return NextResponse.json({ authenticated: false });
+      return apiSuccess({ authenticated: false });
     }
     throw error;
   }

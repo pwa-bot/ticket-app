@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { and, asc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { db, schema } from "@/db/client";
+import { apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
 import type { Priority, TicketState } from "@/lib/types";
 import { assertNoUnauthorizedRepos } from "@/lib/security/repo-access";
@@ -118,7 +119,7 @@ export async function GET(req: NextRequest) {
   });
 
   if (userInstalls.length === 0) {
-    return NextResponse.json({
+    return apiSuccess({
       tickets: [],
       repos: [],
       pagination: { limit: DEFAULT_LIMIT, offset: 0, total: 0, hasMore: false },
@@ -135,7 +136,7 @@ export async function GET(req: NextRequest) {
   });
 
   if (repos.length === 0) {
-    return NextResponse.json({
+    return apiSuccess({
       tickets: [],
       repos: [],
       pagination: { limit: DEFAULT_LIMIT, offset: 0, total: 0, hasMore: false },
@@ -180,7 +181,7 @@ export async function GET(req: NextRequest) {
   }));
 
   if (targetRepos.length === 0) {
-    return NextResponse.json({
+    return apiSuccess({
       tickets: [],
       repos: repoSummaries,
       pagination: { limit, offset, total: 0, hasMore: false },
@@ -281,7 +282,7 @@ export async function GET(req: NextRequest) {
     };
   });
 
-  return NextResponse.json({
+  return apiSuccess({
     tickets,
     repos: repoSummaries,
     pagination: {

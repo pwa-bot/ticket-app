@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db, schema } from "@/db/client";
+import { apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
 import { assertNoUnauthorizedRepos } from "@/lib/security/repo-access";
 
@@ -94,7 +95,7 @@ export async function GET(req: NextRequest) {
   });
 
   if (userInstalls.length === 0) {
-    return NextResponse.json(emptyResponse([], 0, 0) satisfies SpaceIndexResponse);
+    return apiSuccess(emptyResponse([], 0, 0) satisfies SpaceIndexResponse);
   }
 
   const installationIds = userInstalls.map((ui) => ui.installationId);
@@ -126,7 +127,7 @@ export async function GET(req: NextRequest) {
   }
 
   if (targetRepos.length === 0) {
-    return NextResponse.json(
+    return apiSuccess(
       emptyResponse(
         Array.from(repoSummaryMap.values()),
         repos.length,
@@ -195,7 +196,7 @@ export async function GET(req: NextRequest) {
     };
   });
 
-  return NextResponse.json({
+  return apiSuccess({
     tickets,
     repos: Array.from(repoSummaryMap.values()),
     totals: {

@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
 import { eq, inArray } from "drizzle-orm";
 import { db, schema } from "@/db/client";
+import { apiError, apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
 
 /**
@@ -19,7 +19,7 @@ export async function GET() {
     });
 
     if (userInstallations.length === 0) {
-      return NextResponse.json({ repos: [] });
+      return apiSuccess({ repos: [] });
     }
 
     const installationIds = userInstallations.map((ui) => ui.installationId);
@@ -29,7 +29,7 @@ export async function GET() {
       where: inArray(schema.repos.installationId, installationIds),
     });
 
-    return NextResponse.json({
+    return apiSuccess({
       repos: repos.map((r) => ({
         full_name: r.fullName,
         name: r.repo,
@@ -40,9 +40,6 @@ export async function GET() {
     });
   } catch (error) {
     console.error("[/api/repos] Error loading repositories:", error);
-    return NextResponse.json(
-      { error: "Failed to load repositories" },
-      { status: 500 },
-    );
+    return apiError("Failed to load repositories", { status: 500 });
   }
 }

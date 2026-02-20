@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { apiSuccess } from "@/lib/api/response";
 
 /**
  * GET /api/github/app/install-url
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
   
   // Note: GitHub App redirects to the configured Setup URL, not this redirect param
   // This is just for reference
-  return NextResponse.json({ 
+  return apiSuccess({
     url: installUrl,
     setupUrl: `${baseUrl}${redirect}`,
   });

@@ -15,6 +15,7 @@ import {
 } from "@/lib/attention";
 import type { Priority, TicketIndex, TicketState } from "@/lib/types";
 import { BOARD_LABELS, BOARD_STATES } from "@/lib/utils";
+import { unwrapApiData } from "@/lib/api/client";
 
 interface MultiRepoAttentionProps {
   repos: string[];
@@ -145,7 +146,8 @@ export default function MultiRepoAttention({ repos }: MultiRepoAttentionProps) {
               return { repo: fullRepo, links: [] as TicketPrEntry[] };
             }
 
-            const links = (await response.json()) as TicketPrEntry[];
+            const json = await response.json();
+            const links = unwrapApiData<{ entries: TicketPrEntry[] }>(json).entries ?? [];
             return { repo: fullRepo, links };
           }),
         );

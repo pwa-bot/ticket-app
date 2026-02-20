@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db/client";
+import { apiError, apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
 import { getAppOctokit } from "@/lib/github-app";
 
@@ -16,7 +17,7 @@ export async function POST(req: NextRequest) {
   const { installationId } = body as { installationId?: number };
 
   if (!installationId || typeof installationId !== "number") {
-    return NextResponse.json({ error: "installationId required" }, { status: 400 });
+    return apiError("installationId required", { status: 400 });
   }
 
   try {
@@ -68,8 +69,7 @@ export async function POST(req: NextRequest) {
       })
       .onConflictDoNothing();
 
-    return NextResponse.json({
-      ok: true,
+    return apiSuccess({
       installation: {
         installationId,
         accountLogin,
@@ -78,9 +78,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("[register installation] Error:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to register installation" },
-      { status: 500 }
-    );
+    return apiError(error instanceof Error ? error.message : "Failed to register installation", { status: 500 });
   }
 }

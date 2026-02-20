@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
-import { NextResponse } from "next/server";
 import { db, schema } from "@/db/client";
+import { apiError, apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
 import { hasRepoAccess } from "@/lib/security/repo-access";
 
@@ -11,12 +11,12 @@ export async function GET(request: Request) {
   const repo = url.searchParams.get("repo");
 
   if (!repo) {
-    return NextResponse.json({ error: "Missing repo query parameter" }, { status: 400 });
+    return apiError("Missing repo query parameter", { status: 400 });
   }
 
   const [owner, repoName] = repo.split("/");
   if (!owner || !repoName || !(await hasRepoAccess(userId, `${owner}/${repoName}`))) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiError("Forbidden", { status: 403 });
   }
 
   const [repoRow, tickets] = await Promise.all([
@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     db.query.tickets.findMany({ where: eq(schema.tickets.repoFullName, repo) }),
   ]);
 
-  return NextResponse.json({
+  return apiSuccess({
     format_version: 1,
     tickets: tickets.map((t) => ({
       id: t.id,

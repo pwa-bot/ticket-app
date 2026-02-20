@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
-import { NextResponse } from "next/server";
 import { db, schema } from "@/db/client";
+import { apiSuccess } from "@/lib/api/response";
 import type { CiStatus } from "@/lib/attention";
 import { requireRepoAccess } from "@/lib/security/repo-access";
 
@@ -54,5 +54,5 @@ export async function GET(_request: Request, { params }: Params) {
     prs: prs.sort((a, b) => b.number - a.number),
   }));
 
-  return NextResponse.json(entries);
+  return apiSuccess({ entries });
 }
