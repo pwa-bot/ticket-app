@@ -76,6 +76,7 @@ function getOnboardingCallbackReturnTo(url: URL): string {
 }
 
 export async function GET(request: Request) {
+  try {
   const clientId = process.env.GITHUB_CLIENT_ID;
   const clientSecret = process.env.GITHUB_CLIENT_SECRET;
 
@@ -318,4 +319,10 @@ export async function GET(request: Request) {
   setCsrfCookie(response, issueCsrfToken());
 
   return response;
+  } catch (error) {
+    console.error("[/api/auth/github] Error:", error);
+    const fallback = new URL("/api/auth/reconnect", getCanonicalBaseUrl(request));
+    fallback.searchParams.set("returnTo", "/space");
+    return NextResponse.redirect(fallback);
+  }
 }
