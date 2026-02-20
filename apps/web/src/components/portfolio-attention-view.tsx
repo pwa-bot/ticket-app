@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import AttentionTable from "@/components/attention-table";
 import { SavedViewsDropdown, SaveViewBanner } from "@/components/saved-views";
 import TicketDetailModal from "@/components/ticket-detail-modal";
@@ -173,20 +173,31 @@ function normalizeJumpId(value: string): { shortId: string; displayId: string; r
 
 export default function PortfolioAttentionView() {
   const pathname = usePathname();
-  const router = useRouter();
   const searchParams = useSearchParams();
 
-  const activeTab = searchParams.get("tab") === "tickets" ? "tickets" : "attention";
-  const repoParam = searchParams.get("repos");
-  const searchQuery = searchParams.get("q") ?? "";
-  // Exclude modal params from the view query so that saving a view
-  // doesn't pin an open modal state into the saved filter.
+  const [activeTab, setActiveTab] = useState<"attention" | "tickets">("attention");
+  const [repoParam, setRepoParam] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [selectedTicketRepo, setSelectedTicketRepo] = useState<string | null>(null);
+
+  useEffect(() => {
+    setActiveTab(searchParams.get("tab") === "tickets" ? "tickets" : "attention");
+    setRepoParam(searchParams.get("repos"));
+    setSearchQuery(searchParams.get("q") ?? "");
+    setSelectedTicketId(searchParams.get("ticket"));
+    setSelectedTicketRepo(searchParams.get("ticketRepo"));
+    // Initialize from URL once; after that keep UI local to avoid route reload churn.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const currentQuery = useMemo(() => {
-    const p = new URLSearchParams(searchParams.toString());
-    p.delete("ticket");
-    p.delete("ticketRepo");
+    const p = new URLSearchParams();
+    if (activeTab === "tickets") p.set("tab", "tickets");
+    if (repoParam) p.set("repos", repoParam);
+    if (searchQuery) p.set("q", searchQuery);
     return p.toString();
-  }, [searchParams]);
+  }, [activeTab, repoParam, searchQuery]);
 
   const [attentionData, setAttentionData] = useState<AttentionResponse | null>(null);
   const [indexData, setIndexData] = useState<SpaceIndexResponse | null>(null);
@@ -340,36 +351,45 @@ export default function PortfolioAttentionView() {
     });
   }, [activeTab, attentionData, error, loading, indexData]);
 
-  const selectedTicketId = searchParams.get("ticket");
-  const selectedTicketRepo = searchParams.get("ticketRepo");
+  function replaceUrl(params: URLSearchParams) {
+    const query = params.toString();
+    const next = query ? `${pathname}?${query}` : pathname;
+    window.history.replaceState(null, "", next);
+  }
 
   function setQueryParam(key: string, value?: string) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (!value) {
-      params.delete(key);
-    } else {
-      params.set(key, value);
+    if (key === "tab") {
+      setActiveTab(value === "tickets" ? "tickets" : "attention");
+    } else if (key === "repos") {
+      setRepoParam(value ?? null);
+    } else if (key === "q") {
+      setSearchQuery(value ?? "");
     }
 
-    const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname);
+    const params = new URLSearchParams(currentQuery);
+    if (!value) params.delete(key); else params.set(key, value);
+    if (selectedTicketId) params.set("ticket", selectedTicketId);
+    if (selectedTicketRepo) params.set("ticketRepo", selectedTicketRepo);
+    replaceUrl(params);
   }
 
   function onOpenTicket(repo: string, ticketId: string) {
     trackWebEvent("dashboard_activation_open_ticket", { repo, ticketId, tab: activeTab });
-    const params = new URLSearchParams(searchParams.toString());
+    setSelectedTicketId(ticketId);
+    setSelectedTicketRepo(repo);
+    const params = new URLSearchParams(currentQuery);
     params.set("ticket", ticketId);
     params.set("ticketRepo", repo);
-    const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname);
+    replaceUrl(params);
   }
 
   function onCloseTicket() {
-    const params = new URLSearchParams(searchParams.toString());
+    setSelectedTicketId(null);
+    setSelectedTicketRepo(null);
+    const params = new URLSearchParams(currentQuery);
     params.delete("ticket");
     params.delete("ticketRepo");
-    const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname);
+    replaceUrl(params);
   }
 
   const allRepos = (attentionData?.repos ?? indexData?.repos ?? []) as EnabledRepoSummary[];
