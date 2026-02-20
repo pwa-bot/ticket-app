@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T22:33:53.326Z",
+  "generated_at": "2026-02-20T22:33:53.569Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -115,6 +115,20 @@
       ],
       "path": ".tickets/tickets/01KHYK08XSFYB8G5WTG1PE0TH8.md",
       "display_id": "TK-01KHYK08-4"
+    },
+    {
+      "id": "01KHYK09MJSB6HPX303CYRN4K0",
+      "short_id": "01KHYK09",
+      "title": "Process Define QA handoff rules and ticket surfacing conventions",
+      "state": "backlog",
+      "priority": "p1",
+      "labels": [
+        "process",
+        "qa",
+        "workflow"
+      ],
+      "path": ".tickets/tickets/01KHYK09MJSB6HPX303CYRN4K0.md",
+      "display_id": "TK-01KHYK09-3"
     },
     {
       "id": "01KHYK095CXZEQB50WYR9ZGSWG",
