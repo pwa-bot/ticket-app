@@ -205,6 +205,7 @@ export const userInstallations = pgTable(
   },
   (t) => ({
     pk: primaryKey({ columns: [t.userId, t.installationId] }),
+    userIdx: index("user_installations_user_idx").on(t.userId),
     installationIdx: index("user_installations_installation_idx").on(t.installationId),
   })
 );

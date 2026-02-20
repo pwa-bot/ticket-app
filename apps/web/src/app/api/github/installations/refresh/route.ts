@@ -2,80 +2,11 @@ import { eq } from "drizzle-orm";
 import { db, schema } from "@/db/client";
 import { apiError, apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
+import { hydrateInstallationRepos } from "@/lib/github/hydrate-installation-repos";
 
 interface GithubInstallation {
   id: number;
   account: { login: string; type: string } | null;
-}
-
-interface GithubRepo {
-  name: string;
-  full_name: string;
-  default_branch: string | null;
-  owner: { login: string };
-}
-
-async function hydrateReposForInstallation(installationDbId: number, githubInstallationId: number, token: string): Promise<number> {
-  let hydrated = 0;
-  let page = 1;
-
-  while (true) {
-    const reposResponse = await fetch(
-      `https://api.github.com/user/installations/${githubInstallationId}/repositories?per_page=100&page=${page}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/vnd.github+json",
-        },
-      }
-    );
-
-    if (!reposResponse.ok) {
-      throw new Error(`GitHub repositories API error: ${reposResponse.status}`);
-    }
-
-    const reposData = (await reposResponse.json()) as { repositories: GithubRepo[] };
-
-    for (const ghRepo of reposData.repositories) {
-      const fullName = ghRepo.full_name;
-      const existing = await db.query.repos.findFirst({
-        where: eq(schema.repos.fullName, fullName),
-      });
-
-      if (!existing) {
-        await db.insert(schema.repos).values({
-          id: crypto.randomUUID(),
-          installationId: installationDbId,
-          owner: ghRepo.owner.login,
-          repo: ghRepo.name,
-          fullName,
-          defaultBranch: ghRepo.default_branch ?? "main",
-          enabled: false,
-        });
-      } else {
-        await db
-          .update(schema.repos)
-          .set({
-            installationId: installationDbId,
-            owner: ghRepo.owner.login,
-            repo: ghRepo.name,
-            defaultBranch: ghRepo.default_branch ?? existing.defaultBranch,
-            updatedAt: new Date(),
-          })
-          .where(eq(schema.repos.id, existing.id));
-      }
-
-      hydrated += 1;
-    }
-
-    if (reposData.repositories.length < 100) {
-      break;
-    }
-
-    page += 1;
-  }
-
-  return hydrated;
 }
 
 /**
@@ -148,7 +79,8 @@ export async function POST() {
         .onConflictDoNothing();
 
       try {
-        hydratedRepoCount += await hydrateReposForInstallation(installationDbId, inst.id, token);
+        const result = await hydrateInstallationRepos(installationDbId, inst.id, token);
+        hydratedRepoCount += result.hydratedRepoCount;
       } catch (error) {
         console.error("[refresh installations] repo hydration failed for", inst.id, error);
       }

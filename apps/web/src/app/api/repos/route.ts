@@ -3,18 +3,15 @@ import { eq, inArray } from "drizzle-orm";
 import { db, schema } from "@/db/client";
 import { apiError, apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
+import { hydrateInstallationRepos } from "@/lib/github/hydrate-installation-repos";
 
 interface GithubInstallation {
   id: number;
   account: { login: string; type: string } | null;
 }
 
-interface GithubRepo {
-  name: string;
-  full_name: string;
-  default_branch: string | null;
-  owner: { login: string };
-}
+const INSTALLATION_REHYDRATE_TTL_MS = 10 * 60 * 1000;
+const MAX_STALE_INSTALLATION_REHYDRATES_PER_REQUEST = 1;
 
 function shouldRefresh(request: NextRequest): boolean {
   const value = request.nextUrl.searchParams.get("refresh");
@@ -74,65 +71,6 @@ async function syncUserInstallationsFromGithub(userId: string, token: string): P
   }
 }
 
-async function hydrateReposForInstallation(installationDbId: number, githubInstallationId: number, token: string): Promise<void> {
-  let page = 1;
-
-  while (true) {
-    const response = await fetch(
-      `https://api.github.com/user/installations/${githubInstallationId}/repositories?per_page=100&page=${page}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/vnd.github+json",
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`GitHub repo hydration failed: ${response.status}`);
-    }
-
-    const data = (await response.json()) as { repositories: GithubRepo[] };
-
-    for (const ghRepo of data.repositories) {
-      const fullName = ghRepo.full_name;
-      const existingRepo = await db.query.repos.findFirst({
-        where: eq(schema.repos.fullName, fullName),
-      });
-
-      if (!existingRepo) {
-        await db.insert(schema.repos).values({
-          id: crypto.randomUUID(),
-          installationId: installationDbId,
-          owner: ghRepo.owner.login,
-          repo: ghRepo.name,
-          fullName,
-          defaultBranch: ghRepo.default_branch ?? "main",
-          enabled: false,
-        });
-        continue;
-      }
-
-      await db
-        .update(schema.repos)
-        .set({
-          installationId: installationDbId,
-          owner: ghRepo.owner.login,
-          repo: ghRepo.name,
-          defaultBranch: ghRepo.default_branch ?? existingRepo.defaultBranch,
-          updatedAt: new Date(),
-        })
-        .where(eq(schema.repos.id, existingRepo.id));
-    }
-
-    if (data.repositories.length < 100) {
-      break;
-    }
-
-    page += 1;
-  }
-}
-
 /**
  * GET /api/repos
  *
@@ -142,8 +80,8 @@ async function hydrateReposForInstallation(installationDbId: number, githubInsta
  * listing repos, then force-hydrates repos for each installation.
  *
  * Without refresh, hydration is lazy and only runs for installations that currently
- * have zero cached repos. This keeps normal page loads fast while still self-healing
- * missing personal repos when first discovered.
+ * have zero cached repos, plus at most one stale installation (TTL-based) to avoid
+ * long-lived stale repo lists.
  */
 export async function GET(request: NextRequest) {
   const { userId, token } = await requireSession();
@@ -168,10 +106,36 @@ export async function GET(request: NextRequest) {
       where: inArray(schema.repos.installationId, installationIds),
     });
 
-    const installationsWithRepos = new Set(repos.map((repo) => repo.installationId).filter((id): id is number => typeof id === "number"));
+    const reposByInstallation = new Map<number, typeof repos>();
+    for (const repo of repos) {
+      if (typeof repo.installationId !== "number") continue;
+      const current = reposByInstallation.get(repo.installationId) ?? [];
+      current.push(repo);
+      reposByInstallation.set(repo.installationId, current);
+    }
+
+    const now = Date.now();
+    const staleInstallations = installationIds
+      .filter((id) => (reposByInstallation.get(id)?.length ?? 0) > 0)
+      .filter((id) => {
+        const newestUpdatedAt = reposByInstallation
+          .get(id)
+          ?.reduce<number>((latest, repo) => {
+            const updated = repo.updatedAt?.getTime() ?? 0;
+            return updated > latest ? updated : latest;
+          }, 0) ?? 0;
+
+        if (!newestUpdatedAt) return true;
+        return now - newestUpdatedAt > INSTALLATION_REHYDRATE_TTL_MS;
+      })
+      .slice(0, MAX_STALE_INSTALLATION_REHYDRATES_PER_REQUEST);
+
     const installationsToHydrate = refresh
       ? installationIds
-      : installationIds.filter((id) => !installationsWithRepos.has(id));
+      : [
+          ...installationIds.filter((id) => (reposByInstallation.get(id)?.length ?? 0) === 0),
+          ...staleInstallations,
+        ];
 
     if (installationsToHydrate.length > 0) {
       for (const installationDbId of installationsToHydrate) {
@@ -184,7 +148,15 @@ export async function GET(request: NextRequest) {
         }
 
         try {
-          await hydrateReposForInstallation(installationDbId, installation.githubInstallationId, token);
+          const result = await hydrateInstallationRepos(installationDbId, installation.githubInstallationId, token);
+          console.info("[/api/repos] hydrated installation", {
+            installationDbId,
+            githubInstallationId: installation.githubInstallationId,
+            hydratedRepoCount: result.hydratedRepoCount,
+            pagesFetched: result.pagesFetched,
+            totalCountHint: result.totalCountHint,
+            reason: refresh ? "forced_refresh" : "stale_or_empty_cache",
+          });
         } catch (error) {
           console.error("[/api/repos] hydration failed for installation", installation.githubInstallationId, error);
         }

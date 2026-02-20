@@ -35,20 +35,23 @@ test("/api/auth/github validates and honors returnTo", async () => {
   assert.match(source, /response\.cookies\.set\(cookieNames\.oauthReturnTo, "", expiredCookieOptions\(\)\)/, "oauth returnTo cookie should be cleared after login");
 });
 
-test("/api/repos is cache-first by default and does not unconditionally call GitHub installations API", async () => {
+test("/api/repos is cache-first by default and only does expensive GitHub syncs when needed", async () => {
   const source = await readSource("app/api/repos/route.ts");
 
   assert.match(source, /const refresh = shouldRefresh\(request\)/, "should gate refresh behavior behind an explicit refresh flag");
   assert.match(source, /if \(refresh\) \{[\s\S]*syncUserInstallationsFromGithub\(userId, token\)/, "should only sync installations when refresh is requested");
-  assert.match(source, /installationsToHydrate = refresh[\s\S]*: installationIds\.filter\(\(id\) => !installationsWithRepos\.has\(id\)\)/, "default path should hydrate only installations with zero cached repos");
+  assert.match(source, /INSTALLATION_REHYDRATE_TTL_MS/, "default path should support stale-installation rehydration");
+  assert.match(source, /MAX_STALE_INSTALLATION_REHYDRATES_PER_REQUEST/, "default path should cap stale hydration work per request");
 });
 
 test("refresh flows hydrate repos for personal installations so repo list can include newly installed repos", async () => {
   const reposRouteSource = await readSource("app/api/repos/route.ts");
   const refreshRouteSource = await readSource("app/api/github/installations/refresh/route.ts");
+  const helperSource = await readSource("lib/github/hydrate-installation-repos.ts");
 
-  assert.match(reposRouteSource, /\/user\/installations\/\$\{githubInstallationId\}\/repositories/, "repos route should support hydration from GitHub installation repositories endpoint");
-  assert.match(refreshRouteSource, /hydrateReposForInstallation\(/, "installations refresh endpoint should hydrate repos");
+  assert.match(helperSource, /\/user\/installations\/\$\{githubInstallationId\}\/repositories/, "hydration helper should use GitHub installation repositories endpoint");
+  assert.match(reposRouteSource, /hydrateInstallationRepos\(/, "repos route should hydrate via shared helper");
+  assert.match(refreshRouteSource, /hydrateInstallationRepos\(/, "installations refresh endpoint should hydrate via shared helper");
   assert.match(refreshRouteSource, /hydratedRepoCount/, "refresh response should report hydration work");
 });
 
