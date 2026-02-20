@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T00:16:13.504Z",
+  "generated_at": "2026-02-20T01:18:21.256Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -337,21 +337,6 @@
       "path": ".tickets/tickets/01KHS9PES0SP0ZAJAAVQYW98E4.md"
     },
     {
-      "id": "01KHT40R161HJ71E5QEKP02SM8",
-      "short_id": "01KHT40R",
-      "display_id": "TK-01KHT40R",
-      "title": "Merge readiness signal (checks + review + mergeable)",
-      "state": "in_progress",
-      "priority": "p0",
-      "labels": [
-        "merge",
-        "github"
-      ],
-      "assignee": "agent:openclaw",
-      "reviewer": "human:morgan",
-      "path": ".tickets/tickets/01KHT40R161HJ71E5QEKP02SM8.md"
-    },
-    {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
       "short_id": "01KHQ0K0",
       "display_id": "TK-01KHQ0K0",
@@ -478,6 +463,21 @@
       "assignee": "agent:openclaw",
       "reviewer": "human:morgan",
       "path": ".tickets/tickets/01KHT40QGXG6EWEA41J6ZJEVTC.md"
+    },
+    {
+      "id": "01KHT40R161HJ71E5QEKP02SM8",
+      "short_id": "01KHT40R",
+      "display_id": "TK-01KHT40R",
+      "title": "Merge readiness signal (checks + review + mergeable)",
+      "state": "done",
+      "priority": "p0",
+      "labels": [
+        "merge",
+        "github"
+      ],
+      "assignee": "agent:openclaw",
+      "reviewer": "human:morgan",
+      "path": ".tickets/tickets/01KHT40R161HJ71E5QEKP02SM8.md"
     },
     {
       "id": "01KHT40SNQEEQW7G0DP1CWW6VM",
