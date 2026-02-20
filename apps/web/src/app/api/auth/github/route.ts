@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { apiError } from "@/lib/api/response";
 import { cookieNames, encryptToken, isUnauthorizedResponse, requireSession } from "@/lib/auth";
 import { normalizeReturnTo } from "@/lib/auth-return-to";
+import { getCanonicalBaseUrl, toCanonicalUrl } from "@/lib/app-url";
 import { db, schema } from "@/db/client";
 import {
   expiredCookieOptions,
@@ -11,11 +12,6 @@ import {
   sessionCookieOptions,
 } from "@/lib/security/cookies";
 import { issueCsrfToken, setCsrfCookie } from "@/lib/security/csrf";
-
-function getBaseUrl(request: Request): string {
-  const url = new URL(request.url);
-  return `${url.protocol}//${url.host}`;
-}
 
 function readCookieValue(request: Request, cookieName: string): string | null {
   const cookieHeader = request.headers.get("cookie") ?? "";
@@ -80,7 +76,7 @@ export async function GET(request: Request) {
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
   const installationId = url.searchParams.get("installation_id");
-  const redirectUri = `${getBaseUrl(request)}/api/auth/github`;
+  const redirectUri = `${getCanonicalBaseUrl(request)}/api/auth/github`;
 
   // Check for force re-auth (from reconnect flow)
   const forceReauth = url.searchParams.get("force") === "1";
@@ -91,7 +87,7 @@ export async function GET(request: Request) {
   // If user already has a valid session and no OAuth params, redirect to requested destination.
   // Unless force=1 which means we want to re-authenticate.
   if (!code && !installationId && !forceReauth && await hasSession()) {
-    return NextResponse.redirect(new URL(requestedReturnTo, request.url));
+    return NextResponse.redirect(toCanonicalUrl(request, requestedReturnTo));
   }
 
   // Case 1: Start OAuth flow
@@ -115,7 +111,7 @@ export async function GET(request: Request) {
   if (installationId && !code) {
     // User already has a session, continue onboarding callback flow if possible
     if (await hasSession()) {
-      return NextResponse.redirect(new URL(installationReturnTo, request.url));
+      return NextResponse.redirect(toCanonicalUrl(request, installationReturnTo));
     }
 
     // No session, need to log in first
@@ -136,7 +132,7 @@ export async function GET(request: Request) {
 
   // Case 3: No code (shouldn't happen)
   if (!code) {
-    return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.redirect(toCanonicalUrl(request, "/"));
   }
 
   // Validate state
@@ -290,7 +286,7 @@ export async function GET(request: Request) {
     githubLogin: githubUser.login,
   });
 
-  const response = NextResponse.redirect(new URL(redirectTo, request.url));
+  const response = NextResponse.redirect(toCanonicalUrl(request, redirectTo));
   response.cookies.set(cookieNames.session, encryptToken(sessionData), sessionCookieOptions());
   response.cookies.set(cookieNames.oauthState, "", expiredCookieOptions());
   response.cookies.set(cookieNames.oauthReturnTo, "", expiredCookieOptions());

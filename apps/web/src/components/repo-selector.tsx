@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { RateLimitError, isRateLimitError } from "@/components/rate-limit-error";
+import { getApiErrorMessage } from "@/lib/api/client";
+import { shouldShowReconnectCta } from "@/lib/auth-errors";
 
 interface RepoSummary {
   id: number;
@@ -19,13 +21,18 @@ interface Installation {
   accountType: string;
 }
 
+type RepoLoadError = {
+  message: string;
+  status?: number;
+};
+
 export default function RepoSelector() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [repos, setRepos] = useState<RepoSummary[]>([]);
   const [installations, setInstallations] = useState<Installation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<RepoLoadError | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
 
   useEffect(() => {
@@ -51,19 +58,34 @@ export default function RepoSelector() {
         ]);
 
         if (!reposResponse.ok) {
-          throw new Error("Failed to load repositories");
+          let payload: unknown = null;
+          try {
+            payload = await reposResponse.json();
+          } catch {
+            // ignore malformed/non-json error bodies
+          }
+
+          throw {
+            status: reposResponse.status,
+            message: getApiErrorMessage(payload, "Failed to load repositories"),
+          } satisfies RepoLoadError;
         }
 
         const reposData = (await reposResponse.json()) as { repos: RepoSummary[] };
         setRepos(reposData.repos);
-        
+
         if (installationsResponse.ok) {
           const installationsData = (await installationsResponse.json()) as { installations: Installation[] };
           setInstallations(installationsData.installations ?? []);
         }
       } catch (err) {
         if (!controller.signal.aborted) {
-          setError(err instanceof Error ? err.message : "Unknown error");
+          if (typeof err === "object" && err !== null && "message" in err) {
+            const typed = err as RepoLoadError;
+            setError({ message: typed.message, status: typed.status });
+          } else {
+            setError({ message: "Unknown error" });
+          }
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -78,34 +100,12 @@ export default function RepoSelector() {
   }, []);
 
   const selectedSet = useMemo(() => new Set(selected), [selected]);
-  
+
   // All useMemo hooks MUST be before early returns (React hooks rules)
   const installationLogins = useMemo(
     () => new Set(installations.map((i) => i.accountLogin.toLowerCase())),
     [installations]
   );
-  
-  // Unused computed value - commented out to fix linting
-  // const repoOwners = useMemo(() => {
-  //   const owners = new Map<string, { count: number; hasApp: boolean }>();
-  //   for (const repo of repos) {
-  //     const owner = repo.full_name.split("/")[0];
-  //     if (!owner) continue;
-  //     const existing = owners.get(owner) || { count: 0, hasApp: false };
-  //     existing.count++;
-  //     existing.hasApp = installationLogins.has(owner.toLowerCase());
-  //     owners.set(owner, existing);
-  //   }
-  //   return owners;
-  // }, [repos, installationLogins]);
-
-  // Unused computed value - commented out to fix linting
-  // const ownersNeedingInstall = useMemo(() => 
-  //   Array.from(repoOwners.entries())
-  //     .filter(([, info]) => !info.hasApp)
-  //     .map(([owner]) => owner),
-  //   [repoOwners]
-  // );
 
   function toggleRepo(fullName: string) {
     setSelected((current) => {
@@ -135,32 +135,32 @@ export default function RepoSelector() {
   }
 
   if (error) {
-    const isAuthError = error.includes("authentication") || error.includes("expired") || error.includes("401");
-    
-    if (isRateLimitError(error)) {
+    const isAuthError = shouldShowReconnectCta(error.status);
+
+    if (isRateLimitError(error.message)) {
       return (
         <RateLimitError
-          error={error}
+          error={error.message}
           onRetry={() => window.location.reload()}
-          
+
         />
       );
     }
-    
+
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
         <p className="text-sm font-medium text-amber-800">
           {isAuthError ? "GitHub connection expired" : "Failed to load repositories"}
         </p>
         <p className="mt-1 text-sm text-amber-700">
-          {isAuthError 
+          {isAuthError
             ? "Your GitHub authorization has expired. Click below to reconnect."
-            : error
+            : error.message
           }
         </p>
         {isAuthError && (
           <a
-            href="/api/auth/reconnect"
+            href="/api/auth/reconnect?returnTo=%2Fspace"
             className="mt-4 inline-block rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
           >
             Reconnect GitHub
@@ -189,7 +189,7 @@ export default function RepoSelector() {
         <ul className="divide-y divide-slate-200">
           {repos.map((repo) => {
             const hasApp = hasAppAccess(repo.full_name);
-            
+
             return (
               <li key={repo.id} className="flex items-center justify-between gap-4 p-4">
                 <label className="flex items-center gap-3">

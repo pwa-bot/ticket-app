@@ -31,7 +31,7 @@ test("/api/auth/github validates and honors returnTo", async () => {
   assert.match(source, /normalizeReturnTo\(/, "auth route should sanitize requested returnTo values");
   assert.match(source, /cookieNames\.oauthReturnTo/, "auth route should persist returnTo across OAuth round-trip");
   assert.match(source, /const finalReturnTo = normalizeReturnTo\(/, "auth route should compute final safe returnTo");
-  assert.match(source, /NextResponse\.redirect\(new URL\(requestedReturnTo, request\.url\)\)/, "existing sessions should be redirected to returnTo");
+  assert.match(source, /toCanonicalUrl\(request, requestedReturnTo\)/, "existing sessions should be redirected to returnTo on canonical host");
   assert.match(source, /response\.cookies\.set\(cookieNames\.oauthReturnTo, "", expiredCookieOptions\(\)\)/, "oauth returnTo cookie should be cleared after login");
 });
 
@@ -64,4 +64,16 @@ test("repo navigation uses Next Link components for in-app routing", async () =>
     assert.match(source, /<Link[\s\S]*href=\{`\/space\/\$\{encodeURIComponent\(owner\)\}\/\$\{encodeURIComponent\(name\)\}`\}/, `${componentPath} should use <Link> for repo routes`);
     assert.doesNotMatch(source, /<a\s+[^>]*href=\{`\/space\//, `${componentPath} should not use raw <a> for repo routes`);
   }
+});
+
+
+test("/api/auth routes use canonical base url and preserve returnTo in reconnect flow", async () => {
+  const githubSource = await readSource("app/api/auth/github/route.ts");
+  const reconnectSource = await readSource("app/api/auth/reconnect/route.ts");
+
+  assert.match(githubSource, /getCanonicalBaseUrl\(request\)/, "auth callback redirect_uri should use canonical base url");
+  assert.match(githubSource, /toCanonicalUrl\(request, redirectTo\)/, "post-login redirects should stay on canonical host");
+
+  assert.match(reconnectSource, /getCanonicalBaseUrl\(request\)/, "reconnect redirect_uri should use canonical base url");
+  assert.match(reconnectSource, /cookieNames\.oauthReturnTo/, "reconnect flow should preserve returnTo across OAuth callback");
 });

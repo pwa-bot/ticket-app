@@ -2,13 +2,10 @@ import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { apiError } from "@/lib/api/response";
 import { cookieNames } from "@/lib/auth";
+import { normalizeReturnTo } from "@/lib/auth-return-to";
+import { getCanonicalBaseUrl } from "@/lib/app-url";
 import { expiredCookieOptions, oauthStateCookieOptions } from "@/lib/security/cookies";
 import { CSRF_COOKIE_NAME } from "@/lib/security/csrf";
-
-function getBaseUrl(request: Request): string {
-  const url = new URL(request.url);
-  return `${url.protocol}//${url.host}`;
-}
 
 /**
  * Clear stale session and redirect directly to GitHub OAuth.
@@ -16,14 +13,15 @@ function getBaseUrl(request: Request): string {
  */
 export async function GET(request: Request) {
   const clientId = process.env.GITHUB_CLIENT_ID;
-  
+
   if (!clientId) {
     return apiError("Missing GITHUB_CLIENT_ID", { status: 500 });
   }
 
   const state = randomBytes(16).toString("hex");
-  const redirectUri = `${getBaseUrl(request)}/api/auth/github`;
-  
+  const redirectUri = `${getCanonicalBaseUrl(request)}/api/auth/github`;
+  const requestedReturnTo = normalizeReturnTo(new URL(request.url).searchParams.get("returnTo"));
+
   // Go directly to GitHub, bypassing our auth endpoint
   const authorizeUrl = new URL("https://github.com/login/oauth/authorize");
   authorizeUrl.searchParams.set("client_id", clientId);
@@ -37,9 +35,10 @@ export async function GET(request: Request) {
   response.cookies.delete(cookieNames.session);
   response.cookies.set(cookieNames.session, "", expiredCookieOptions());
   response.cookies.set(CSRF_COOKIE_NAME, "", expiredCookieOptions("strict"));
-  
-  // Set OAuth state for validation
+
+  // Set OAuth state + return destination for callback validation
   response.cookies.set(cookieNames.oauthState, state, oauthStateCookieOptions());
+  response.cookies.set(cookieNames.oauthReturnTo, requestedReturnTo, oauthStateCookieOptions());
 
   return response;
 }

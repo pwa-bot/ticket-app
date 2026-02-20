@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getApiErrorMessage } from "@/lib/api/client";
+import { shouldShowReconnectCta } from "@/lib/auth-errors";
 
 type Installation = {
   installationId: number;
@@ -15,6 +16,7 @@ export default function SettingsClient() {
   const [installations, setInstallations] = useState<Installation[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [showReconnectCta, setShowReconnectCta] = useState(false);
   const [installUrl, setInstallUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -46,6 +48,7 @@ export default function SettingsClient() {
   async function refreshInstallations() {
     setRefreshing(true);
     setRefreshError(null);
+    setShowReconnectCta(false);
     try {
       const res = await fetch("/api/github/installations/refresh", { method: "POST" });
       const json = await res.json();
@@ -57,6 +60,7 @@ export default function SettingsClient() {
         }
       } else {
         setRefreshError(getApiErrorMessage(json, "Failed to refresh. Try logging out and back in."));
+        setShowReconnectCta(shouldShowReconnectCta(res.status));
       }
     } catch (err) {
       console.error("[Settings] Refresh error:", err);
@@ -117,7 +121,7 @@ export default function SettingsClient() {
                 <span className="flex h-2 w-2 rounded-full bg-green-500" />
                 <span className="text-sm font-medium text-green-700">App installed</span>
               </div>
-              
+
               <div className="rounded-lg border border-slate-200 divide-y divide-slate-200">
                 {installations.map((inst) => (
                   <div key={inst.installationId} className="flex items-center justify-between px-4 py-3">
@@ -126,7 +130,7 @@ export default function SettingsClient() {
                       <span className="ml-2 text-xs text-slate-500">{inst.accountType}</span>
                     </div>
                     <a
-                      href={inst.accountType === "Organization" 
+                      href={inst.accountType === "Organization"
                         ? `https://github.com/organizations/${inst.accountLogin}/settings/installations/${inst.installationId}`
                         : `https://github.com/settings/installations/${inst.installationId}`
                       }
@@ -164,7 +168,7 @@ export default function SettingsClient() {
                 <span className="flex h-2 w-2 rounded-full bg-amber-500" />
                 <span className="text-sm font-medium text-amber-700">App not installed</span>
               </div>
-              
+
               <p className="text-sm text-slate-600">
                 Install the GitHub App to unlock:
               </p>
@@ -191,18 +195,20 @@ export default function SettingsClient() {
                   {refreshing ? "Checking..." : "Refresh"}
                 </button>
               </div>
-              
+
               {refreshError && (
                 <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                   {refreshError}
-                  <div className="mt-2">
-                    <a
-                      href="/api/auth/reconnect"
-                      className="text-sm font-medium text-red-800 underline hover:text-red-900"
-                    >
-                      Reconnect GitHub account →
-                    </a>
-                  </div>
+                  {showReconnectCta && (
+                    <div className="mt-2">
+                      <a
+                        href="/api/auth/reconnect?returnTo=%2Fspace%2Fsettings"
+                        className="text-sm font-medium text-red-800 underline hover:text-red-900"
+                      >
+                        Reconnect GitHub account →
+                      </a>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
