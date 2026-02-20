@@ -128,10 +128,22 @@ export async function GET(req: NextRequest) {
   }
 
   const installationIds = userInstalls.map((ui) => ui.installationId);
+  const installations = await db.query.installations.findMany({
+    where: inArray(schema.installations.id, installationIds),
+  });
+  const ownerLogins = installations
+    .map((installation) => installation.githubAccountLogin)
+    .filter((value): value is string => Boolean(value));
+
   const repos = await db.query.repos.findMany({
     where: and(
       eq(schema.repos.enabled, true),
-      inArray(schema.repos.installationId, installationIds),
+      ownerLogins.length > 0
+        ? or(
+            inArray(schema.repos.installationId, installationIds),
+            inArray(schema.repos.owner, ownerLogins),
+          )
+        : inArray(schema.repos.installationId, installationIds),
     ),
   });
 
