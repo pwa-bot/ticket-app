@@ -1,4 +1,5 @@
 import { pgTable, text, timestamp, jsonb, integer, bigint, boolean, primaryKey, uniqueIndex, index, serial } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 /**
  * Users who have signed in via GitHub OAuth.
@@ -48,6 +49,7 @@ export const repos = pgTable(
   (t) => ({
     fullNameIdx: uniqueIndex("repos_full_name_uidx").on(t.fullName),
     userIdx: index("repos_user_idx").on(t.userId),
+    enabledInstallationIdx: index("repos_enabled_installation_idx").on(t.installationId).where(sql`${t.enabled} = true`),
   })
 );
 
@@ -101,6 +103,7 @@ export const tickets = pgTable(
     pk: primaryKey({ columns: [t.repoFullName, t.id] }),
     statePriIdx: index("tickets_repo_state_priority_idx").on(t.repoFullName, t.state, t.priority),
     repoIdx: index("tickets_repo_idx").on(t.repoFullName),
+    stateCachedIdx: index("tickets_repo_state_cached_idx").on(t.repoFullName, t.state, t.cachedAt),
   })
 );
 
@@ -128,6 +131,12 @@ export const ticketPrs = pgTable(
     pk: primaryKey({ columns: [t.repoFullName, t.ticketId, t.prNumber] }),
     repoTicketIdx: index("ticket_prs_repo_ticket_idx").on(t.repoFullName, t.ticketId),
     repoPrIdx: index("ticket_prs_repo_pr_idx").on(t.repoFullName, t.prNumber),
+    openPrTicketIdx: index("ticket_prs_open_ticket_idx")
+      .on(t.repoFullName, t.ticketId)
+      .where(sql`${t.state} = 'open' and coalesce(${t.merged}, false) = false`),
+    failingChecksTicketIdx: index("ticket_prs_failing_checks_ticket_idx")
+      .on(t.repoFullName, t.ticketId)
+      .where(sql`${t.checksState} = 'fail'`),
   })
 );
 
@@ -155,6 +164,12 @@ export const pendingChanges = pgTable(
     repoIdx: index("pending_changes_repo_idx").on(t.repoFullName),
     prIdx: uniqueIndex("pending_changes_repo_pr_uidx").on(t.repoFullName, t.prNumber),
     ticketIdx: index("pending_changes_ticket_idx").on(t.repoFullName, t.ticketId),
+    activeTicketIdx: index("pending_changes_active_ticket_idx")
+      .on(t.repoFullName, t.ticketId)
+      .where(sql`${t.status} <> 'merged' and ${t.status} <> 'closed'`),
+    waitingReviewPrIdx: index("pending_changes_waiting_review_pr_idx")
+      .on(t.repoFullName, t.prNumber)
+      .where(sql`${t.status} = 'waiting_review'`),
   })
 );
 

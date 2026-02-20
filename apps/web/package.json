@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "tsx --test \"src/**/*.test.ts\"",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "perf:attention-baseline": "tsx scripts/attention-perf-baseline.ts"
   },
   "dependencies": {
     "@octokit/auth-app": "^7.1.1",

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { eq, inArray, and, ne } from "drizzle-orm";
+import { eq, inArray, and, ne, or, sql, lt } from "drizzle-orm";
 import { db, schema } from "@/db/client";
 import { apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
@@ -67,6 +67,30 @@ export interface AttentionResponse {
   loadedAt: string;
 }
 
+interface RepoTicketCountRow {
+  repoFullName: string;
+  total: number;
+}
+
+interface AttentionTicketRow {
+  repoFullName: string;
+  id: string;
+  shortId: string;
+  displayId: string;
+  title: string;
+  state: string;
+  priority: string;
+  labels: unknown;
+  path: string;
+  assignee: string | null;
+  reviewer: string | null;
+  createdAt: Date | null;
+  cachedAt: Date;
+  hasPendingChange: boolean;
+  hasOpenPr: boolean;
+  hasCiFailing: boolean;
+}
+
 function ticketLookupKey(repoFullName: string, ticketId: string): string {
   return `${repoFullName}:${ticketId}`;
 }
@@ -105,6 +129,61 @@ function deriveMergeReadiness(prs: AttentionPrSummary[]): MergeReadiness {
   return openPrs
     .map(derivePrMergeReadiness)
     .sort((a, b) => readinessOrder[a] - readinessOrder[b])[0];
+}
+
+function attentionExistsClauses(ticket: typeof schema.tickets) {
+  const hasPendingChange = sql<boolean>`
+    exists (
+      select 1
+      from ${schema.pendingChanges} pc
+      where pc.repo_full_name = ${ticket.repoFullName}
+        and pc.ticket_id = ${ticket.id}
+        and pc.status <> 'merged'
+        and pc.status <> 'closed'
+    )
+  `;
+
+  const hasOpenPr = sql<boolean>`
+    exists (
+      select 1
+      from ${schema.ticketPrs} tp
+      where tp.repo_full_name = ${ticket.repoFullName}
+        and tp.ticket_id = ${ticket.id}
+        and tp.state = 'open'
+        and coalesce(tp.merged, false) = false
+    )
+  `;
+
+  const hasCiFailing = sql<boolean>`
+    exists (
+      select 1
+      from ${schema.ticketPrs} tp
+      where tp.repo_full_name = ${ticket.repoFullName}
+        and tp.ticket_id = ${ticket.id}
+        and tp.checks_state = 'fail'
+    )
+  `;
+
+  return { hasPendingChange, hasOpenPr, hasCiFailing };
+}
+
+function buildRepoTicketFilter(
+  repoTicketIds: Map<string, string[]>,
+  repoColumn: typeof schema.ticketPrs.repoFullName | typeof schema.pendingChanges.repoFullName,
+  ticketColumn: typeof schema.ticketPrs.ticketId | typeof schema.pendingChanges.ticketId,
+) {
+  const clauses = Array.from(repoTicketIds.entries())
+    .filter(([, ids]) => ids.length > 0)
+    .map(([repoFullName, ids]) => and(eq(repoColumn, repoFullName), inArray(ticketColumn, ids)));
+
+  if (clauses.length === 0) {
+    return undefined;
+  }
+  if (clauses.length === 1) {
+    return clauses[0];
+  }
+
+  return or(...clauses);
 }
 
 /**
@@ -194,31 +273,79 @@ export async function GET(req: NextRequest) {
   }
 
   const repoFullNames = targetRepos.map((r) => r.fullName);
+  const staleThreshold = new Date(Date.now() - STALE_THRESHOLD_MS);
 
-  const now = Date.now();
+  const { hasPendingChange, hasOpenPr, hasCiFailing } = attentionExistsClauses(schema.tickets);
 
-  // Bulk query: tickets, PRs, checks, pending changes
-  const [tickets, prs, pending] = await Promise.all([
-    db.query.tickets.findMany({
-      where: inArray(schema.tickets.repoFullName, repoFullNames),
-    }),
-    db.query.ticketPrs.findMany({
-      where: inArray(schema.ticketPrs.repoFullName, repoFullNames),
-    }),
-    db.query.pendingChanges.findMany({
+  const [repoTicketCounts, attentionTickets] = await Promise.all([
+    db.select({
+      repoFullName: schema.tickets.repoFullName,
+      total: sql<number>`count(*)`,
+    })
+      .from(schema.tickets)
+      .where(inArray(schema.tickets.repoFullName, repoFullNames))
+      .groupBy(schema.tickets.repoFullName),
+    db.select({
+      repoFullName: schema.tickets.repoFullName,
+      id: schema.tickets.id,
+      shortId: schema.tickets.shortId,
+      displayId: schema.tickets.displayId,
+      title: schema.tickets.title,
+      state: schema.tickets.state,
+      priority: schema.tickets.priority,
+      labels: schema.tickets.labels,
+      path: schema.tickets.path,
+      assignee: schema.tickets.assignee,
+      reviewer: schema.tickets.reviewer,
+      createdAt: schema.tickets.createdAt,
+      cachedAt: schema.tickets.cachedAt,
+      hasPendingChange,
+      hasOpenPr,
+      hasCiFailing,
+    })
+      .from(schema.tickets)
+      .where(and(
+        inArray(schema.tickets.repoFullName, repoFullNames),
+        or(
+          eq(schema.tickets.state, "blocked"),
+          and(eq(schema.tickets.state, "in_progress"), lt(schema.tickets.cachedAt, staleThreshold)),
+          hasPendingChange,
+          hasOpenPr,
+          hasCiFailing,
+        ),
+      )),
+  ]);
+  const typedRepoTicketCounts = repoTicketCounts as unknown as RepoTicketCountRow[];
+  const typedAttentionTickets = attentionTickets as unknown as AttentionTicketRow[];
+
+  const repoTicketIds = new Map<string, string[]>();
+  for (const ticket of typedAttentionTickets) {
+    const repoIds = repoTicketIds.get(ticket.repoFullName) ?? [];
+    repoIds.push(ticket.id);
+    repoTicketIds.set(ticket.repoFullName, repoIds);
+  }
+
+  const ticketPrFilter = buildRepoTicketFilter(
+    repoTicketIds,
+    schema.ticketPrs.repoFullName,
+    schema.ticketPrs.ticketId,
+  );
+  const pendingFilter = buildRepoTicketFilter(
+    repoTicketIds,
+    schema.pendingChanges.repoFullName,
+    schema.pendingChanges.ticketId,
+  );
+
+  const [prs, pending] = await Promise.all([
+    ticketPrFilter ? db.query.ticketPrs.findMany({ where: ticketPrFilter }) : Promise.resolve([]),
+    pendingFilter ? db.query.pendingChanges.findMany({
       where: and(
-        inArray(schema.pendingChanges.repoFullName, repoFullNames),
+        pendingFilter,
         ne(schema.pendingChanges.status, "merged"),
         ne(schema.pendingChanges.status, "closed"),
       ),
-    }),
+    }) : Promise.resolve([]),
   ]);
-
-  // Build ticket lookup: repoFullName:ticketId → ticket
-  const ticketByRepoAndId = new Map<string, (typeof tickets)[number]>();
-  for (const ticket of tickets) {
-    ticketByRepoAndId.set(ticketLookupKey(ticket.repoFullName, ticket.id), ticket);
-  }
 
   // Build pending changes lookup:
   // - repoFullName:ticketId -> has pending change
@@ -233,11 +360,9 @@ export async function GET(req: NextRequest) {
   }
 
   // Build PR lookup: repoFullName:shortId → prs
-  const prsByShortId = new Map<string, AttentionPrSummary[]>();
+  const prsByTicketId = new Map<string, AttentionPrSummary[]>();
   for (const pr of prs) {
     const repoFullName = pr.repoFullName;
-    const ticket = ticketByRepoAndId.get(ticketLookupKey(repoFullName, pr.ticketId));
-    if (!ticket) continue;
     const ciStatus = checksStatusToCiStatus(pr.checksState);
 
     const summary: AttentionPrSummary = {
@@ -252,22 +377,22 @@ export async function GET(req: NextRequest) {
       ciStatus,
     };
 
-    const key = `${repoFullName}:${ticket.shortId}`;
-    const existing = prsByShortId.get(key) ?? [];
+    const key = ticketLookupKey(repoFullName, pr.ticketId);
+    const existing = prsByTicketId.get(key) ?? [];
     existing.push(summary);
-    prsByShortId.set(key, existing);
+    prsByTicketId.set(key, existing);
   }
 
   // Process tickets and determine attention
   const items: AttentionItem[] = [];
-  const totalByRepo = new Map<string, number>();
+  const totalByRepo = new Map<string, number>(
+    typedRepoTicketCounts.map((row) => [row.repoFullName, Number(row.total)]),
+  );
   const attentionByRepo = new Map<string, number>();
 
-  for (const ticket of tickets) {
-    totalByRepo.set(ticket.repoFullName, (totalByRepo.get(ticket.repoFullName) ?? 0) + 1);
-
-    const ticketPrs = prsByShortId.get(`${ticket.repoFullName}:${ticket.shortId}`) ?? [];
-    const hasPendingChange = pendingTicketSet.has(`${ticket.repoFullName}:${ticket.id}`);
+  for (const ticket of typedAttentionTickets) {
+    const ticketPrs = prsByTicketId.get(ticketLookupKey(ticket.repoFullName, ticket.id)) ?? [];
+    const hasPendingChange = ticket.hasPendingChange || pendingTicketSet.has(ticketLookupKey(ticket.repoFullName, ticket.id));
     const mergeReadiness = deriveMergeReadiness(ticketPrs);
 
     const reasons: AttentionReason[] = [];
@@ -278,13 +403,13 @@ export async function GET(req: NextRequest) {
     }
 
     // Condition 2: open PR linked → waiting review
-    const hasOpenPr = ticketPrs.some((pr) => pr.state === "open" && !pr.merged);
+    const hasOpenPr = ticket.hasOpenPr || ticketPrs.some((pr) => pr.state === "open" && !pr.merged);
     if (hasOpenPr) {
       reasons.push("pr_waiting_review");
     }
 
     // Condition 3: CI failing on linked PR
-    const hasCiFailing = ticketPrs.some((pr) => pr.ciStatus === "failure");
+    const hasCiFailing = ticket.hasCiFailing || ticketPrs.some((pr) => pr.ciStatus === "failure");
     if (hasCiFailing) {
       reasons.push("ci_failing");
     }
@@ -296,8 +421,7 @@ export async function GET(req: NextRequest) {
 
     // Condition 5: in_progress stale (>24h since last cache update)
     if (ticket.state === "in_progress") {
-      const cachedMs = ticket.cachedAt?.getTime() ?? 0;
-      if (now - cachedMs > STALE_THRESHOLD_MS) {
+      if (ticket.cachedAt < staleThreshold) {
         reasons.push("stale_in_progress");
       }
     }
@@ -350,7 +474,7 @@ export async function GET(req: NextRequest) {
     totals: {
       reposEnabled: repos.length,
       reposSelected: targetRepos.length,
-      ticketsTotal: tickets.length,
+      ticketsTotal: Array.from(totalByRepo.values()).reduce((sum, value) => sum + value, 0),
       ticketsAttention: items.length,
     },
     reasonCatalog: getReasonCatalog(),
