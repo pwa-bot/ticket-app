@@ -1,7 +1,7 @@
 ---
 id: 01KHT40T5MGCWRB1KQYB8M568T
 title: Ticket templates (bug/feature/chore) for consistent creation
-state: ready
+state: in_progress
 priority: p2
 labels:
   - templates

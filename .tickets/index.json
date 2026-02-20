@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T05:05:27.270Z",
+  "generated_at": "2026-02-20T05:17:03.867Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -179,21 +179,6 @@
       "path": ".tickets/tickets/01KHS9PFF2Z37S54PZD6QGW8DJ.md"
     },
     {
-      "id": "01KHT40T5MGCWRB1KQYB8M568T",
-      "short_id": "01KHT40T",
-      "display_id": "TK-01KHT40T",
-      "title": "Ticket templates (bug/feature/chore) for consistent creation",
-      "state": "ready",
-      "priority": "p2",
-      "labels": [
-        "templates",
-        "cli"
-      ],
-      "assignee": "agent:openclaw",
-      "reviewer": "human:morgan",
-      "path": ".tickets/tickets/01KHT40T5MGCWRB1KQYB8M568T.md"
-    },
-    {
       "id": "01KHWGY6QMV26C1242E9GTYBJ8",
       "short_id": "01KHWGY6",
       "display_id": "TK-01KHWGY6",
@@ -220,6 +205,21 @@
         "policy"
       ],
       "path": ".tickets/tickets/01KHWGYAVFC7VSZ6A0EMFQT9K2.md"
+    },
+    {
+      "id": "01KHT40T5MGCWRB1KQYB8M568T",
+      "short_id": "01KHT40T",
+      "display_id": "TK-01KHT40T",
+      "title": "Ticket templates (bug/feature/chore) for consistent creation",
+      "state": "in_progress",
+      "priority": "p2",
+      "labels": [
+        "templates",
+        "cli"
+      ],
+      "assignee": "agent:openclaw",
+      "reviewer": "human:morgan",
+      "path": ".tickets/tickets/01KHT40T5MGCWRB1KQYB8M568T.md"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
