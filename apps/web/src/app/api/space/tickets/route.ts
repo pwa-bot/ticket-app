@@ -4,7 +4,7 @@ import { db, schema } from "@/db/client";
 import { apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
 import type { Priority, TicketState } from "@ticketdotapp/core";
-import { assertNoUnauthorizedRepos } from "@/lib/security/repo-access";
+import { assertNoUnauthorizedRepos, listAccessibleRepos } from "@/lib/security/repo-access";
 
 const VALID_STATES: TicketState[] = ["backlog", "ready", "in_progress", "blocked", "done"];
 const VALID_PRIORITIES: Priority[] = ["p0", "p1", "p2", "p3"];
@@ -114,39 +114,7 @@ function parseOffset(value: string | null): number {
 export async function GET(req: NextRequest) {
   const { userId } = await requireSession();
 
-  const userInstalls = await db.query.userInstallations.findMany({
-    where: eq(schema.userInstallations.userId, userId),
-  });
-
-  if (userInstalls.length === 0) {
-    return apiSuccess({
-      tickets: [],
-      repos: [],
-      pagination: { limit: DEFAULT_LIMIT, offset: 0, total: 0, hasMore: false },
-      loadedAt: new Date().toISOString(),
-    } satisfies SpaceTicketsResponse);
-  }
-
-  const installationIds = userInstalls.map((ui) => ui.installationId);
-  const installations = await db.query.installations.findMany({
-    where: inArray(schema.installations.id, installationIds),
-  });
-  const ownerLogins = installations
-    .map((installation) => installation.githubAccountLogin)
-    .filter((value): value is string => Boolean(value));
-
-  const repos = await db.query.repos.findMany({
-    where: and(
-      eq(schema.repos.enabled, true),
-      ownerLogins.length > 0
-        ? or(
-            inArray(schema.repos.installationId, installationIds),
-            inArray(schema.repos.owner, ownerLogins),
-          )
-        : inArray(schema.repos.installationId, installationIds),
-    ),
-  });
-
+  const repos = await listAccessibleRepos({ userId, enabledOnly: true });
   if (repos.length === 0) {
     return apiSuccess({
       tickets: [],

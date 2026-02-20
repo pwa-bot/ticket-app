@@ -1,8 +1,9 @@
 import { NextRequest } from "next/server";
-import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
+import { asc, inArray, sql } from "drizzle-orm";
 import { db, schema } from "@/db/client";
 import { apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
+import { assertNoUnauthorizedRepos, listAccessibleRepos } from "@/lib/security/repo-access";
 
 export interface SpaceIndexTicket {
   repoFullName: string;
@@ -84,136 +85,117 @@ export async function GET(req: NextRequest) {
   try {
     const { userId } = await requireSession();
 
-  const { searchParams } = new URL(req.url);
-  const repoParam = searchParams.get("repos");
-  const filterSet = repoParam
-    ? new Set(repoParam.split(",").map((r) => r.trim()).filter((r) => r.includes("/")))
-    : null;
+    const { searchParams } = new URL(req.url);
+    const repoParam = searchParams.get("repos");
+    const filterSet = repoParam
+      ? new Set(repoParam.split(",").map((r) => r.trim()).filter((r) => r.includes("/")))
+      : null;
 
-  const userInstalls = await db.query.userInstallations.findMany({
-    where: eq(schema.userInstallations.userId, userId),
-  });
+    const repos = await listAccessibleRepos({ userId, enabledOnly: true });
 
-  if (userInstalls.length === 0) {
-    return apiSuccess(emptyResponse([], 0, 0) satisfies SpaceIndexResponse);
-  }
+    if (repos.length === 0) {
+      return apiSuccess(emptyResponse([], 0, 0) satisfies SpaceIndexResponse);
+    }
 
-  const installationIds = userInstalls.map((ui) => ui.installationId);
+    if (filterSet) {
+      assertNoUnauthorizedRepos(filterSet, repos.map((repo) => repo.fullName));
+    }
 
-  const installations = await db.query.installations.findMany({
-    where: inArray(schema.installations.id, installationIds),
-  });
-  const ownerLogins = installations
-    .map((installation) => installation.githubAccountLogin)
-    .filter((value): value is string => Boolean(value));
+    const targetRepos = filterSet
+      ? repos.filter((r) => filterSet.has(r.fullName))
+      : repos;
 
-  const repos = await db.query.repos.findMany({
-    where: and(
-      eq(schema.repos.enabled, true),
-      ownerLogins.length > 0
-        ? or(
-            inArray(schema.repos.installationId, installationIds),
-            inArray(schema.repos.owner, ownerLogins),
-          )
-        : inArray(schema.repos.installationId, installationIds),
-    ),
-  });
+    // Build repo summary map (will accumulate ticket counts below)
+    const repoSummaryMap = new Map<string, SpaceIndexRepoSummary>();
+    for (const repo of repos) {
+      repoSummaryMap.set(repo.fullName, {
+        fullName: repo.fullName,
+        owner: repo.owner,
+        repo: repo.repo,
+        totalTickets: 0,
+      });
+    }
 
-  const targetRepos = filterSet
-    ? repos.filter((r) => filterSet.has(r.fullName))
-    : repos;
+    if (targetRepos.length === 0) {
+      return apiSuccess(
+        emptyResponse(
+          Array.from(repoSummaryMap.values()),
+          repos.length,
+          0,
+        ) satisfies SpaceIndexResponse,
+      );
+    }
 
-  // Build repo summary map (will accumulate ticket counts below)
-  const repoSummaryMap = new Map<string, SpaceIndexRepoSummary>();
-  for (const repo of repos) {
-    repoSummaryMap.set(repo.fullName, {
-      fullName: repo.fullName,
-      owner: repo.owner,
-      repo: repo.repo,
-      totalTickets: 0,
-    });
-  }
+    const repoLookup = new Map(repos.map((r) => [r.fullName, r]));
+    const targetRepoFullNames = targetRepos.map((r) => r.fullName);
 
-  if (targetRepos.length === 0) {
-    return apiSuccess(
-      emptyResponse(
-        Array.from(repoSummaryMap.values()),
-        repos.length,
-        0,
-      ) satisfies SpaceIndexResponse,
-    );
-  }
-
-  const repoLookup = new Map(repos.map((r) => [r.fullName, r]));
-  const targetRepoFullNames = targetRepos.map((r) => r.fullName);
-
-  const rows = await db
-    .select({
-      repoFullName: schema.tickets.repoFullName,
-      id: schema.tickets.id,
-      shortId: schema.tickets.shortId,
-      displayId: schema.tickets.displayId,
-      title: schema.tickets.title,
-      state: schema.tickets.state,
-      priority: schema.tickets.priority,
-      labels: schema.tickets.labels,
-      path: schema.tickets.path,
-      assignee: schema.tickets.assignee,
-      reviewer: schema.tickets.reviewer,
-      createdAt: schema.tickets.createdAt,
-      cachedAt: schema.tickets.cachedAt,
-    })
-    .from(schema.tickets)
-    .where(inArray(schema.tickets.repoFullName, targetRepoFullNames))
-    .orderBy(
-      sql`case ${schema.tickets.priority}
+    const rows = await db
+      .select({
+        repoFullName: schema.tickets.repoFullName,
+        id: schema.tickets.id,
+        shortId: schema.tickets.shortId,
+        displayId: schema.tickets.displayId,
+        title: schema.tickets.title,
+        state: schema.tickets.state,
+        priority: schema.tickets.priority,
+        labels: schema.tickets.labels,
+        path: schema.tickets.path,
+        assignee: schema.tickets.assignee,
+        reviewer: schema.tickets.reviewer,
+        createdAt: schema.tickets.createdAt,
+        cachedAt: schema.tickets.cachedAt,
+      })
+      .from(schema.tickets)
+      .where(inArray(schema.tickets.repoFullName, targetRepoFullNames))
+      .orderBy(
+        sql`case ${schema.tickets.priority}
         when 'p0' then 0
         when 'p1' then 1
         when 'p2' then 2
         when 'p3' then 3
         else 99
       end`,
-      asc(schema.tickets.createdAt),
-      asc(schema.tickets.id),
-    );
+        asc(schema.tickets.createdAt),
+        asc(schema.tickets.id),
+      );
 
-  const typedRows = rows as unknown as IndexTicketRow[];
-  const tickets: SpaceIndexTicket[] = typedRows.map((row) => {
-    const repo = repoLookup.get(row.repoFullName);
-    const summary = repoSummaryMap.get(row.repoFullName);
-    if (summary) {
-      summary.totalTickets++;
-    }
+    const typedRows = rows as unknown as IndexTicketRow[];
+    const tickets: SpaceIndexTicket[] = typedRows.map((row) => {
+      const repo = repoLookup.get(row.repoFullName);
+      const summary = repoSummaryMap.get(row.repoFullName);
+      if (summary) {
+        summary.totalTickets++;
+      }
 
-    return {
-      repoFullName: row.repoFullName,
-      repoOwner: repo?.owner ?? row.repoFullName.split("/")[0] ?? "",
-      repoName: repo?.repo ?? row.repoFullName.split("/")[1] ?? "",
-      id: row.id,
-      shortId: row.shortId,
-      displayId: row.displayId,
-      title: row.title,
-      state: row.state,
-      priority: row.priority,
-      labels: (row.labels as string[]) ?? [],
-      path: row.path,
-      assignee: row.assignee,
-      reviewer: row.reviewer,
-      createdAt: row.createdAt?.toISOString() ?? null,
-      cachedAt: row.cachedAt.toISOString(),
-    };
-  });
+      return {
+        repoFullName: row.repoFullName,
+        repoOwner: repo?.owner ?? row.repoFullName.split("/")[0] ?? "",
+        repoName: repo?.repo ?? row.repoFullName.split("/")[1] ?? "",
+        id: row.id,
+        shortId: row.shortId,
+        displayId: row.displayId,
+        title: row.title,
+        state: row.state,
+        priority: row.priority,
+        labels: (row.labels as string[]) ?? [],
+        path: row.path,
+        assignee: row.assignee,
+        reviewer: row.reviewer,
+        createdAt: row.createdAt?.toISOString() ?? null,
+        cachedAt: row.cachedAt.toISOString(),
+      };
+    });
 
-  return apiSuccess({
-    tickets,
-    repos: Array.from(repoSummaryMap.values()),
-    totals: {
-      reposEnabled: repos.length,
-      reposSelected: targetRepos.length,
-      ticketsTotal: tickets.length,
-    },
-    loadedAt: new Date().toISOString(),
-  } satisfies SpaceIndexResponse);
+    return apiSuccess({
+      tickets,
+      repos: Array.from(repoSummaryMap.values()),
+      totals: {
+        reposEnabled: repos.length,
+        reposSelected: targetRepos.length,
+        ticketsTotal: tickets.length,
+      },
+      loadedAt: new Date().toISOString(),
+    } satisfies SpaceIndexResponse);
   } catch (error) {
     if (error instanceof Response) {
       return error;

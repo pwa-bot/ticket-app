@@ -6,6 +6,7 @@ import { requireSession } from "@/lib/auth";
 import type { CiStatus, MergeReadiness } from "@/lib/attention";
 import { compareAttentionItems, getReasonCatalog, toReasonDetails, type AttentionReason } from "@/lib/attention-contract";
 import type { AttentionReasonDetail } from "@/lib/attention-contract";
+import { assertNoUnauthorizedRepos, listAccessibleRepos } from "@/lib/security/repo-access";
 
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -204,279 +205,258 @@ export async function GET(req: NextRequest) {
   try {
     const { userId } = await requireSession();
 
-  // Parse optional repo filter
-  const { searchParams } = new URL(req.url);
-  const repoFilter = searchParams.get("repos");
-  const filterSet = repoFilter
-    ? new Set(repoFilter.split(",").map((r) => r.trim()).filter(Boolean))
-    : null;
+    // Parse optional repo filter
+    const { searchParams } = new URL(req.url);
+    const repoFilter = searchParams.get("repos");
+    const filterSet = repoFilter
+      ? new Set(repoFilter.split(",").map((r) => r.trim()).filter(Boolean))
+      : null;
 
-  // Get user's installation IDs
-  const userInstalls = await db.query.userInstallations.findMany({
-    where: eq(schema.userInstallations.userId, userId),
-  });
+    // Get enabled repos scoped to the authenticated user's installations.
+    const repos = await listAccessibleRepos({ userId, enabledOnly: true });
 
-  if (userInstalls.length === 0) {
-    return apiSuccess({
-      items: [],
-      repos: [],
-      totals: {
-        reposEnabled: 0,
-        reposSelected: 0,
-        ticketsTotal: 0,
-        ticketsAttention: 0,
-      },
-      reasonCatalog: getReasonCatalog(),
-      loadedAt: new Date().toISOString(),
-    } satisfies AttentionResponse);
-  }
+    if (repos.length === 0) {
+      return apiSuccess({
+        items: [],
+        repos: [],
+        totals: {
+          reposEnabled: 0,
+          reposSelected: 0,
+          ticketsTotal: 0,
+          ticketsAttention: 0,
+        },
+        reasonCatalog: getReasonCatalog(),
+        loadedAt: new Date().toISOString(),
+      } satisfies AttentionResponse);
+    }
 
-  const installationIds = userInstalls.map((ui) => ui.installationId);
+    if (filterSet) {
+      assertNoUnauthorizedRepos(filterSet, repos.map((repo) => repo.fullName));
+    }
 
-  // Get enabled repos for this user.
-  // Include fallback owner-login match to tolerate installation-id drift in cached repos.
-  const installations = await db.query.installations.findMany({
-    where: inArray(schema.installations.id, installationIds),
-  });
-  const ownerLogins = installations
-    .map((installation) => installation.githubAccountLogin)
-    .filter((value): value is string => Boolean(value));
+    // Apply repo filter if provided.
+    const targetRepos = filterSet
+      ? repos.filter((r) => filterSet.has(r.fullName))
+      : repos;
 
-  const repos = await db.query.repos.findMany({
-    where: and(
-      eq(schema.repos.enabled, true),
-      ownerLogins.length > 0
-        ? or(
-            inArray(schema.repos.installationId, installationIds),
-            inArray(schema.repos.owner, ownerLogins),
-          )
-        : inArray(schema.repos.installationId, installationIds),
-    ),
-  });
+    if (targetRepos.length === 0) {
+      const enabledRepos: EnabledRepoSummary[] = repos.map((r) => ({
+        fullName: r.fullName,
+        owner: r.owner,
+        repo: r.repo,
+        totalTickets: 0,
+        attentionTickets: 0,
+      }));
 
-  // Apply repo filter if provided. Ignore unknown/unauthorized repos instead of failing the whole view.
-  const targetRepos = filterSet
-    ? repos.filter((r) => filterSet.has(r.fullName))
-    : repos;
+      return apiSuccess({
+        items: [],
+        repos: enabledRepos,
+        totals: {
+          reposEnabled: repos.length,
+          reposSelected: 0,
+          ticketsTotal: 0,
+          ticketsAttention: 0,
+        },
+        reasonCatalog: getReasonCatalog(),
+        loadedAt: new Date().toISOString(),
+      } satisfies AttentionResponse);
+    }
 
-  if (targetRepos.length === 0) {
+    const repoFullNames = targetRepos.map((r) => r.fullName);
+    const staleThreshold = new Date(Date.now() - STALE_THRESHOLD_MS);
+
+    const { hasPendingChange, hasOpenPr, hasCiFailing } = attentionExistsClauses(schema.tickets);
+
+    const [repoTicketCounts, attentionTickets] = await Promise.all([
+      db.select({
+        repoFullName: schema.tickets.repoFullName,
+        total: sql<number>`count(*)`,
+      })
+        .from(schema.tickets)
+        .where(inArray(schema.tickets.repoFullName, repoFullNames))
+        .groupBy(schema.tickets.repoFullName),
+      db.select({
+        repoFullName: schema.tickets.repoFullName,
+        id: schema.tickets.id,
+        shortId: schema.tickets.shortId,
+        displayId: schema.tickets.displayId,
+        title: schema.tickets.title,
+        state: schema.tickets.state,
+        priority: schema.tickets.priority,
+        labels: schema.tickets.labels,
+        path: schema.tickets.path,
+        assignee: schema.tickets.assignee,
+        reviewer: schema.tickets.reviewer,
+        createdAt: schema.tickets.createdAt,
+        cachedAt: schema.tickets.cachedAt,
+        hasPendingChange,
+        hasOpenPr,
+        hasCiFailing,
+      })
+        .from(schema.tickets)
+        .where(and(
+          inArray(schema.tickets.repoFullName, repoFullNames),
+          or(
+            eq(schema.tickets.state, "blocked"),
+            and(eq(schema.tickets.state, "in_progress"), lt(schema.tickets.cachedAt, staleThreshold)),
+            hasPendingChange,
+            hasOpenPr,
+            hasCiFailing,
+          ),
+        )),
+    ]);
+    const typedRepoTicketCounts = repoTicketCounts as unknown as RepoTicketCountRow[];
+    const typedAttentionTickets = attentionTickets as unknown as AttentionTicketRow[];
+
+    const repoTicketIds = new Map<string, string[]>();
+    for (const ticket of typedAttentionTickets) {
+      const repoIds = repoTicketIds.get(ticket.repoFullName) ?? [];
+      repoIds.push(ticket.id);
+      repoTicketIds.set(ticket.repoFullName, repoIds);
+    }
+
+    const ticketPrFilter = buildRepoTicketFilter(
+      repoTicketIds,
+      schema.ticketPrs.repoFullName,
+      schema.ticketPrs.ticketId,
+    );
+    const pendingFilter = buildRepoTicketFilter(
+      repoTicketIds,
+      schema.pendingChanges.repoFullName,
+      schema.pendingChanges.ticketId,
+    );
+
+    const [prs, pending] = await Promise.all([
+      ticketPrFilter ? db.query.ticketPrs.findMany({ where: ticketPrFilter }) : Promise.resolve([]),
+      pendingFilter ? db.query.pendingChanges.findMany({
+        where: and(
+          pendingFilter,
+          ne(schema.pendingChanges.status, "merged"),
+          ne(schema.pendingChanges.status, "closed"),
+        ),
+      }) : Promise.resolve([]),
+    ]);
+
+    // Build pending changes lookup:
+    // - repoFullName:ticketId -> has pending change
+    // - repoFullName:prNumber -> review required state
+    const pendingTicketSet = new Set<string>();
+    const waitingReviewPrSet = new Set<string>();
+    for (const pc of pending) {
+      pendingTicketSet.add(`${pc.repoFullName}:${pc.ticketId}`);
+      if (pc.status === "waiting_review") {
+        waitingReviewPrSet.add(`${pc.repoFullName}:${pc.prNumber}`);
+      }
+    }
+
+    // Build PR lookup: repoFullName:shortId -> prs
+    const prsByTicketId = new Map<string, AttentionPrSummary[]>();
+    for (const pr of prs) {
+      const repoFullName = pr.repoFullName;
+      const ciStatus = checksStatusToCiStatus(pr.checksState);
+
+      const summary: AttentionPrSummary = {
+        prNumber: pr.prNumber,
+        url: pr.prUrl,
+        title: pr.title ?? null,
+        state: pr.state ?? null,
+        merged: pr.merged ?? null,
+        mergeableState: pr.mergeableState ?? null,
+        checksStatus: pr.checksState,
+        reviewRequired: waitingReviewPrSet.has(`${repoFullName}:${pr.prNumber}`),
+        ciStatus,
+      };
+
+      const key = ticketLookupKey(repoFullName, pr.ticketId);
+      const existing = prsByTicketId.get(key) ?? [];
+      existing.push(summary);
+      prsByTicketId.set(key, existing);
+    }
+
+    // Process tickets and determine attention
+    const items: AttentionItem[] = [];
+    const totalByRepo = new Map<string, number>(
+      typedRepoTicketCounts.map((row) => [row.repoFullName, Number(row.total)]),
+    );
+    const attentionByRepo = new Map<string, number>();
+
+    for (const ticket of typedAttentionTickets) {
+      const ticketPrs = prsByTicketId.get(ticketLookupKey(ticket.repoFullName, ticket.id)) ?? [];
+      const hasPendingChange = ticket.hasPendingChange || pendingTicketSet.has(ticketLookupKey(ticket.repoFullName, ticket.id));
+      const mergeReadiness = deriveMergeReadiness(ticketPrs);
+
+      const reasons: AttentionReason[] = [];
+
+      // Condition 1: pending ticket-change PR
+      if (hasPendingChange) {
+        reasons.push("pending_pr");
+      }
+
+      // Condition 2: open PR linked -> waiting review
+      const hasOpenPr = ticket.hasOpenPr || ticketPrs.some((pr) => pr.state === "open" && !pr.merged);
+      if (hasOpenPr) {
+        reasons.push("pr_waiting_review");
+      }
+
+      // Condition 3: CI failing on linked PR
+      const hasCiFailing = ticket.hasCiFailing || ticketPrs.some((pr) => pr.ciStatus === "failure");
+      if (hasCiFailing) {
+        reasons.push("ci_failing");
+      }
+
+      // Condition 4: ticket state is blocked
+      if (ticket.state === "blocked") {
+        reasons.push("blocked");
+      }
+
+      // Condition 5: in_progress stale (>24h since last cache update)
+      if (ticket.state === "in_progress") {
+        if (ticket.cachedAt < staleThreshold) {
+          reasons.push("stale_in_progress");
+        }
+      }
+
+      if (reasons.length === 0) {
+        continue;
+      }
+      const reasonDetails = toReasonDetails(reasons);
+      const orderedReasons = reasonDetails.map((reason) => reason.code);
+
+      attentionByRepo.set(ticket.repoFullName, (attentionByRepo.get(ticket.repoFullName) ?? 0) + 1);
+
+      items.push({
+        repoFullName: ticket.repoFullName,
+        ticketId: ticket.id,
+        shortId: ticket.shortId,
+        displayId: ticket.displayId,
+        title: ticket.title,
+        state: ticket.state,
+        priority: ticket.priority,
+        labels: (ticket.labels as string[]) ?? [],
+        path: ticket.path,
+        assignee: ticket.assignee,
+        reviewer: ticket.reviewer,
+        createdAt: ticket.createdAt?.toISOString() ?? null,
+        cachedAt: ticket.cachedAt.toISOString(),
+        reasons: orderedReasons,
+        reasonDetails,
+        primaryReason: orderedReasons[0],
+        prs: ticketPrs,
+        mergeReadiness,
+        hasPendingChange,
+      });
+    }
+
+    // Sort: blocked first, then stale_in_progress, then priority, then age
+    items.sort(compareAttentionItems);
+
     const enabledRepos: EnabledRepoSummary[] = repos.map((r) => ({
       fullName: r.fullName,
       owner: r.owner,
       repo: r.repo,
-      totalTickets: 0,
-      attentionTickets: 0,
+      totalTickets: totalByRepo.get(r.fullName) ?? 0,
+      attentionTickets: attentionByRepo.get(r.fullName) ?? 0,
     }));
-
-    return apiSuccess({
-      items: [],
-      repos: enabledRepos,
-      totals: {
-        reposEnabled: repos.length,
-        reposSelected: 0,
-        ticketsTotal: 0,
-        ticketsAttention: 0,
-      },
-      reasonCatalog: getReasonCatalog(),
-      loadedAt: new Date().toISOString(),
-    } satisfies AttentionResponse);
-  }
-
-  const repoFullNames = targetRepos.map((r) => r.fullName);
-  const staleThreshold = new Date(Date.now() - STALE_THRESHOLD_MS);
-
-  const { hasPendingChange, hasOpenPr, hasCiFailing } = attentionExistsClauses(schema.tickets);
-
-  const [repoTicketCounts, attentionTickets] = await Promise.all([
-    db.select({
-      repoFullName: schema.tickets.repoFullName,
-      total: sql<number>`count(*)`,
-    })
-      .from(schema.tickets)
-      .where(inArray(schema.tickets.repoFullName, repoFullNames))
-      .groupBy(schema.tickets.repoFullName),
-    db.select({
-      repoFullName: schema.tickets.repoFullName,
-      id: schema.tickets.id,
-      shortId: schema.tickets.shortId,
-      displayId: schema.tickets.displayId,
-      title: schema.tickets.title,
-      state: schema.tickets.state,
-      priority: schema.tickets.priority,
-      labels: schema.tickets.labels,
-      path: schema.tickets.path,
-      assignee: schema.tickets.assignee,
-      reviewer: schema.tickets.reviewer,
-      createdAt: schema.tickets.createdAt,
-      cachedAt: schema.tickets.cachedAt,
-      hasPendingChange,
-      hasOpenPr,
-      hasCiFailing,
-    })
-      .from(schema.tickets)
-      .where(and(
-        inArray(schema.tickets.repoFullName, repoFullNames),
-        or(
-          eq(schema.tickets.state, "blocked"),
-          and(eq(schema.tickets.state, "in_progress"), lt(schema.tickets.cachedAt, staleThreshold)),
-          hasPendingChange,
-          hasOpenPr,
-          hasCiFailing,
-        ),
-      )),
-  ]);
-  const typedRepoTicketCounts = repoTicketCounts as unknown as RepoTicketCountRow[];
-  const typedAttentionTickets = attentionTickets as unknown as AttentionTicketRow[];
-
-  const repoTicketIds = new Map<string, string[]>();
-  for (const ticket of typedAttentionTickets) {
-    const repoIds = repoTicketIds.get(ticket.repoFullName) ?? [];
-    repoIds.push(ticket.id);
-    repoTicketIds.set(ticket.repoFullName, repoIds);
-  }
-
-  const ticketPrFilter = buildRepoTicketFilter(
-    repoTicketIds,
-    schema.ticketPrs.repoFullName,
-    schema.ticketPrs.ticketId,
-  );
-  const pendingFilter = buildRepoTicketFilter(
-    repoTicketIds,
-    schema.pendingChanges.repoFullName,
-    schema.pendingChanges.ticketId,
-  );
-
-  const [prs, pending] = await Promise.all([
-    ticketPrFilter ? db.query.ticketPrs.findMany({ where: ticketPrFilter }) : Promise.resolve([]),
-    pendingFilter ? db.query.pendingChanges.findMany({
-      where: and(
-        pendingFilter,
-        ne(schema.pendingChanges.status, "merged"),
-        ne(schema.pendingChanges.status, "closed"),
-      ),
-    }) : Promise.resolve([]),
-  ]);
-
-  // Build pending changes lookup:
-  // - repoFullName:ticketId -> has pending change
-  // - repoFullName:prNumber -> review required state
-  const pendingTicketSet = new Set<string>();
-  const waitingReviewPrSet = new Set<string>();
-  for (const pc of pending) {
-    pendingTicketSet.add(`${pc.repoFullName}:${pc.ticketId}`);
-    if (pc.status === "waiting_review") {
-      waitingReviewPrSet.add(`${pc.repoFullName}:${pc.prNumber}`);
-    }
-  }
-
-  // Build PR lookup: repoFullName:shortId → prs
-  const prsByTicketId = new Map<string, AttentionPrSummary[]>();
-  for (const pr of prs) {
-    const repoFullName = pr.repoFullName;
-    const ciStatus = checksStatusToCiStatus(pr.checksState);
-
-    const summary: AttentionPrSummary = {
-      prNumber: pr.prNumber,
-      url: pr.prUrl,
-      title: pr.title ?? null,
-      state: pr.state ?? null,
-      merged: pr.merged ?? null,
-      mergeableState: pr.mergeableState ?? null,
-      checksStatus: pr.checksState,
-      reviewRequired: waitingReviewPrSet.has(`${repoFullName}:${pr.prNumber}`),
-      ciStatus,
-    };
-
-    const key = ticketLookupKey(repoFullName, pr.ticketId);
-    const existing = prsByTicketId.get(key) ?? [];
-    existing.push(summary);
-    prsByTicketId.set(key, existing);
-  }
-
-  // Process tickets and determine attention
-  const items: AttentionItem[] = [];
-  const totalByRepo = new Map<string, number>(
-    typedRepoTicketCounts.map((row) => [row.repoFullName, Number(row.total)]),
-  );
-  const attentionByRepo = new Map<string, number>();
-
-  for (const ticket of typedAttentionTickets) {
-    const ticketPrs = prsByTicketId.get(ticketLookupKey(ticket.repoFullName, ticket.id)) ?? [];
-    const hasPendingChange = ticket.hasPendingChange || pendingTicketSet.has(ticketLookupKey(ticket.repoFullName, ticket.id));
-    const mergeReadiness = deriveMergeReadiness(ticketPrs);
-
-    const reasons: AttentionReason[] = [];
-
-    // Condition 1: pending ticket-change PR
-    if (hasPendingChange) {
-      reasons.push("pending_pr");
-    }
-
-    // Condition 2: open PR linked → waiting review
-    const hasOpenPr = ticket.hasOpenPr || ticketPrs.some((pr) => pr.state === "open" && !pr.merged);
-    if (hasOpenPr) {
-      reasons.push("pr_waiting_review");
-    }
-
-    // Condition 3: CI failing on linked PR
-    const hasCiFailing = ticket.hasCiFailing || ticketPrs.some((pr) => pr.ciStatus === "failure");
-    if (hasCiFailing) {
-      reasons.push("ci_failing");
-    }
-
-    // Condition 4: ticket state is blocked
-    if (ticket.state === "blocked") {
-      reasons.push("blocked");
-    }
-
-    // Condition 5: in_progress stale (>24h since last cache update)
-    if (ticket.state === "in_progress") {
-      if (ticket.cachedAt < staleThreshold) {
-        reasons.push("stale_in_progress");
-      }
-    }
-
-    if (reasons.length === 0) {
-      continue;
-    }
-    const reasonDetails = toReasonDetails(reasons);
-    const orderedReasons = reasonDetails.map((reason) => reason.code);
-
-    attentionByRepo.set(ticket.repoFullName, (attentionByRepo.get(ticket.repoFullName) ?? 0) + 1);
-
-    items.push({
-      repoFullName: ticket.repoFullName,
-      ticketId: ticket.id,
-      shortId: ticket.shortId,
-      displayId: ticket.displayId,
-      title: ticket.title,
-      state: ticket.state,
-      priority: ticket.priority,
-      labels: (ticket.labels as string[]) ?? [],
-      path: ticket.path,
-      assignee: ticket.assignee,
-      reviewer: ticket.reviewer,
-      createdAt: ticket.createdAt?.toISOString() ?? null,
-      cachedAt: ticket.cachedAt.toISOString(),
-      reasons: orderedReasons,
-      reasonDetails,
-      primaryReason: orderedReasons[0],
-      prs: ticketPrs,
-      mergeReadiness,
-      hasPendingChange,
-    });
-  }
-
-  // Sort: blocked first, then stale_in_progress, then priority, then age
-  items.sort(compareAttentionItems);
-
-  const enabledRepos: EnabledRepoSummary[] = repos.map((r) => ({
-    fullName: r.fullName,
-    owner: r.owner,
-    repo: r.repo,
-    totalTickets: totalByRepo.get(r.fullName) ?? 0,
-    attentionTickets: attentionByRepo.get(r.fullName) ?? 0,
-  }));
 
     return apiSuccess({
       items,

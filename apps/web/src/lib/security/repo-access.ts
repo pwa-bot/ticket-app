@@ -8,7 +8,18 @@ interface AccessibleRepoFilter {
   enabledOnly?: boolean;
 }
 
-export async function listAccessibleRepoFullNames({ userId, enabledOnly = false }: AccessibleRepoFilter): Promise<string[]> {
+export interface AccessibleRepo {
+  fullName: string;
+  owner: string;
+  repo: string;
+  installationId: number | null;
+  enabled: boolean;
+}
+
+export async function listAccessibleRepos({
+  userId,
+  enabledOnly = false,
+}: AccessibleRepoFilter): Promise<AccessibleRepo[]> {
   const userInstallations = await db.query.userInstallations.findMany({
     where: eq(schema.userInstallations.userId, userId),
   });
@@ -24,6 +35,18 @@ export async function listAccessibleRepoFullNames({ userId, enabledOnly = false 
     : inArray(schema.repos.installationId, installationIds);
 
   const repos = await db.query.repos.findMany({ where });
+
+  return repos.map((repo) => ({
+    fullName: repo.fullName,
+    owner: repo.owner,
+    repo: repo.repo,
+    installationId: repo.installationId ?? null,
+    enabled: repo.enabled,
+  }));
+}
+
+export async function listAccessibleRepoFullNames({ userId, enabledOnly = false }: AccessibleRepoFilter): Promise<string[]> {
+  const repos = await listAccessibleRepos({ userId, enabledOnly });
   return repos.map((repo) => repo.fullName);
 }
 
