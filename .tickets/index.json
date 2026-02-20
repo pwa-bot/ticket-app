@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T06:27:00.845Z",
+  "generated_at": "2026-02-20T06:37:02.345Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -163,20 +163,6 @@
       ],
       "path": ".tickets/tickets/01KHVQ0B6VR7M2HAWB9QPEMBED.md",
       "display_id": "TK-01KHVQ0B"
-    },
-    {
-      "id": "01KHWGYAVFC7VSZ6A0EMFQT9K2",
-      "short_id": "01KHWGYA",
-      "title": "Phase C: Policy tiers hard integrity warn quality opt-in strict",
-      "state": "in_progress",
-      "priority": "p1",
-      "labels": [
-        "governance",
-        "ci",
-        "policy"
-      ],
-      "path": ".tickets/tickets/01KHWGYAVFC7VSZ6A0EMFQT9K2.md",
-      "display_id": "TK-01KHWGYA-3"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
@@ -725,6 +711,20 @@
       ],
       "path": ".tickets/tickets/01KHWGYAM6JM3RPHPHKP5EA6D8.md",
       "display_id": "TK-01KHWGYA-2"
+    },
+    {
+      "id": "01KHWGYAVFC7VSZ6A0EMFQT9K2",
+      "short_id": "01KHWGYA",
+      "title": "Phase C: Policy tiers hard integrity warn quality opt-in strict",
+      "state": "done",
+      "priority": "p1",
+      "labels": [
+        "governance",
+        "ci",
+        "policy"
+      ],
+      "path": ".tickets/tickets/01KHWGYAVFC7VSZ6A0EMFQT9K2.md",
+      "display_id": "TK-01KHWGYA-3"
     },
     {
       "id": "01KHWGYB2SYQVJZYQSKTJ6NWFT",
