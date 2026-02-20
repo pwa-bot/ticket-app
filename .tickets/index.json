@@ -50,7 +50,7 @@
       "short_id": "01KHW6ER",
       "display_id": "TK-01KHW6ER",
       "title": "E2E filters URL sync and browser nav correctness",
-      "state": "backlog",
+      "state": "done",
       "priority": "p0",
       "labels": [
         "dashboard",

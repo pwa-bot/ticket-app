@@ -7,8 +7,8 @@
 3. [DONE] 01KHVQ07RFJNSWWTGRF9EG0NDB - Dashboard fix Attention search and add Jump-to-ID
 4. [DONE] 01KHVX92DSSK48NP4HZ7H9WGQC - Fix O(n²) attention endpoint - use Map instead of find()
 5. [DONE] 01KHW6EB9RAKEYEESTRJP0SP3E - Attention contract + reason explainability in /space
-6. [IN PROGRESS] 01KHW6ERTAS4MW29ZBGXSH325X - E2E filters URL sync and browser nav correctness
-7. 01KHW6EX837MYH0V9AN8C25930 - E2E modal deep link loads ticket outside current page filter
+6. [DONE] 01KHW6ERTAS4MW29ZBGXSH325X - E2E filters URL sync and browser nav correctness
+7. [IN PROGRESS] 01KHW6EX837MYH0V9AN8C25930 - E2E modal deep link loads ticket outside current page filter
 8. 01KHW6EXQC308GTC9EV697NEA4 - API attention precedence and multi reason contract tests
 9. 01KHW6EYE44BXJKWXY17C9MSVK - Instrumentation MVP funnel events for CLI and dashboard activation
 
