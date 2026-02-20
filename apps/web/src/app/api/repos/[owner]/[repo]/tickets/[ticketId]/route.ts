@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and } from "drizzle-orm";
-import { isUnauthorizedResponse, requireSession } from "@/lib/auth";
+import { isAuthFailureResponse } from "@/lib/auth";
 import { getCachedBlob, upsertBlob, getRepo } from "@/db/sync";
 import { db, schema } from "@/db/client";
+import { requireRepoAccess } from "@/lib/security/repo-access";
 
 interface RouteParams {
   params: Promise<{ owner: string; repo: string; ticketId: string }>;
@@ -14,12 +15,10 @@ interface RouteParams {
  * Returns ticket metadata + markdown content.
  * Lazy-fetches and caches markdown from GitHub if not in cache.
  */
-export async function GET(req: NextRequest, { params }: RouteParams) {
+export async function GET(_req: NextRequest, { params }: RouteParams) {
   try {
-    const { token } = await requireSession();
-
     const { owner, repo, ticketId } = await params;
-    const fullName = `${owner}/${repo}`;
+    const { session, fullName } = await requireRepoAccess(owner, repo);
 
     // Get ticket metadata from cache
     const ticket = await db.query.tickets.findFirst({
@@ -50,7 +49,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
         `https://api.github.com/repos/${fullName}/contents/${ticket.path}?ref=${defaultBranch}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${session.token}`,
             Accept: "application/vnd.github+json",
           },
         }
@@ -101,7 +100,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       source,
     });
   } catch (error) {
-    if (isUnauthorizedResponse(error)) {
+    if (isAuthFailureResponse(error)) {
       return error;
     }
     console.error("[ticket-detail] Error:", error);

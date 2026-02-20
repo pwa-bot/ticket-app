@@ -1,6 +1,7 @@
 import type { Priority, TicketIndexEntry } from "@/lib/types";
 
 export type CiStatus = "success" | "failure" | "pending" | "unknown";
+export type MergeReadiness = "MERGEABLE_NOW" | "WAITING_REVIEW" | "FAILING_CHECKS" | "CONFLICT" | "UNKNOWN";
 
 export interface AttentionTicket extends TicketIndexEntry {
   created?: string;

@@ -3,6 +3,7 @@ import { and, asc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { db, schema } from "@/db/client";
 import { requireSession } from "@/lib/auth";
 import type { Priority, TicketState } from "@/lib/types";
+import { assertNoUnauthorizedRepos } from "@/lib/security/repo-access";
 
 const VALID_STATES: TicketState[] = ["backlog", "ready", "in_progress", "blocked", "done"];
 const VALID_PRIORITIES: Priority[] = ["p0", "p1", "p2", "p3"];
@@ -154,6 +155,9 @@ export async function GET(req: NextRequest) {
   const priority = VALID_PRIORITIES.includes(priorityParam as Priority) ? (priorityParam as Priority) : null;
 
   const enabledRepoFullNames = repos.map((repo) => repo.fullName);
+  if (repoFilter) {
+    assertNoUnauthorizedRepos(repoFilter, enabledRepoFullNames);
+  }
   const targetRepos = repoFilter
     ? enabledRepoFullNames.filter((fullName) => repoFilter.has(fullName))
     : enabledRepoFullNames;

@@ -7,8 +7,10 @@ import { and, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import type { ApiEnvelope, PrStatusResponse } from "@ticketdotapp/core";
 import { db, schema } from "@/db/client";
-import { isUnauthorizedResponse, requireSession } from "@/lib/auth";
+import { isAuthFailureResponse } from "@/lib/auth";
 import { createOctokit } from "@/lib/github/client";
+import { applyMutationGuards } from "@/lib/security/mutation-guard";
+import { requireRepoAccess } from "@/lib/security/repo-access";
 
 interface RouteParams {
   params: Promise<{ owner: string; repo: string; prNumber: string }>;
@@ -22,9 +24,8 @@ function checksState(status: string): PrStatusResponse["checks"]["state"] {
 }
 
 export async function GET(_req: NextRequest, { params }: RouteParams) {
-  await requireSession();
-
   const { owner, repo, prNumber } = await params;
+  const { fullName } = await requireRepoAccess(owner, repo);
   const prNum = Number(prNumber);
 
   if (Number.isNaN(prNum) || prNum <= 0) {
@@ -35,7 +36,6 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
     return NextResponse.json(resp, { status: 400 });
   }
 
-  const fullName = `${owner}/${repo}`;
   const row = await db.query.ticketPrs.findFirst({
     where: and(eq(schema.ticketPrs.repoFullName, fullName), eq(schema.ticketPrs.prNumber, prNum)),
   });
@@ -66,8 +66,20 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
 
 export async function PATCH(_req: NextRequest, { params }: RouteParams) {
   try {
-    const { token } = await requireSession();
     const { owner, repo, prNumber } = await params;
+    const { session, fullName } = await requireRepoAccess(owner, repo);
+    const guard = applyMutationGuards({
+      request: _req,
+      bucket: "pr-status-patch",
+      identity: `${session.userId}:${fullName}`,
+      limit: 20,
+      windowMs: 60_000,
+    });
+    if (guard) {
+      return guard;
+    }
+
+    const token = session.token;
     const prNum = Number(prNumber);
 
     if (Number.isNaN(prNum) || prNum <= 0) {
@@ -90,11 +102,11 @@ export async function PATCH(_req: NextRequest, { params }: RouteParams) {
     await db
       .update(schema.ticketPrs)
       .set({ state: "closed", merged: false, updatedAt: new Date() })
-      .where(and(eq(schema.ticketPrs.repoFullName, `${owner}/${repo}`), eq(schema.ticketPrs.prNumber, prNum)));
+      .where(and(eq(schema.ticketPrs.repoFullName, fullName), eq(schema.ticketPrs.prNumber, prNum)));
 
     return NextResponse.json({ ok: true, data: { closed: true } } satisfies ApiEnvelope<{ closed: boolean }>);
   } catch (e: unknown) {
-    if (isUnauthorizedResponse(e)) {
+    if (isAuthFailureResponse(e)) {
       return e;
     }
     const err = e as { status?: number; message?: string };

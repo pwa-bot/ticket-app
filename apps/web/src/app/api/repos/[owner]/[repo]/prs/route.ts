@@ -1,8 +1,8 @@
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db, schema } from "@/db/client";
-import { requireSession } from "@/lib/auth";
 import type { CiStatus } from "@/lib/attention";
+import { requireRepoAccess } from "@/lib/security/repo-access";
 
 interface Params {
   params: Promise<{ owner: string; repo: string }>;
@@ -29,10 +29,8 @@ function checksToCi(status: string): CiStatus {
 }
 
 export async function GET(_request: Request, { params }: Params) {
-  await requireSession();
-
   const { owner, repo } = await params;
-  const fullRepo = `${owner}/${repo}`;
+  const { fullName: fullRepo } = await requireRepoAccess(owner, repo);
 
   const rows = await db.query.ticketPrs.findMany({
     where: eq(schema.ticketPrs.repoFullName, fullRepo),

@@ -12,6 +12,7 @@ import {
   getUpdatedLabel,
   type AttentionRow,
   type CiStatus,
+  type MergeReadiness,
 } from "@/lib/attention";
 import type { TicketChangePatch } from "@ticketdotapp/core";
 
@@ -25,6 +26,7 @@ interface AttentionTableProps {
   ciMap: Record<string, CiStatus>;
   showPrCi?: boolean;
   reasonMap?: Record<string, string[]>;
+  mergeReadinessMap?: Record<string, MergeReadiness>;
   reasonLabels?: Record<string, string>;
 }
 
@@ -48,6 +50,29 @@ const STATE_PILL_STYLES: Record<string, string> = {
   in_progress: "bg-amber-50 text-amber-700 border-amber-300",
   blocked: "bg-red-50 text-red-700 border-red-300",
   done: "bg-green-50 text-green-700 border-green-300",
+};
+
+const MERGE_READINESS_STYLES: Record<MergeReadiness, { label: string; className: string }> = {
+  MERGEABLE_NOW: {
+    label: "Mergeable now",
+    className: "border-emerald-300 bg-emerald-50 text-emerald-700",
+  },
+  WAITING_REVIEW: {
+    label: "Waiting review",
+    className: "border-amber-300 bg-amber-50 text-amber-700",
+  },
+  FAILING_CHECKS: {
+    label: "Failing checks",
+    className: "border-rose-300 bg-rose-50 text-rose-700",
+  },
+  CONFLICT: {
+    label: "Conflict",
+    className: "border-red-300 bg-red-50 text-red-700",
+  },
+  UNKNOWN: {
+    label: "Unknown",
+    className: "border-slate-300 bg-slate-100 text-slate-700",
+  },
 };
 
 // Generate consistent color for repo name
@@ -80,6 +105,7 @@ export default function AttentionTable({
   ciMap,
   showPrCi = true,
   reasonMap,
+  mergeReadinessMap,
   reasonLabels = {},
 }: AttentionTableProps) {
   // Group rows by state
@@ -99,7 +125,8 @@ export default function AttentionTable({
   }, [groupedRows]);
 
   const showReasons = !!reasonMap && Object.keys(reasonMap).length > 0;
-  const colCount = (multiRepo ? 9 : 8) + (showPrCi ? 2 : 0) + (showReasons ? 1 : 0);
+  const showMergeReadiness = !!mergeReadinessMap && Object.keys(mergeReadinessMap).length > 0;
+  const colCount = (multiRepo ? 9 : 8) + (showPrCi ? 2 : 0) + (showReasons ? 1 : 0) + (showMergeReadiness ? 1 : 0);
 
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
@@ -110,6 +137,7 @@ export default function AttentionTable({
             <th className="px-3 py-2">Title</th>
             {multiRepo ? <th className="px-3 py-2">Repo</th> : null}
             {showReasons ? <th className="px-3 py-2">Reasons</th> : null}
+            {showMergeReadiness ? <th className="px-3 py-2">Merge</th> : null}
             <th className="px-3 py-2">State</th>
             <th className="px-3 py-2">Priority</th>
             <th className="px-3 py-2">Assignee</th>
@@ -145,6 +173,7 @@ export default function AttentionTable({
                   const isPending = pendingTicketIds.has(row.ticket.id);
                   const canEdit = !!onChangeField && !isPending;
                   const reasons = reasonMap?.[ticketKey] ?? [];
+                  const mergeReadiness = mergeReadinessMap?.[ticketKey];
 
                   return (
                     <tr key={ticketKey} className="border-t border-slate-100 align-top hover:bg-slate-50">
@@ -185,6 +214,17 @@ export default function AttentionTable({
                                 </span>
                               ))}
                             </div>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </td>
+                      ) : null}
+                      {showMergeReadiness ? (
+                        <td className="px-3 py-2">
+                          {mergeReadiness ? (
+                            <span className={`rounded border px-2 py-0.5 text-xs font-medium ${MERGE_READINESS_STYLES[mergeReadiness].className}`}>
+                              {MERGE_READINESS_STYLES[mergeReadiness].label}
+                            </span>
                           ) : (
                             <span className="text-slate-400">—</span>
                           )}

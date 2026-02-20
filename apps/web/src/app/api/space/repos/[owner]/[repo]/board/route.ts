@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { db, schema } from "@/db/client";
-import { requireSession } from "@/lib/auth";
+import { requireRepoAccess } from "@/lib/security/repo-access";
 
 interface Params {
   params: Promise<{ owner: string; repo: string }>;
@@ -15,10 +15,8 @@ function checksToUi(status: string): "success" | "failure" | "pending" | "unknow
 }
 
 export async function GET(_req: NextRequest, { params }: Params) {
-  await requireSession();
-
   const { owner, repo: repoName } = await params;
-  const fullName = `${owner}/${repoName}`;
+  const { fullName } = await requireRepoAccess(owner, repoName);
 
   const [repo, tickets, prs] = await Promise.all([
     db.query.repos.findFirst({ where: eq(schema.repos.fullName, fullName) }),

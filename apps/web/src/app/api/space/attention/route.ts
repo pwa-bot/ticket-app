@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq, inArray, and, ne, sql } from "drizzle-orm";
 import { db, schema } from "@/db/client";
 import { requireSession } from "@/lib/auth";
-import type { CiStatus } from "@/lib/attention";
+import type { CiStatus, MergeReadiness } from "@/lib/attention";
+import { assertNoUnauthorizedRepos } from "@/lib/security/repo-access";
 
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -15,6 +16,8 @@ export interface AttentionPrSummary {
   state: string | null;
   merged: boolean | null;
   mergeableState: string | null;
+  checksStatus: string;
+  reviewRequired: boolean;
   ciStatus: CiStatus;
 }
 
@@ -34,6 +37,7 @@ export interface AttentionItem {
   cachedAt: string;
   reasons: AttentionReason[];
   prs: AttentionPrSummary[];
+  mergeReadiness: MergeReadiness;
   hasPendingChange: boolean;
 }
 
@@ -61,6 +65,33 @@ function checksStatusToCiStatus(status: string): CiStatus {
     case "running": return "pending";
     default: return "unknown";
   }
+}
+
+function derivePrMergeReadiness(pr: AttentionPrSummary): MergeReadiness {
+  if (pr.mergeableState === "dirty" || pr.mergeableState === "blocked") return "CONFLICT";
+  if (pr.checksStatus === "fail") return "FAILING_CHECKS";
+  if (pr.reviewRequired) return "WAITING_REVIEW";
+  if (pr.checksStatus === "pass" && pr.mergeableState === "clean") return "MERGEABLE_NOW";
+  return "UNKNOWN";
+}
+
+function deriveMergeReadiness(prs: AttentionPrSummary[]): MergeReadiness {
+  const openPrs = prs.filter((pr) => pr.state === "open" && !pr.merged);
+  if (openPrs.length === 0) {
+    return "UNKNOWN";
+  }
+
+  const readinessOrder: Record<MergeReadiness, number> = {
+    CONFLICT: 0,
+    FAILING_CHECKS: 1,
+    WAITING_REVIEW: 2,
+    UNKNOWN: 3,
+    MERGEABLE_NOW: 4,
+  };
+
+  return openPrs
+    .map(derivePrMergeReadiness)
+    .sort((a, b) => readinessOrder[a] - readinessOrder[b])[0];
 }
 
 /**
@@ -108,6 +139,9 @@ export async function GET(req: NextRequest) {
   });
 
   // Apply repo filter if provided
+  if (filterSet) {
+    assertNoUnauthorizedRepos(filterSet, repos.map((repo) => repo.fullName));
+  }
   const targetRepos = filterSet
     ? repos.filter((r) => filterSet.has(r.fullName))
     : repos;
@@ -168,6 +202,18 @@ export async function GET(req: NextRequest) {
     ticketByRepoAndId.set(ticketLookupKey(ticket.repoFullName, ticket.id), ticket);
   }
 
+  // Build pending changes lookup:
+  // - repoFullName:ticketId -> has pending change
+  // - repoFullName:prNumber -> review required state
+  const pendingTicketSet = new Set<string>();
+  const waitingReviewPrSet = new Set<string>();
+  for (const pc of pending) {
+    pendingTicketSet.add(`${pc.repoFullName}:${pc.ticketId}`);
+    if (pc.status === "waiting_review") {
+      waitingReviewPrSet.add(`${pc.repoFullName}:${pc.prNumber}`);
+    }
+  }
+
   // Build PR lookup: repoFullName:shortId → prs
   const prsByShortId = new Map<string, AttentionPrSummary[]>();
   for (const pr of prs) {
@@ -183,6 +229,8 @@ export async function GET(req: NextRequest) {
       state: pr.state ?? null,
       merged: pr.merged ?? null,
       mergeableState: pr.mergeableState ?? null,
+      checksStatus: pr.checksState,
+      reviewRequired: waitingReviewPrSet.has(`${repoFullName}:${pr.prNumber}`),
       ciStatus,
     };
 
@@ -192,18 +240,13 @@ export async function GET(req: NextRequest) {
     prsByShortId.set(key, existing);
   }
 
-  // Build pending changes lookup: repoFullName:ticketId → has pending
-  const pendingTicketSet = new Set<string>();
-  for (const pc of pending) {
-    pendingTicketSet.add(`${pc.repoFullName}:${pc.ticketId}`);
-  }
-
   // Process tickets and determine attention
   const items: AttentionItem[] = [];
 
   for (const ticket of tickets) {
     const ticketPrs = prsByShortId.get(`${ticket.repoFullName}:${ticket.shortId}`) ?? [];
     const hasPendingChange = pendingTicketSet.has(`${ticket.repoFullName}:${ticket.id}`);
+    const mergeReadiness = deriveMergeReadiness(ticketPrs);
 
     const reasons: AttentionReason[] = [];
 
@@ -257,6 +300,7 @@ export async function GET(req: NextRequest) {
       cachedAt: ticket.cachedAt.toISOString(),
       reasons,
       prs: ticketPrs,
+      mergeReadiness,
       hasPendingChange,
     });
   }
@@ -270,11 +314,22 @@ export async function GET(req: NextRequest) {
     pending_pr: 4,
   };
   const priorityOrder: Record<string, number> = { p0: 0, p1: 1, p2: 2, p3: 3 };
+  const mergeReadinessOrder: Record<MergeReadiness, number> = {
+    CONFLICT: 0,
+    FAILING_CHECKS: 1,
+    WAITING_REVIEW: 2,
+    UNKNOWN: 3,
+    MERGEABLE_NOW: 4,
+  };
 
   items.sort((a, b) => {
     const aReason = Math.min(...a.reasons.map((r) => reasonOrder[r]));
     const bReason = Math.min(...b.reasons.map((r) => reasonOrder[r]));
     if (aReason !== bReason) return aReason - bReason;
+
+    const aReadiness = mergeReadinessOrder[a.mergeReadiness];
+    const bReadiness = mergeReadinessOrder[b.mergeReadiness];
+    if (aReadiness !== bReadiness) return aReadiness - bReadiness;
 
     const aPriority = priorityOrder[a.priority] ?? 99;
     const bPriority = priorityOrder[b.priority] ?? 99;

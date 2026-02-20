@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import type { ApiEnvelope } from "@ticketdotapp/core";
 import { db, schema } from "@/db/client";
-import { requireSession } from "@/lib/auth";
+import { requireRepoAccess } from "@/lib/security/repo-access";
 
 type TicketPrInfo = {
   ticketId: string;
@@ -46,10 +46,8 @@ function mapStatus(row: {
 }
 
 export async function GET(_req: Request, { params }: RouteParams) {
-  await requireSession();
-
   const { owner, repo } = await params;
-  const fullName = `${owner}/${repo}`;
+  const { fullName } = await requireRepoAccess(owner, repo);
 
   const rows = await db.query.ticketPrs.findMany({
     where: eq(schema.ticketPrs.repoFullName, fullName),

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db/client";
-import { requireSession } from "@/lib/auth";
 import { syncRepo } from "@/db/sync";
+import { applyMutationGuards } from "@/lib/security/mutation-guard";
+import { requireRepoAccess } from "@/lib/security/repo-access";
 
 interface Params {
   params: Promise<{ owner: string; repo: string }>;
@@ -16,10 +17,18 @@ interface Params {
  * TODO: Enqueue job and return immediately when we add Redis.
  */
 export async function POST(_req: NextRequest, { params }: Params) {
-  const { token } = await requireSession();
-
   const { owner, repo: repoName } = await params;
-  const fullName = `${owner}/${repoName}`;
+  const { session, fullName } = await requireRepoAccess(owner, repoName);
+  const guard = applyMutationGuards({
+    request: _req,
+    bucket: "space-refresh",
+    identity: `${session.userId}:${fullName}`,
+    limit: 20,
+    windowMs: 60_000,
+  });
+  if (guard) {
+    return guard;
+  }
 
   // Find the repo
   const repo = await db.query.repos.findFirst({
@@ -47,7 +56,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
   try {
     // For Phase A, run sync synchronously using existing sync function
     // This still makes GitHub API calls, but only when user explicitly refreshes
-    const result = await syncRepo(fullName, token, true);
+    const result = await syncRepo(fullName, session.token, true);
 
     if (!result.success) {
       await db

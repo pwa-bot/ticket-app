@@ -1,6 +1,8 @@
 import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { cookieNames } from "@/lib/auth";
+import { expiredCookieOptions, oauthStateCookieOptions } from "@/lib/security/cookies";
+import { CSRF_COOKIE_NAME } from "@/lib/security/csrf";
 
 function getBaseUrl(request: Request): string {
   const url = new URL(request.url);
@@ -32,22 +34,11 @@ export async function GET(request: Request) {
 
   // Clear old session
   response.cookies.delete(cookieNames.session);
-  response.cookies.set(cookieNames.session, "", {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 0,
-  });
+  response.cookies.set(cookieNames.session, "", expiredCookieOptions());
+  response.cookies.set(CSRF_COOKIE_NAME, "", expiredCookieOptions("strict"));
   
   // Set OAuth state for validation
-  response.cookies.set(cookieNames.oauthState, state, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 10,
-  });
+  response.cookies.set(cookieNames.oauthState, state, oauthStateCookieOptions());
 
   return response;
 }

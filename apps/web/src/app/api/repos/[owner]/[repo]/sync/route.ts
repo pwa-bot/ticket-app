@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isUnauthorizedResponse, requireSession } from "@/lib/auth";
+import { isAuthFailureResponse } from "@/lib/auth";
 import { syncRepo, getRepo, reconcilePendingChanges } from "@/db/sync";
+import { applyMutationGuards } from "@/lib/security/mutation-guard";
+import { requireRepoAccess } from "@/lib/security/repo-access";
 
 interface RouteParams {
   params: Promise<{ owner: string; repo: string }>;
@@ -14,10 +16,18 @@ interface RouteParams {
  */
 export async function POST(req: NextRequest, { params }: RouteParams) {
   try {
-    const { token } = await requireSession();
-
     const { owner, repo } = await params;
-    const fullName = `${owner}/${repo}`;
+    const { session, fullName } = await requireRepoAccess(owner, repo);
+    const guard = applyMutationGuards({
+      request: req,
+      bucket: "repo-sync",
+      identity: `${session.userId}:${fullName}`,
+      limit: 20,
+      windowMs: 60_000,
+    });
+    if (guard) {
+      return guard;
+    }
 
     // Parse body for force option
     let force = false;
@@ -29,7 +39,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     }
 
     // Run sync
-    const result = await syncRepo(fullName, token, force);
+    const result = await syncRepo(fullName, session.token, force);
 
     if (!result.success) {
       return NextResponse.json(
@@ -39,7 +49,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     }
 
     // Also reconcile pending changes
-    await reconcilePendingChanges(fullName, token);
+    await reconcilePendingChanges(fullName, session.token);
 
     return NextResponse.json({
       success: true,
@@ -49,7 +59,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       syncedAt: new Date().toISOString(),
     });
   } catch (error) {
-    if (isUnauthorizedResponse(error)) {
+    if (isAuthFailureResponse(error)) {
       return error;
     }
     console.error("[sync] Error:", error);
@@ -68,7 +78,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 export async function GET(req: NextRequest, { params }: RouteParams) {
   try {
     const { owner, repo } = await params;
-    const fullName = `${owner}/${repo}`;
+    const { fullName } = await requireRepoAccess(owner, repo);
 
     const repoRow = await getRepo(fullName);
 
@@ -87,6 +97,9 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       syncError: repoRow.syncError,
     });
   } catch (error) {
+    if (isAuthFailureResponse(error)) {
+      return error;
+    }
     console.error("[sync] Error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },

@@ -3,6 +3,12 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { cookieNames, encryptToken, isUnauthorizedResponse, requireSession } from "@/lib/auth";
 import { db, schema } from "@/db/client";
+import {
+  expiredCookieOptions,
+  oauthStateCookieOptions,
+  sessionCookieOptions,
+} from "@/lib/security/cookies";
+import { issueCsrfToken, setCsrfCookie } from "@/lib/security/csrf";
 
 function getBaseUrl(request: Request): string {
   const url = new URL(request.url);
@@ -62,13 +68,7 @@ export async function GET(request: Request) {
     authorizeUrl.searchParams.set("scope", "read:user user:email");
 
     const response = NextResponse.redirect(authorizeUrl);
-    response.cookies.set(cookieNames.oauthState, generatedState, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 60 * 10,
-    });
+    response.cookies.set(cookieNames.oauthState, generatedState, oauthStateCookieOptions());
 
     return response;
   }
@@ -91,13 +91,7 @@ export async function GET(request: Request) {
     authorizeUrl.searchParams.set("scope", "read:user user:email");
     
     const response = NextResponse.redirect(authorizeUrl);
-    response.cookies.set(cookieNames.oauthState, generatedState, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 60 * 10,
-    });
+    response.cookies.set(cookieNames.oauthState, generatedState, oauthStateCookieOptions());
 
     return response;
   }
@@ -259,14 +253,9 @@ export async function GET(request: Request) {
   });
 
   const response = NextResponse.redirect(new URL(redirectTo, request.url));
-  response.cookies.set(cookieNames.session, encryptToken(sessionData), {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7,
-  });
-  response.cookies.set(cookieNames.oauthState, "", { maxAge: 0, path: "/" });
+  response.cookies.set(cookieNames.session, encryptToken(sessionData), sessionCookieOptions());
+  response.cookies.set(cookieNames.oauthState, "", expiredCookieOptions());
+  setCsrfCookie(response, issueCsrfToken());
 
   return response;
 }

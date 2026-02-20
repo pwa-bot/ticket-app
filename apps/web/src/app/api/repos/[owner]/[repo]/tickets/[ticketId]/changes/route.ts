@@ -12,9 +12,11 @@ import {
   type CreateChangePrResponse,
   type TicketChangePatch,
 } from "@ticketdotapp/core";
-import { isUnauthorizedResponse, requireSession } from "@/lib/auth";
+import { isAuthFailureResponse } from "@/lib/auth";
 import { createOctokit } from "@/lib/github/client";
 import { createTicketChangePr } from "@/lib/github/create-ticket-change-pr";
+import { applyMutationGuards } from "@/lib/security/mutation-guard";
+import { requireRepoAccess } from "@/lib/security/repo-access";
 
 interface RouteParams {
   params: Promise<{ owner: string; repo: string; ticketId: string }>;
@@ -22,10 +24,20 @@ interface RouteParams {
 
 export async function POST(req: NextRequest, { params }: RouteParams) {
   try {
-    const { token } = await requireSession();
     const { owner, repo, ticketId } = await params;
+    const { session, fullName } = await requireRepoAccess(owner, repo);
+    const guard = applyMutationGuards({
+      request: req,
+      bucket: "ticket-change-pr",
+      identity: `${session.userId}:${fullName}`,
+      limit: 20,
+      windowMs: 60_000,
+    });
+    if (guard) {
+      return guard;
+    }
 
-    const octokit = createOctokit(token);
+    const octokit = createOctokit(session.token);
 
     // Parse request body
     const body = await req.json();
@@ -61,7 +73,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(resp, { status: 201 });
   } catch (e: unknown) {
-    if (isUnauthorizedResponse(e)) {
+    if (isAuthFailureResponse(e)) {
       return e;
     }
 

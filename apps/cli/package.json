@@ -10,7 +10,7 @@
     "build": "tsc",
     "dev": "tsx src/cli.ts",
     "test": "vitest run",
-    "lint": "eslint src"
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
     "@ticketdotapp/core": "0.1.0",

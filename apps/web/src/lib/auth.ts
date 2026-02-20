@@ -1,6 +1,7 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { isDevAuthBypassEnabled } from "@/lib/security/auth-bypass";
 
 const SESSION_COOKIE = "ticket_app_session";
 const OAUTH_STATE_COOKIE = "ticket_app_oauth_state";
@@ -59,11 +60,11 @@ export interface SessionData {
 const UNAUTHORIZED_MESSAGE = "Unauthorized";
 
 export async function getSession(): Promise<SessionData | null> {
-  // DEV ONLY: bypass auth for local QA
-  if (process.env.DEV_BYPASS_AUTH === "true" && process.env.DEV_BYPASS_USER_ID) {
+  // DEV ONLY: bypass auth for local QA (hard-disabled outside development)
+  if (isDevAuthBypassEnabled()) {
     return {
       token: "dev-bypass-token",
-      userId: process.env.DEV_BYPASS_USER_ID,
+      userId: process.env.DEV_BYPASS_USER_ID!,
       githubLogin: "dev-user",
     };
   }
@@ -111,6 +112,10 @@ export async function requireSession(): Promise<SessionData> {
 
 export function isUnauthorizedResponse(error: unknown): error is Response {
   return error instanceof Response && error.status === 401;
+}
+
+export function isAuthFailureResponse(error: unknown): error is Response {
+  return error instanceof Response && (error.status === 401 || error.status === 403);
 }
 
 export async function getAccessTokenFromCookies(): Promise<string | null> {

@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import AttentionTable from "@/components/attention-table";
 import TicketDetailModal from "@/components/ticket-detail-modal";
 import type { LinkedPrSummary } from "@/components/pr-status-badge";
-import type { AttentionRow, CiStatus } from "@/lib/attention";
+import type { AttentionRow, CiStatus, MergeReadiness } from "@/lib/attention";
 import type { Actor } from "@/lib/types";
 import type { AttentionItem, AttentionResponse, EnabledRepoSummary } from "@/app/api/space/attention/route";
 import type { SpaceTicketsResponse } from "@/app/api/space/tickets/route";
@@ -91,6 +91,14 @@ function itemToReasonMap(items: AttentionItem[]): Record<string, string[]> {
   const map: Record<string, string[]> = {};
   for (const item of items) {
     map[prKey(item.repoFullName, item.ticketId)] = item.reasons;
+  }
+  return map;
+}
+
+function itemToMergeReadinessMap(items: AttentionItem[]): Record<string, MergeReadiness> {
+  const map: Record<string, MergeReadiness> = {};
+  for (const item of items) {
+    map[prKey(item.repoFullName, item.ticketId)] = item.mergeReadiness;
   }
   return map;
 }
@@ -272,6 +280,10 @@ export default function PortfolioAttentionView() {
   );
   const reasonMap = useMemo(
     () => (activeTab === "attention" ? itemToReasonMap(filteredAttentionItems) : {}),
+    [activeTab, filteredAttentionItems],
+  );
+  const mergeReadinessMap = useMemo(
+    () => (activeTab === "attention" ? itemToMergeReadinessMap(filteredAttentionItems) : {}),
     [activeTab, filteredAttentionItems],
   );
 
@@ -484,6 +496,7 @@ export default function PortfolioAttentionView() {
           ciMap={ciMap}
           showPrCi={activeTab === "attention"}
           reasonMap={activeTab === "attention" ? reasonMap : undefined}
+          mergeReadinessMap={activeTab === "attention" ? mergeReadinessMap : undefined}
           reasonLabels={REASON_LABELS}
         />
       ) : null}

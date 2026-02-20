@@ -4,6 +4,8 @@ import { db, schema } from "@/db/client";
 import { requireSession } from "@/lib/auth";
 import { syncRepo } from "@/db/sync";
 import { getInstallationOctokit } from "@/lib/github-app";
+import { applyMutationGuards } from "@/lib/security/mutation-guard";
+import { hasRepoAccess } from "@/lib/security/repo-access";
 
 /**
  * POST /api/repos/enable
@@ -22,6 +24,20 @@ export async function POST(req: NextRequest) {
   }
 
   const fullName = `${owner}/${repo}`;
+  const guard = applyMutationGuards({
+    request: req,
+    bucket: "repos-enable",
+    identity: userId,
+    limit: 15,
+    windowMs: 60_000,
+  });
+  if (guard) {
+    return guard;
+  }
+
+  if (!(await hasRepoAccess(userId, fullName))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   // Find the repo
   const repoRow = await db.query.repos.findFirst({
@@ -42,7 +58,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (!userInstallation) {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
   }
 
