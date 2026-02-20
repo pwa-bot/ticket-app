@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T05:37:05.380Z",
+  "generated_at": "2026-02-20T05:37:08.377Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -165,20 +165,6 @@
       "path": ".tickets/tickets/01KHS9PFF2Z37S54PZD6QGW8DJ.md"
     },
     {
-      "id": "01KHVQ0B6VR7M2HAWB9QPEMBED",
-      "short_id": "01KHVQ0B",
-      "display_id": "TK-01KHVQ0B",
-      "title": "Dashboard wire All tickets view (board/table)",
-      "state": "ready",
-      "priority": "p1",
-      "labels": [
-        "dashboard",
-        "board",
-        "p1"
-      ],
-      "path": ".tickets/tickets/01KHVQ0B6VR7M2HAWB9QPEMBED.md"
-    },
-    {
       "id": "01KHWGY6QMV26C1242E9GTYBJ8",
       "short_id": "01KHWGY6",
       "display_id": "TK-01KHWGY6",
@@ -191,6 +177,20 @@
         "git"
       ],
       "path": ".tickets/tickets/01KHWGY6QMV26C1242E9GTYBJ8.md"
+    },
+    {
+      "id": "01KHVQ0B6VR7M2HAWB9QPEMBED",
+      "short_id": "01KHVQ0B",
+      "display_id": "TK-01KHVQ0B",
+      "title": "Dashboard wire All tickets view (board/table)",
+      "state": "in_progress",
+      "priority": "p1",
+      "labels": [
+        "dashboard",
+        "board",
+        "p1"
+      ],
+      "path": ".tickets/tickets/01KHVQ0B6VR7M2HAWB9QPEMBED.md"
     },
     {
       "id": "01KHWGYAVFC7VSZ6A0EMFQT9K2",

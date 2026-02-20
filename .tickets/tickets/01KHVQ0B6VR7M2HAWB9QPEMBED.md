@@ -1,7 +1,7 @@
 ---
 id: 01KHVQ0B6VR7M2HAWB9QPEMBED
 title: Dashboard wire All tickets view (board/table)
-state: ready
+state: in_progress
 priority: p1
 labels:
   - dashboard
