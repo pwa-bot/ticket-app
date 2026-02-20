@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T07:37:10.203Z",
+  "generated_at": "2026-02-20T07:37:47.115Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -17,20 +17,6 @@
       ],
       "path": ".tickets/tickets/01KHW6EXFRJ818M63EJ0356D0H.md",
       "display_id": "TK-01KHW6EX-2"
-    },
-    {
-      "id": "01KHW6EXZ1SPHTEQZND9EZWA9T",
-      "short_id": "01KHW6EX",
-      "title": "Data integrity audit orphan repo names and cross scope checks",
-      "state": "backlog",
-      "priority": "p1",
-      "labels": [
-        "data",
-        "integrity",
-        "audit"
-      ],
-      "path": ".tickets/tickets/01KHW6EXZ1SPHTEQZND9EZWA9T.md",
-      "display_id": "TK-01KHW6EX-4"
     },
     {
       "id": "01KHW6EY6MS5WYZFZA3Y3ZCC8R",
@@ -72,6 +58,20 @@
       ],
       "path": ".tickets/tickets/01KHS9PFF2Z37S54PZD6QGW8DJ.md",
       "display_id": "TK-01KHS9PF-3"
+    },
+    {
+      "id": "01KHW6EXZ1SPHTEQZND9EZWA9T",
+      "short_id": "01KHW6EX",
+      "title": "Data integrity audit orphan repo names and cross scope checks",
+      "state": "ready",
+      "priority": "p1",
+      "labels": [
+        "data",
+        "integrity",
+        "audit"
+      ],
+      "path": ".tickets/tickets/01KHW6EXZ1SPHTEQZND9EZWA9T.md",
+      "display_id": "TK-01KHW6EX-4"
     },
     {
       "id": "01KHVQ0B6VR7M2HAWB9QPEMBED",
