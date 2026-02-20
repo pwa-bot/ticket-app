@@ -8,7 +8,8 @@ const MARKETING_REDIRECTS = new Set(["/"]);
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const hasSession = request.cookies.has(SESSION_COOKIE);
+  const sessionCookie = request.cookies.get(SESSION_COOKIE)?.value;
+  const hasSession = Boolean(sessionCookie && sessionCookie.length >= 32 && !sessionCookie.includes("."));
 
   // Redirect logged-in users from marketing homepage to dashboard
   if (hasSession && MARKETING_REDIRECTS.has(pathname)) {

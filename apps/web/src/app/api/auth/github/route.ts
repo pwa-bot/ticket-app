@@ -2,7 +2,14 @@ import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { apiError } from "@/lib/api/response";
-import { cookieNames, encryptToken, isUnauthorizedResponse, requireSession } from "@/lib/auth";
+import {
+  cookieNames,
+  createAuthSession,
+  destroySessionById,
+  getSessionIdFromRequest,
+  isUnauthorizedResponse,
+  requireSession,
+} from "@/lib/auth";
 import { normalizeReturnTo } from "@/lib/auth-return-to";
 import { getCanonicalBaseUrl, toCanonicalUrl } from "@/lib/app-url";
 import { db, schema } from "@/db/client";
@@ -58,7 +65,7 @@ async function hasSession(): Promise<boolean> {
 }
 
 function hasSessionCookieInRequest(request: Request): boolean {
-  return Boolean(readCookieValue(request, cookieNames.session));
+  return Boolean(getSessionIdFromRequest(request));
 }
 
 function getOnboardingCallbackReturnTo(url: URL): string {
@@ -285,15 +292,20 @@ export async function GET(request: Request) {
   const defaultRedirectTo = existingInstallation ? "/space" : "/space/onboarding";
   const redirectTo = finalReturnTo === "/space" ? defaultRedirectTo : finalReturnTo;
 
-  // Create session with both token and user ID
-  const sessionData = JSON.stringify({
-    token: tokenData.access_token,
+  const previousSessionId = getSessionIdFromRequest(request);
+  const { sessionId } = await createAuthSession({
     userId,
     githubLogin: githubUser.login,
+    accessToken: tokenData.access_token,
   });
+  try {
+    await destroySessionById(previousSessionId);
+  } catch (error) {
+    console.error("[auth] Failed to delete previous server session:", error);
+  }
 
   const response = NextResponse.redirect(toCanonicalUrl(request, redirectTo));
-  response.cookies.set(cookieNames.session, encryptToken(sessionData), sessionCookieOptions());
+  response.cookies.set(cookieNames.session, sessionId, sessionCookieOptions());
   response.cookies.set(cookieNames.oauthState, "", expiredCookieOptions());
   response.cookies.set(cookieNames.oauthReturnTo, "", expiredCookieOptions());
   setCsrfCookie(response, issueCsrfToken());

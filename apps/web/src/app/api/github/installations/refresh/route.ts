@@ -1,7 +1,7 @@
 import { eq, inArray } from "drizzle-orm";
 import { db, schema } from "@/db/client";
 import { apiError, apiSuccess } from "@/lib/api/response";
-import { requireSession } from "@/lib/auth";
+import { destroySessionById, requireSession } from "@/lib/auth";
 import { hydrateInstallationRepos } from "@/lib/github/hydrate-installation-repos";
 
 interface GithubInstallation {
@@ -19,7 +19,7 @@ interface GithubInstallation {
  * personal repos become visible immediately in /api/repos.
  */
 export async function POST() {
-  const { userId, token } = await requireSession();
+  const { userId, token, sessionId } = await requireSession();
 
   try {
     const recentInstallations = await db.query.userInstallations.findMany({
@@ -61,6 +61,13 @@ export async function POST() {
       console.error("[refresh installations] GitHub API error:", response.status, text);
 
       // Preserve auth/permission semantics so clients can prompt reconnect only when appropriate.
+      if (response.status === 401) {
+        try {
+          await destroySessionById(sessionId);
+        } catch (error) {
+          console.error("[refresh installations] Failed to delete expired auth session:", error);
+        }
+      }
       if (response.status === 401 || response.status === 403) {
         return apiError("GitHub authorization expired or insufficient scope", { status: response.status });
       }

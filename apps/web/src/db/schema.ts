@@ -17,6 +17,28 @@ export const users = pgTable(
 );
 
 /**
+ * Opaque auth sessions mapped to GitHub OAuth tokens.
+ * Cookie only stores session id; access token is encrypted server-side.
+ */
+export const authSessions = pgTable(
+  "auth_sessions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    githubLogin: text("github_login").notNull(),
+    accessTokenEncrypted: text("access_token_encrypted").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    userIdx: index("auth_sessions_user_idx").on(t.userId),
+    expiresIdx: index("auth_sessions_expires_idx").on(t.expiresAt),
+  })
+);
+
+/**
  * Repos enabled by a user/org in ticket.app.
  * We treat Postgres as a derived cache only. GitHub is authoritative.
  */
@@ -417,3 +439,4 @@ export type PrCache = typeof prCache.$inferSelect;
 export type PrChecksCache = typeof prChecksCache.$inferSelect;
 export type WebhookDelivery = typeof webhookDeliveries.$inferSelect;
 export type ManualRefreshJob = typeof manualRefreshJobs.$inferSelect;
+export type AuthSession = typeof authSessions.$inferSelect;

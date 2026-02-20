@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookieNames } from "@/lib/auth";
+import { cookieNames, destroySessionById, getSessionIdFromRequest } from "@/lib/auth";
 import { expiredCookieOptions } from "@/lib/security/cookies";
 import { CSRF_COOKIE_NAME } from "@/lib/security/csrf";
 
@@ -23,6 +23,12 @@ function isPrefetchRequest(request: Request): boolean {
 export async function GET(request: Request) {
   if (isPrefetchRequest(request)) {
     return new NextResponse(null, { status: 204 });
+  }
+
+  try {
+    await destroySessionById(getSessionIdFromRequest(request));
+  } catch (error) {
+    console.error("[auth/logout] Failed to delete server session:", error);
   }
 
   const response = NextResponse.redirect(new URL("/", request.url));

@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { apiError } from "@/lib/api/response";
-import { cookieNames } from "@/lib/auth";
+import { cookieNames, destroySessionById, getSessionIdFromRequest } from "@/lib/auth";
 import { normalizeReturnTo } from "@/lib/auth-return-to";
 import { getCanonicalBaseUrl } from "@/lib/app-url";
 import { expiredCookieOptions, oauthStateCookieOptions } from "@/lib/security/cookies";
@@ -30,6 +30,11 @@ export async function GET(request: Request) {
   authorizeUrl.searchParams.set("scope", "repo read:user user:email");
 
   const response = NextResponse.redirect(authorizeUrl);
+  try {
+    await destroySessionById(getSessionIdFromRequest(request));
+  } catch (error) {
+    console.error("[auth/reconnect] Failed to delete server session:", error);
+  }
 
   // Clear old session
   response.cookies.delete(cookieNames.session);

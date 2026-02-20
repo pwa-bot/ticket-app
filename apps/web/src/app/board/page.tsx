@@ -1,13 +1,13 @@
 import { redirect } from "next/navigation";
-import { getAccessTokenFromCookies } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 
 interface BoardPageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function BoardPage({ searchParams }: BoardPageProps) {
-  const token = await getAccessTokenFromCookies();
-  if (!token) {
+  const session = await getSession();
+  if (!session) {
     redirect("/");
   }
 

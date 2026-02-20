@@ -1,12 +1,19 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
+import { eq, lte } from "drizzle-orm";
 import { cookies } from "next/headers";
+import { db, schema } from "@/db/client";
 import { apiError } from "@/lib/api/response";
+import { createOpaqueToken } from "@/lib/security/cookies";
 import { isDevAuthBypassEnabled } from "@/lib/security/auth-bypass";
 
 const SESSION_COOKIE = "ticket_app_session";
 const OAUTH_STATE_COOKIE = "ticket_app_oauth_state";
 const OAUTH_RETURN_TO_COOKIE = "ticket_app_oauth_return_to";
 const SELECTED_REPO_COOKIE = "ticket_app_repo";
+const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const SESSION_TOUCH_INTERVAL_MS = 5 * 60 * 1000;
+const SESSION_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
+let lastSessionCleanupAt = 0;
 
 function getSecret(): string {
   const secret = process.env.NEXTAUTH_SECRET;
@@ -53,50 +60,151 @@ export function decryptToken(payload: string): string | null {
 }
 
 export interface SessionData {
+  sessionId: string;
   token: string;
   userId: string;
   githubLogin: string;
+  expiresAt: Date;
 }
 
 const UNAUTHORIZED_MESSAGE = "Unauthorized";
+
+function isOpaqueSessionId(value: string): boolean {
+  return value.length >= 32 && !value.includes(".");
+}
+
+function parseCookieValue(cookieHeader: string | null, cookieName: string): string | null {
+  const header = cookieHeader ?? "";
+  const cookie = header
+    .split(";")
+    .map((entry) => entry.trim())
+    .find((entry) => entry.startsWith(`${cookieName}=`));
+
+  if (!cookie) {
+    return null;
+  }
+
+  const separatorIndex = cookie.indexOf("=");
+  const value = separatorIndex >= 0 ? cookie.slice(separatorIndex + 1) : null;
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+async function maybeCleanupExpiredSessions(): Promise<void> {
+  const nowMs = Date.now();
+  if (nowMs - lastSessionCleanupAt < SESSION_CLEANUP_INTERVAL_MS) {
+    return;
+  }
+
+  lastSessionCleanupAt = nowMs;
+  await db.delete(schema.authSessions).where(lte(schema.authSessions.expiresAt, new Date(nowMs)));
+}
+
+export async function createAuthSession(input: {
+  userId: string;
+  githubLogin: string;
+  accessToken: string;
+}): Promise<{ sessionId: string; expiresAt: Date }> {
+  const sessionId = createOpaqueToken(32);
+  const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
+
+  await db.insert(schema.authSessions).values({
+    id: sessionId,
+    userId: input.userId,
+    githubLogin: input.githubLogin,
+    accessTokenEncrypted: encryptToken(input.accessToken),
+    expiresAt,
+    lastSeenAt: new Date(),
+  });
+
+  void maybeCleanupExpiredSessions().catch((error) => {
+    console.error("[auth] Failed to cleanup expired sessions:", error);
+  });
+
+  return { sessionId, expiresAt };
+}
+
+export async function destroySessionById(sessionId: string | null | undefined): Promise<void> {
+  if (!sessionId) {
+    return;
+  }
+
+  await db.delete(schema.authSessions).where(eq(schema.authSessions.id, sessionId));
+}
+
+export function getSessionIdFromRequest(request: Request): string | null {
+  const value = parseCookieValue(request.headers.get("cookie"), SESSION_COOKIE);
+  if (!value || !isOpaqueSessionId(value)) {
+    return null;
+  }
+  return value;
+}
 
 export async function getSession(): Promise<SessionData | null> {
   // DEV ONLY: bypass auth for local QA (hard-disabled outside development)
   if (isDevAuthBypassEnabled()) {
     return {
+      sessionId: "dev-bypass-session",
       token: "dev-bypass-token",
       userId: process.env.DEV_BYPASS_USER_ID!,
       githubLogin: "dev-user",
+      expiresAt: new Date(Date.now() + SESSION_TTL_MS),
     };
   }
 
   const store = await cookies();
-  const encrypted = store.get(SESSION_COOKIE)?.value;
-  if (!encrypted) {
+  const sessionId = store.get(SESSION_COOKIE)?.value;
+  if (!sessionId || !isOpaqueSessionId(sessionId)) {
     return null;
   }
 
-  const decrypted = decryptToken(encrypted);
-  if (!decrypted) {
+  const sessionRow = await db.query.authSessions.findFirst({
+    where: eq(schema.authSessions.id, sessionId),
+  });
+
+  if (!sessionRow) {
     return null;
   }
 
-  try {
-    // Try new format (JSON)
-    const parsed = JSON.parse(decrypted);
-    if (parsed.token && parsed.userId) {
-      return parsed as SessionData;
-    }
-  } catch {
-    // Fall back to old format (plain token string)
-    return {
-      token: decrypted,
-      userId: "legacy",
-      githubLogin: "unknown",
-    };
+  if (sessionRow.expiresAt.getTime() <= Date.now()) {
+    await destroySessionById(sessionId);
+    return null;
   }
 
-  return null;
+  const token = decryptToken(sessionRow.accessTokenEncrypted);
+  if (!token) {
+    await destroySessionById(sessionId);
+    return null;
+  }
+
+  if (Date.now() - sessionRow.lastSeenAt.getTime() >= SESSION_TOUCH_INTERVAL_MS) {
+    void db
+      .update(schema.authSessions)
+      .set({ lastSeenAt: new Date(), updatedAt: new Date() })
+      .where(eq(schema.authSessions.id, sessionId))
+      .catch((error) => {
+        console.error("[auth] Failed to touch auth session:", error);
+      });
+  }
+
+  void maybeCleanupExpiredSessions().catch((error) => {
+    console.error("[auth] Failed to cleanup expired sessions:", error);
+  });
+
+  return {
+    sessionId,
+    token,
+    userId: sessionRow.userId,
+    githubLogin: sessionRow.githubLogin,
+    expiresAt: sessionRow.expiresAt,
+  };
 }
 
 export async function requireSession(): Promise<SessionData> {
@@ -105,9 +213,11 @@ export async function requireSession(): Promise<SessionData> {
     throw apiError(UNAUTHORIZED_MESSAGE, { status: 401 });
   }
   return {
+    sessionId: session.sessionId,
     userId: session.userId,
     token: session.token,
     githubLogin: session.githubLogin ?? "unknown",
+    expiresAt: session.expiresAt,
   };
 }
 
@@ -126,7 +236,8 @@ export async function getAccessTokenFromCookies(): Promise<string | null> {
 
 export async function hasSessionCookie(): Promise<boolean> {
   const store = await cookies();
-  return Boolean(store.get(SESSION_COOKIE)?.value);
+  const cookieValue = store.get(SESSION_COOKIE)?.value;
+  return Boolean(cookieValue && isOpaqueSessionId(cookieValue));
 }
 
 export const cookieNames = {
