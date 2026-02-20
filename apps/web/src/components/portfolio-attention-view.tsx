@@ -565,6 +565,7 @@ export default function PortfolioAttentionView() {
           </Link>
           <Link
             href="/api/auth/logout"
+            prefetch={false}
             className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white"
           >
             Log out

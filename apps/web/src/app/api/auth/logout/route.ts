@@ -3,7 +3,28 @@ import { cookieNames } from "@/lib/auth";
 import { expiredCookieOptions } from "@/lib/security/cookies";
 import { CSRF_COOKIE_NAME } from "@/lib/security/csrf";
 
+function isPrefetchRequest(request: Request): boolean {
+  const purpose = request.headers.get("purpose") || request.headers.get("sec-purpose");
+  if (purpose?.toLowerCase().includes("prefetch")) {
+    return true;
+  }
+
+  if (request.headers.get("x-middleware-prefetch") === "1") {
+    return true;
+  }
+
+  if (request.headers.get("next-router-prefetch") === "1") {
+    return true;
+  }
+
+  return false;
+}
+
 export async function GET(request: Request) {
+  if (isPrefetchRequest(request)) {
+    return new NextResponse(null, { status: 204 });
+  }
+
   const response = NextResponse.redirect(new URL("/", request.url));
 
   // Delete cookies by setting empty value with expires in the past
