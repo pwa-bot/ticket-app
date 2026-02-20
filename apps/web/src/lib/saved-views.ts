@@ -67,3 +67,8 @@ export function renameView(id: string, name: string): void {
 export function getViewsForRepo(repo: string | null): SavedView[] {
   return loadSavedViews().filter((v) => v.repo === repo || v.repo === null);
 }
+
+export function buildShareUrl(basePath: string, query: string): string {
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  return `${origin}${basePath}?${query}`;
+}

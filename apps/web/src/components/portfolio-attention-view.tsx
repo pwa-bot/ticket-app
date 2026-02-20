@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import AttentionTable from "@/components/attention-table";
-import { SavedViewsDropdown } from "@/components/saved-views";
+import { SavedViewsDropdown, SaveViewBanner } from "@/components/saved-views";
 import TicketDetailModal from "@/components/ticket-detail-modal";
 import type { LinkedPrSummary } from "@/components/pr-status-badge";
 import type { AttentionRow, CiStatus, MergeReadiness } from "@/lib/attention";
@@ -178,6 +178,14 @@ export default function PortfolioAttentionView() {
   const activeTab = searchParams.get("tab") === "tickets" ? "tickets" : "attention";
   const repoParam = searchParams.get("repos");
   const searchQuery = searchParams.get("q") ?? "";
+  // Exclude modal params from the view query so that saving a view
+  // doesn't pin an open modal state into the saved filter.
+  const currentQuery = useMemo(() => {
+    const p = new URLSearchParams(searchParams.toString());
+    p.delete("ticket");
+    p.delete("ticketRepo");
+    return p.toString();
+  }, [searchParams]);
 
   const [attentionData, setAttentionData] = useState<AttentionResponse | null>(null);
   const [indexData, setIndexData] = useState<SpaceIndexResponse | null>(null);
@@ -588,6 +596,8 @@ export default function PortfolioAttentionView() {
           ) : null}
         </div>
       </div>
+
+      <SaveViewBanner currentQuery={currentQuery} repo={null} basePath="/space" />
 
       {error ? (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>

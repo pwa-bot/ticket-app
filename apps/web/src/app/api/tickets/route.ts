@@ -3,12 +3,14 @@ import { db, schema } from "@/db/client";
 import { apiError, apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
 import { hasRepoAccess } from "@/lib/security/repo-access";
+import { getManualRefreshJobService } from "@/lib/services/manual-refresh-job-service";
 
 export async function GET(request: Request) {
   const { userId } = await requireSession();
 
   const url = new URL(request.url);
   const repo = url.searchParams.get("repo");
+  const refresh = url.searchParams.get("refresh") === "1";
 
   if (!repo) {
     return apiError("Missing repo query parameter", { status: 400 });
@@ -17,6 +19,25 @@ export async function GET(request: Request) {
   const [owner, repoName] = repo.split("/");
   if (!owner || !repoName || !(await hasRepoAccess(userId, `${owner}/${repoName}`))) {
     return apiError("Forbidden", { status: 403 });
+  }
+
+  let refreshJob: { id: string; status: string; queued: boolean } | null = null;
+  if (refresh) {
+    const service = getManualRefreshJobService();
+    try {
+      const result = await service.enqueueRefresh({
+        repoFullName: repo,
+        requestedByUserId: userId,
+        force: true,
+      });
+      refreshJob = {
+        id: result.job.id,
+        status: result.job.status,
+        queued: result.enqueued,
+      };
+    } catch {
+      // Keep serving cached data even if enqueue fails.
+    }
   }
 
   const [repoRow, tickets] = await Promise.all([
@@ -49,5 +70,6 @@ export async function GET(request: Request) {
       syncStatus: repoRow?.syncStatus ?? "idle",
       stale: !repoRow?.webhookSyncedAt,
     },
+    refreshJob,
   });
 }

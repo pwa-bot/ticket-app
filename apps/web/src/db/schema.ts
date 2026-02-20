@@ -300,6 +300,34 @@ export const webhookDeliveries = pgTable(
   })
 );
 
+/**
+ * Manual refresh job queue.
+ * Jobs are created by user-triggered refresh requests and processed by a background runner.
+ */
+export const manualRefreshJobs = pgTable(
+  "manual_refresh_jobs",
+  {
+    id: text("id").primaryKey(),
+    repoId: text("repo_id").notNull(),
+    repoFullName: text("repo_full_name").notNull(),
+    requestedByUserId: text("requested_by_user_id").notNull(),
+    force: boolean("force").notNull().default(true),
+    status: text("status").notNull().default("queued"), // queued|running|succeeded|failed
+    attempts: integer("attempts").notNull().default(0),
+    maxAttempts: integer("max_attempts").notNull().default(3),
+    errorCode: text("error_code"),
+    errorMessage: text("error_message"),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    repoStatusCreatedIdx: index("manual_refresh_jobs_repo_status_created_idx").on(t.repoId, t.status, t.createdAt),
+    statusCreatedIdx: index("manual_refresh_jobs_status_created_idx").on(t.status, t.createdAt),
+  })
+);
+
 // ============================================================================
 // Slack Integration Tables (v1.3)
 // ============================================================================
@@ -387,3 +415,4 @@ export type TicketIndexSnapshot = typeof ticketIndexSnapshots.$inferSelect;
 export type PrCache = typeof prCache.$inferSelect;
 export type PrChecksCache = typeof prChecksCache.$inferSelect;
 export type WebhookDelivery = typeof webhookDeliveries.$inferSelect;
+export type ManualRefreshJob = typeof manualRefreshJobs.$inferSelect;
