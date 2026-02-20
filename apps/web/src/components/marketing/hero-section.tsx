@@ -11,25 +11,28 @@ export function HeroSectionV2() {
         Tickets are Markdown. State is YAML. History is Git. Agents use the CLI.
         Humans use a fast dashboard overlay.
       </p>
-      <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-        <Link
-          href="/cli"
-          className="rounded-lg bg-foreground px-6 py-3 text-sm font-medium text-background transition-opacity hover:opacity-80"
-        >
-          Install CLI
-        </Link>
-        <Link
-          href="/protocol"
-          className="rounded-lg border border-border px-6 py-3 text-sm font-medium transition-colors hover:bg-surface"
-        >
-          Read the Protocol
-        </Link>
+      <div className="mt-10 flex flex-col items-center justify-center gap-4">
         <Link
           href="/api/auth/github"
-          className="text-sm font-medium text-muted underline underline-offset-4 transition-colors hover:text-foreground"
+          className="rounded-lg bg-foreground px-8 py-4 text-base font-medium text-background transition-opacity hover:opacity-80"
         >
-          Connect GitHub
+          Get Started with GitHub
         </Link>
+        <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
+          <Link
+            href="/cli"
+            className="text-muted underline underline-offset-4 transition-colors hover:text-foreground"
+          >
+            Install CLI
+          </Link>
+          <span className="text-border">•</span>
+          <Link
+            href="/protocol"
+            className="text-muted underline underline-offset-4 transition-colors hover:text-foreground"
+          >
+            Read Protocol
+          </Link>
+        </div>
       </div>
       <p className="mt-6 text-xs text-subtle">
         Git is authoritative. Everything else is derived and disposable.
