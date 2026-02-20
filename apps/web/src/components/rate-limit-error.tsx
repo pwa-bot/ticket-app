@@ -45,9 +45,19 @@ export function isRateLimitError(error: string): boolean {
   return (
     lower.includes("rate limit") ||
     lower.includes("api rate") ||
-    lower.includes("403") ||
     lower.includes("too many requests") ||
     lower.includes("secondary rate")
+  );
+}
+
+function isAuthError(error: string): boolean {
+  const lower = error.toLowerCase();
+  return (
+    lower.includes("401") ||
+    lower.includes("403") ||
+    lower.includes("unauthorized") ||
+    lower.includes("forbidden") ||
+    lower.includes("auth")
   );
 }
 
@@ -56,13 +66,15 @@ export function RateLimitError({ error, onRetry }: RateLimitErrorProps) {
   const { handleRetry, countdown, isWaiting } = useProgressiveRetry(onRetry);
 
   if (!isRateLimit) {
-    // Generic error with progressive retry
+    const authError = isAuthError(error);
+
+    // Generic/auth error with progressive retry
     return (
       <div className="rounded-lg border border-red-200 bg-red-50 p-4">
         <p className="text-sm text-red-700">{error}</p>
-        {onRetry && (
-          <div className="mt-2">
-            {isWaiting ? (
+        <div className="mt-2 flex items-center gap-2">
+          {onRetry ? (
+            isWaiting ? (
               <p className="text-xs text-red-600">
                 Waiting {countdown}s before retry...
               </p>
@@ -73,9 +85,17 @@ export function RateLimitError({ error, onRetry }: RateLimitErrorProps) {
               >
                 Try again
               </button>
-            )}
-          </div>
-        )}
+            )
+          ) : null}
+          {authError ? (
+            <Link
+              href="/api/auth/reconnect?returnTo=%2Fspace"
+              className="rounded-md bg-red-100 px-3 py-1.5 text-sm font-medium text-red-800 hover:bg-red-200"
+            >
+              Reconnect GitHub
+            </Link>
+          ) : null}
+        </div>
       </div>
     );
   }
