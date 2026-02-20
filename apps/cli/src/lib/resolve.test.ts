@@ -26,6 +26,36 @@ const index: TicketsIndex = {
       priority: "p2",
       labels: ["onboarding"],
       path: ".tickets/tickets/01ARZ3P9E4C1N2EXAMPLEABCDE.md"
+    },
+    {
+      id: "01KHWGYA000000000000000000",
+      short_id: "01KHWGYA",
+      display_id: "TK-01KHWGYA",
+      title: "Collision first",
+      state: "ready",
+      priority: "p2",
+      labels: [],
+      path: ".tickets/tickets/01KHWGYA000000000000000000.md"
+    },
+    {
+      id: "01KHWGYA000000000000000001",
+      short_id: "01KHWGYA",
+      display_id: "TK-01KHWGYA-2",
+      title: "Collision second",
+      state: "ready",
+      priority: "p2",
+      labels: [],
+      path: ".tickets/tickets/01KHWGYA000000000000000001.md"
+    },
+    {
+      id: "01KHWGYA000000000000000002",
+      short_id: "01KHWGYA",
+      display_id: "TK-01KHWGYA-3",
+      title: "Collision third",
+      state: "ready",
+      priority: "p2",
+      labels: [],
+      path: ".tickets/tickets/01KHWGYA000000000000000002.md"
     }
   ]
 };
@@ -36,17 +66,29 @@ describe("resolveTicket", () => {
     expect(ticket.display_id).toBe("TK-01ARZ3ND");
   });
 
-  it("rejects fuzzy ids in ci mode", () => {
-    expect(() => resolveTicket(index, "01ARZ3", true)).toThrow("Ticket not found");
-  });
-
-  it("supports fuzzy prefix in interactive mode", () => {
-    const ticket = resolveTicket(index, "01ARZ3NDEK", false);
-    expect(ticket.display_id).toBe("TK-01ARZ3ND");
-  });
-
-  it("supports title matching in interactive mode", () => {
-    const ticket = resolveTicket(index, "paywall", false);
+  it("resolves exact display_id before short_id", () => {
+    const ticket = resolveTicket(index, "TK-01ARZ3ND", false);
     expect(ticket.id).toBe("01ARZ3NDEKTSV4RRFFQ69G5FAV");
+  });
+
+  it("resolves unique short_id", () => {
+    const ticket = resolveTicket(index, "01ARZ3P9", false);
+    expect(ticket.id).toBe("01ARZ3P9E4C1N2EXAMPLEABCDE");
+  });
+
+  it("resolves suffixed display ids for collision groups", () => {
+    const ticket = resolveTicket(index, "TK-01KHWGYA-3", false);
+    expect(ticket.id).toBe("01KHWGYA000000000000000002");
+  });
+
+  it("retains compatibility for unsuffixed display id and errors on ambiguous short_id", () => {
+    const legacy = resolveTicket(index, "TK-01KHWGYA", false);
+    expect(legacy.id).toBe("01KHWGYA000000000000000000");
+    expect(() => resolveTicket(index, "01KHWGYA", false)).toThrow("Ambiguous ticket id '01KHWGYA'");
+  });
+
+  it("rejects fuzzy prefix and title matches", () => {
+    expect(() => resolveTicket(index, "01ARZ3", false)).toThrow("Ticket not found");
+    expect(() => resolveTicket(index, "paywall", false)).toThrow("Ticket not found");
   });
 });

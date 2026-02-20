@@ -94,7 +94,7 @@ const attentionResponse = {
   loadedAt: "2026-02-20T08:00:00.000Z",
 };
 
-const ticketsResponse = {
+const indexResponse = {
   tickets: [
     {
       repoFullName: "acme/api",
@@ -128,11 +128,10 @@ const ticketsResponse = {
       totalTickets: 1,
     },
   ],
-  pagination: {
-    limit: 100,
-    offset: 0,
-    total: 1,
-    hasMore: false,
+  totals: {
+    reposEnabled: 2,
+    reposSelected: 2,
+    ticketsTotal: 1,
   },
   loadedAt: "2026-02-20T08:00:00.000Z",
 };
@@ -146,11 +145,11 @@ test("space filters sync to URL and back/forward restores state", async ({ page 
     });
   });
 
-  await page.route("**/api/space/tickets**", async (route) => {
+  await page.route("**/api/space/index**", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify(ticketsResponse),
+      body: JSON.stringify(indexResponse),
     });
   });
 

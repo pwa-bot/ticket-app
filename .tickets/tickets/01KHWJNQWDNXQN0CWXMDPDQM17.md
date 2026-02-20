@@ -17,12 +17,12 @@ labels:
 
 ## Acceptance Criteria
 
-- [ ] `ticket list` shows unambiguous display IDs even when ULID prefixes collide.
-- [ ] `ticket show`, `ticket start`, `ticket done`, and `ticket move` accept current IDs and resolve deterministically (no wrong-ticket selection).
-- [ ] If a legacy short ID is ambiguous, CLI returns a clear error with exact disambiguation options.
-- [ ] Add regression tests covering at least 3 tickets with same prefix and mixed states.
-- [ ] Add a migration/backfill path so existing `.tickets/index.json` display IDs are repaired safely.
-- [ ] Update docs with the new naming/ID rules and examples.
+- [x] `ticket list` shows unambiguous display IDs even when ULID prefixes collide.
+- [x] `ticket show`, `ticket start`, `ticket done`, and `ticket move` accept current IDs and resolve deterministically (no wrong-ticket selection).
+- [x] If a legacy short ID is ambiguous, CLI returns a clear error with exact disambiguation options.
+- [x] Add regression tests covering at least 3 tickets with same prefix and mixed states.
+- [x] Add a migration/backfill path so existing `.tickets/index.json` display IDs are repaired safely.
+- [x] Update docs with the new naming/ID rules and examples.
 
 ## Spec
 

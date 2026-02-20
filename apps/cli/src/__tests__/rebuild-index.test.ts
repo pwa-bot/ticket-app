@@ -86,4 +86,37 @@ labels: []
     const index = JSON.parse(await fs.readFile(indexPath, "utf8"));
     expect(index.tickets).toHaveLength(2);
   });
+
+  it("repairs legacy duplicate display ids during rebuild (migration/backfill)", async () => {
+    const cwd = await mkTempRepo();
+    const id1 = "01KHWGYA000000000000000000";
+    const id2 = "01KHWGYA000000000000000001";
+    const id3 = "01KHWGYA000000000000000002";
+
+    await writeTicket(cwd, id1, "first", "backlog", "p1");
+    await writeTicket(cwd, id2, "second", "ready", "p1");
+    await writeTicket(cwd, id3, "third", "done", "p1");
+
+    const legacyIndex = {
+      format_version: 1,
+      generated_at: "2026-02-20T00:00:00.000Z",
+      workflow: "simple-v1",
+      tickets: [
+        { id: id1, short_id: "01KHWGYA", display_id: "TK-01KHWGYA", title: "first", state: "backlog", priority: "p1", labels: [], path: `.tickets/tickets/${id1}.md` },
+        { id: id2, short_id: "01KHWGYA", display_id: "TK-01KHWGYA", title: "second", state: "ready", priority: "p1", labels: [], path: `.tickets/tickets/${id2}.md` },
+        { id: id3, short_id: "01KHWGYA", display_id: "TK-01KHWGYA", title: "third", state: "done", priority: "p1", labels: [], path: `.tickets/tickets/${id3}.md` }
+      ]
+    };
+    await fs.writeFile(path.join(cwd, ".tickets/index.json"), `${JSON.stringify(legacyIndex, null, 2)}\n`, "utf8");
+
+    await runRebuildIndex(cwd);
+
+    const rebuilt = JSON.parse(await fs.readFile(path.join(cwd, ".tickets/index.json"), "utf8")) as {
+      tickets: Array<{ id: string; display_id: string }>;
+    };
+    const byId = new Map(rebuilt.tickets.map((ticket) => [ticket.id, ticket.display_id]));
+    expect(byId.get(id1)).toBe("TK-01KHWGYA");
+    expect(byId.get(id2)).toBe("TK-01KHWGYA-2");
+    expect(byId.get(id3)).toBe("TK-01KHWGYA-3");
+  });
 });

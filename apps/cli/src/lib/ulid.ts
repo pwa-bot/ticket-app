@@ -31,6 +31,10 @@ export function shortId(id: string): string {
   return id.slice(0, 8);
 }
 
-export function displayId(id: string): string {
-  return `TK-${shortId(id)}`;
+export function displayId(id: string, sequence?: number): string {
+  const base = `TK-${shortId(id)}`;
+  if (sequence == null || sequence <= 1) {
+    return base;
+  }
+  return `${base}-${sequence}`;
 }

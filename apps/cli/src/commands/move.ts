@@ -7,7 +7,6 @@ import { rebuildIndex } from "../lib/index.js";
 import { readIndex } from "../lib/io.js";
 import { shouldCommit, success } from "../lib/output.js";
 import { resolveTicket } from "../lib/resolve.js";
-import { displayId } from "../lib/ulid.js";
 import { assertTransition, normalizeState } from "../lib/workflow.js";
 
 export interface MoveCommandOptions {
@@ -45,7 +44,7 @@ export async function runMove(cwd: string, id: string, stateValue: string, optio
       await autoCommit(
         cwd,
         [ticketPath, indexPath],
-        `ticket: ${displayId(ticket.id)} -> ${state}`
+        `ticket: ${ticket.display_id} -> ${state}`
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -53,7 +52,7 @@ export async function runMove(cwd: string, id: string, stateValue: string, optio
     }
   }
 
-  success(`Moved ${displayId(ticket.id)} to ${state}`);
+  success(`Moved ${ticket.display_id} to ${state}`);
 }
 
 export async function runStart(cwd: string, id: string, options: MoveCommandOptions): Promise<void> {

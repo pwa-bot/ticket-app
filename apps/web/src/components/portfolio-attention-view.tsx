@@ -15,10 +15,8 @@ import type {
   EnabledRepoSummary,
 } from "@/app/api/space/attention/route";
 import type { AttentionReasonDetail } from "@/lib/attention-contract";
-import type { SpaceTicketsResponse } from "@/app/api/space/tickets/route";
+import type { SpaceIndexResponse, SpaceIndexTicket } from "@/app/api/space/index/route";
 import { trackWebEvent } from "@/lib/telemetry";
-
-const TICKETS_PAGE_SIZE = 100;
 
 function prKey(repo: string, ticketId: string): string {
   return `${repo}:${ticketId}`;
@@ -44,7 +42,24 @@ function itemToAttentionRow(item: AttentionItem): AttentionRow {
   };
 }
 
-function ticketToAttentionRow(item: SpaceTicketsResponse["tickets"][number]): AttentionRow {
+function filterIndexTicketsBySearch(tickets: SpaceIndexTicket[], search: string): SpaceIndexTicket[] {
+  if (!search) {
+    return tickets;
+  }
+
+  const lowered = search.toLowerCase();
+  return tickets.filter((t) =>
+    t.title.toLowerCase().includes(lowered) ||
+    t.displayId.toLowerCase().includes(lowered) ||
+    t.shortId.toLowerCase().includes(lowered) ||
+    t.repoFullName.toLowerCase().includes(lowered) ||
+    t.labels.some((label) => label.toLowerCase().includes(lowered)) ||
+    (t.assignee ?? "").toLowerCase().includes(lowered) ||
+    (t.reviewer ?? "").toLowerCase().includes(lowered),
+  );
+}
+
+function ticketToAttentionRow(item: SpaceIndexTicket): AttentionRow {
   return {
     repo: item.repoFullName,
     generatedAt: item.cachedAt,
@@ -165,10 +180,9 @@ export default function PortfolioAttentionView() {
   const searchQuery = searchParams.get("q") ?? "";
 
   const [attentionData, setAttentionData] = useState<AttentionResponse | null>(null);
-  const [ticketsData, setTicketsData] = useState<SpaceTicketsResponse | null>(null);
+  const [indexData, setIndexData] = useState<SpaceIndexResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [ticketsOffset, setTicketsOffset] = useState(0);
   const [jumpValue, setJumpValue] = useState("");
   const [jumpError, setJumpError] = useState<string | null>(null);
   const hasTrackedView = useRef(false);
@@ -192,20 +206,14 @@ export default function PortfolioAttentionView() {
       }
 
       if (activeTab === "tickets") {
-        params.set("limit", String(TICKETS_PAGE_SIZE));
-        params.set("offset", String(ticketsOffset));
-        if (searchQuery) {
-          params.set("q", searchQuery);
-        }
-
-        const url = `/api/space/tickets${params.toString() ? `?${params.toString()}` : ""}`;
+        const url = `/api/space/index${params.toString() ? `?${params.toString()}` : ""}`;
         const res = await fetch(url, { cache: "no-store" });
         if (!res.ok) {
           throw new Error(`Failed to load tickets (${res.status})`);
         }
 
-        const json = (await res.json()) as SpaceTicketsResponse;
-        setTicketsData(json);
+        const json = (await res.json()) as SpaceIndexResponse;
+        setIndexData(json);
       } else {
         const url = `/api/space/attention${params.toString() ? `?${params.toString()}` : ""}`;
         const res = await fetch(url, { cache: "no-store" });
@@ -221,13 +229,7 @@ export default function PortfolioAttentionView() {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, repoParam, searchQuery, ticketsOffset]);
-
-  useEffect(() => {
-    if (activeTab === "tickets") {
-      setTicketsOffset(0);
-    }
-  }, [activeTab, repoParam, searchQuery]);
+  }, [activeTab, repoParam]);
 
   useEffect(() => {
     void load();
@@ -238,7 +240,7 @@ export default function PortfolioAttentionView() {
       return;
     }
 
-    const hasData = !!attentionData || !!ticketsData;
+    const hasData = !!attentionData || !!indexData;
     if (!hasData) {
       return;
     }
@@ -246,9 +248,9 @@ export default function PortfolioAttentionView() {
     hasTrackedView.current = true;
     trackWebEvent("dashboard_activation_viewed", {
       tab: activeTab,
-      reposEnabled: attentionData?.totals.reposEnabled ?? attentionData?.repos.length ?? ticketsData?.repos.length ?? 0,
+      reposEnabled: attentionData?.totals.reposEnabled ?? attentionData?.repos.length ?? indexData?.repos.length ?? 0,
     });
-  }, [activeTab, attentionData, error, loading, ticketsData]);
+  }, [activeTab, attentionData, error, loading, indexData]);
 
   const selectedTicketId = searchParams.get("ticket");
   const selectedTicketRepo = searchParams.get("ticketRepo");
@@ -282,7 +284,7 @@ export default function PortfolioAttentionView() {
     router.push(query ? `${pathname}?${query}` : pathname);
   }
 
-  const allRepos = (attentionData?.repos ?? ticketsData?.repos ?? []) as EnabledRepoSummary[];
+  const allRepos = (attentionData?.repos ?? indexData?.repos ?? []) as EnabledRepoSummary[];
   const allRepoNames = useMemo(() => new Set(allRepos.map((repo) => repo.fullName)), [allRepos]);
   const activeRepos = selectedRepos ?? allRepoNames;
 
@@ -325,7 +327,11 @@ export default function PortfolioAttentionView() {
   );
 
   const attentionRows = useMemo(() => filteredAttentionItems.map(itemToAttentionRow), [filteredAttentionItems]);
-  const ticketRows = useMemo(() => (ticketsData?.tickets ?? []).map(ticketToAttentionRow), [ticketsData?.tickets]);
+  const filteredIndexTickets = useMemo(
+    () => filterIndexTicketsBySearch(indexData?.tickets ?? [], searchQuery),
+    [indexData?.tickets, searchQuery],
+  );
+  const ticketRows = useMemo(() => filteredIndexTickets.map(ticketToAttentionRow), [filteredIndexTickets]);
 
   const activeRows = activeTab === "tickets" ? ticketRows : attentionRows;
   const prMap = useMemo(
@@ -356,7 +362,7 @@ export default function PortfolioAttentionView() {
     return labels;
   }, [attentionData?.reasonCatalog]);
 
-  const loadedAt = (activeTab === "tickets" ? ticketsData?.loadedAt : attentionData?.loadedAt) ?? null;
+  const loadedAt = (activeTab === "tickets" ? indexData?.loadedAt : attentionData?.loadedAt) ?? null;
 
   const attentionTotals = attentionData?.totals;
   const reposEnabled = attentionTotals?.reposEnabled ?? allRepos.length;
@@ -388,7 +394,7 @@ export default function PortfolioAttentionView() {
             shortId: item.shortId,
             displayId: item.displayId,
           }))
-        : (ticketsData?.tickets ?? []).map((ticket) => ({
+        : (indexData?.tickets ?? []).map((ticket) => ({
             repoFullName: ticket.repoFullName,
             ticketId: ticket.id,
             shortId: ticket.shortId,
@@ -425,7 +431,7 @@ export default function PortfolioAttentionView() {
               ? "Loading…"
               : activeTab === "attention"
                 ? `${filteredAttentionItems.length} items needing attention`
-                : `${ticketsData?.pagination.total ?? 0} tickets`}
+                : `${filteredIndexTickets.length} tickets`}
             {loadedAt ? <span className="ml-2 text-slate-400">· cached {new Date(loadedAt).toLocaleString()}</span> : null}
           </p>
         </div>
@@ -685,31 +691,6 @@ export default function PortfolioAttentionView() {
         />
       ) : null}
 
-      {!loading && !error && activeTab === "tickets" && ticketsData ? (
-        <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
-          <span>
-            Showing {ticketsData.tickets.length} of {ticketsData.pagination.total} tickets
-          </span>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={ticketsData.pagination.offset === 0}
-              onClick={() => setTicketsOffset((value) => Math.max(0, value - TICKETS_PAGE_SIZE))}
-              className="rounded-md border border-slate-300 px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <button
-              type="button"
-              disabled={!ticketsData.pagination.hasMore}
-              onClick={() => setTicketsOffset((value) => value + TICKETS_PAGE_SIZE)}
-              className="rounded-md border border-slate-300 px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      ) : null}
 
       {selectedTicketId && selectedTicketRepo ? (
         <TicketDetailModal repo={selectedTicketRepo} ticketId={selectedTicketId} onClose={onCloseTicket} />

@@ -67,9 +67,35 @@ async function listTicketFiles(cwd: string): Promise<string[]> {
     .sort((a, b) => a.localeCompare(b));
 }
 
+function assignDisplayIdsDeterministic(entries: Array<{ id: string; short_id: string }>): Map<string, string> {
+  const grouped = new Map<string, string[]>();
+  for (const entry of entries) {
+    const group = grouped.get(entry.short_id);
+    if (group) {
+      group.push(entry.id);
+      continue;
+    }
+    grouped.set(entry.short_id, [entry.id]);
+  }
+
+  const byId = new Map<string, string>();
+  for (const ids of grouped.values()) {
+    const sorted = [...ids].sort((a, b) => a.localeCompare(b));
+    if (sorted.length === 1) {
+      byId.set(sorted[0], displayId(sorted[0]));
+      continue;
+    }
+    for (let idx = 0; idx < sorted.length; idx += 1) {
+      byId.set(sorted[idx], displayId(sorted[idx], idx + 1));
+    }
+  }
+
+  return byId;
+}
+
 export async function generateIndex(cwd: string): Promise<TicketsIndex> {
   const files = await listTicketFiles(cwd);
-  const tickets: TicketIndexEntry[] = [];
+  const ticketDrafts: Array<Omit<TicketIndexEntry, "display_id">> = [];
 
   for (const file of files) {
     const fullPath = path.join(cwd, TICKETS_DIR, file);
@@ -77,10 +103,9 @@ export async function generateIndex(cwd: string): Promise<TicketsIndex> {
     const stem = file.replace(/\.md$/, "");
     const parsed = parseTicketDocument(markdown, file, stem);
 
-    tickets.push({
+    ticketDrafts.push({
       id: parsed.frontmatter.id,
       short_id: shortId(parsed.frontmatter.id),
-      display_id: displayId(parsed.frontmatter.id),
       title: parsed.frontmatter.title,
       state: parsed.frontmatter.state,
       priority: parsed.frontmatter.priority,
@@ -91,6 +116,12 @@ export async function generateIndex(cwd: string): Promise<TicketsIndex> {
       path: `${TICKETS_DIR}/${file}`
     });
   }
+
+  const displayById = assignDisplayIdsDeterministic(ticketDrafts);
+  const tickets: TicketIndexEntry[] = ticketDrafts.map((ticket) => ({
+    ...ticket,
+    display_id: displayById.get(ticket.id) ?? displayId(ticket.id)
+  }));
 
   return {
     format_version: 1,

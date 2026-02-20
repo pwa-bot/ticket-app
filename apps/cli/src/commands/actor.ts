@@ -7,7 +7,6 @@ import { autoCommit } from "../lib/git.js";
 import { rebuildIndex } from "../lib/index.js";
 import { readIndex } from "../lib/io.js";
 import { resolveTicket } from "../lib/resolve.js";
-import { displayId } from "../lib/ulid.js";
 
 export interface ActorCommandOptions {
   ci?: boolean;
@@ -38,7 +37,7 @@ async function updateTicketActor(ticketPath: string, field: ActorField, actor: s
 async function runActorUpdate(
   cwd: string,
   ticketPath: string,
-  ticketId: string,
+  ticketDisplayId: string,
   actorValue: string,
   field: ActorField,
   commitAction: "assign" | "reviewer"
@@ -49,7 +48,7 @@ async function runActorUpdate(
   await rebuildIndex(cwd);
 
   const indexPath = path.join(cwd, INDEX_PATH);
-  const display = displayId(ticketId);
+  const display = ticketDisplayId;
 
   try {
     await autoCommit(
@@ -73,11 +72,11 @@ async function runActorUpdate(
 export async function runAssign(cwd: string, id: string, actor: string, options: ActorCommandOptions): Promise<void> {
   const index = await readIndex(cwd);
   const ticket = resolveTicket(index, id, options.ci ?? false);
-  await runActorUpdate(cwd, path.join(cwd, ticket.path), ticket.id, actor, "assignee", "assign");
+  await runActorUpdate(cwd, path.join(cwd, ticket.path), ticket.display_id, actor, "assignee", "assign");
 }
 
 export async function runReviewer(cwd: string, id: string, actor: string, options: ActorCommandOptions): Promise<void> {
   const index = await readIndex(cwd);
   const ticket = resolveTicket(index, id, options.ci ?? false);
-  await runActorUpdate(cwd, path.join(cwd, ticket.path), ticket.id, actor, "reviewer", "reviewer");
+  await runActorUpdate(cwd, path.join(cwd, ticket.path), ticket.display_id, actor, "reviewer", "reviewer");
 }

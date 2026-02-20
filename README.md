@@ -32,7 +32,7 @@ ticket new "Add user authentication"
 ticket list
 
 # Move to in progress
-ticket start TK-ABC123
+ticket start TK-01ARZ3ND
 ```
 
 ## Protocol
@@ -57,7 +57,7 @@ Commands:
 - `ticket init` — Create `.tickets/` structure
 - `ticket new <title>` — Create a ticket
 - `ticket list` — List tickets
-- `ticket show <id>` — Show ticket details
+- `ticket show <id>` — Show ticket details (`id`, `display_id`, or unique `short_id`)
 - `ticket move <id> <state>` — Change state
 - `ticket edit <id>` — Edit metadata
 - `ticket validate` — Check for errors (`--policy-tier` controls governance enforcement)

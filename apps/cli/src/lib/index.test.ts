@@ -61,4 +61,23 @@ describe("rebuildIndex", () => {
     // Order should be identical across runs (ignoring generated_at timestamp)
     expect(index1.tickets.map((t) => t.id)).toEqual(index2.tickets.map((t) => t.id));
   });
+
+  it("assigns deterministic v2 display ids for 3-way short_id collisions", async () => {
+    const cwd = await mkTempRepo();
+
+    const id1 = "01KHWGYA000000000000000000";
+    const id2 = "01KHWGYA000000000000000001";
+    const id3 = "01KHWGYA000000000000000002";
+
+    await writeTicket(cwd, id3, "third", "ready", "p2");
+    await writeTicket(cwd, id1, "first", "backlog", "p1");
+    await writeTicket(cwd, id2, "second", "in_progress", "p0");
+
+    const index = await rebuildIndex(cwd);
+    const byId = new Map(index.tickets.map((ticket) => [ticket.id, ticket.display_id]));
+
+    expect(byId.get(id1)).toBe("TK-01KHWGYA");
+    expect(byId.get(id2)).toBe("TK-01KHWGYA-2");
+    expect(byId.get(id3)).toBe("TK-01KHWGYA-3");
+  });
 });

@@ -244,7 +244,7 @@ linking:
 |------|------------|---------|
 | `id` | Full ULID (26 chars) | `01ARZ3NDEKTSV4RRFFQ69G5FAV` |
 | `short_id` | First 8 chars of ULID | `01ARZ3ND` |
-| `display_id` | `{id_prefix}-{short_id}` | `TK-01ARZ3ND` |
+| `display_id` | Deterministic v2 display id (`TK-<short_id>`; on collision: `TK-<short_id>-<seq>`) | `TK-01ARZ3ND`, `TK-01ARZ3ND-2` |
 
 ### `.tickets/policy.yml` (Optional)
 
@@ -396,11 +396,11 @@ Binary: `ticket`
 
 | Mode | Behavior |
 |------|----------|
-| Interactive (default) | Human-friendly, fuzzy matching allowed |
-| `--ci` | Agent-safe, deterministic, no fuzzy matching |
+| Interactive (default) | Deterministic resolution with explicit ambiguity errors |
+| `--ci` | Same deterministic resolution; no fuzzy matching |
 
 In `--ci` mode:
-- IDs must be exact ULID or exact short_id
+- IDs are resolved in precedence order: full `id` > exact `display_id` > unique `short_id`
 - Any ambiguity is an error with non-zero exit
 - `ticket edit` returns non-zero with `code=ci_mode_not_supported`
 
@@ -411,7 +411,7 @@ In `--ci` mode:
 | `ticket init` | Create `.tickets/` structure, config.yml, template.md, empty index.json |
 | `ticket new "Title" [--priority p1] [--state backlog] [--label x]` | Create ticket with ULID, regenerate index, auto-commit |
 | `ticket list [--state x] [--priority x] [--label x]` | List tickets from index.json |
-| `ticket show <id>` | Display ticket details (fuzzy match unless `--ci`) |
+| `ticket show <id>` | Display ticket details using deterministic id resolution |
 | `ticket move <id> <state>` | Transition state, validate, regenerate index, auto-commit |
 | `ticket start <id>` | Shortcut for `move <id> in_progress` |
 | `ticket done <id>` | Shortcut for `move <id> done` |
@@ -438,8 +438,11 @@ Commits include:
 ### 8.4 Collision and Ambiguity Rules
 
 - ULID prevents filename collisions
-- Prefix matching: error if multiple matches
-- Title search: interactive chooser if multiple matches, hard error in `--ci` mode
+- `display_id` v2 is deterministic:
+  - Primary: `TK-<first8>`
+  - On same-prefix collision: `TK-<first8>-<seq>` with stable sequence by sorted full ULID
+- Resolution precedence is strict: full `id` > exact `display_id` > unique `short_id`
+- Ambiguous `short_id` is a hard error and returns explicit disambiguation options (`display_id` + full `id`)
 
 ---
 
@@ -680,8 +683,8 @@ Instructions for any OpenClaw instance:
 
 Agent-safe usage:
 - Always use `--ci` mode
-- Reference tickets by exact short_id or full id
-- Avoid title fuzzy matching in automation
+- Prefer full `id` or exact `display_id`; use `short_id` only when unique
+- Avoid fuzzy matching in automation
 
 Optional skill wrapper:
 - `ticket` skill calls CLI actions and pushes commits

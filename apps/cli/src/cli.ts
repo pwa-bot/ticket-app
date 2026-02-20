@@ -94,7 +94,7 @@ async function main(): Promise<void> {
   program
     .command("show")
     .description("Show a ticket")
-    .argument("<id>", "Ticket id (ULID or short id)")
+    .argument("<id>", "Ticket id (ULID, display_id, or short_id)")
     .option("--ci", "Enable CI mode (exact id matching only)")
     .option("--json", "Emit a JSON envelope")
     .action(async (id: string, options: { ci?: boolean; json?: boolean }, command: Command) => {
@@ -105,7 +105,7 @@ async function main(): Promise<void> {
   program
     .command("move")
     .description("Move a ticket to a new state")
-    .argument("<id>", "Ticket id (ULID or short id)")
+    .argument("<id>", "Ticket id (ULID, display_id, or short_id)")
     .argument("<state>", "Target state")
     .option("--ci", "Enable CI mode (exact id matching only)")
     .action(async (id: string, state: string, options: { ci?: boolean }) => {
@@ -115,7 +115,7 @@ async function main(): Promise<void> {
   program
     .command("start")
     .description("Move a ticket to in_progress")
-    .argument("<id>", "Ticket id (ULID or short id)")
+    .argument("<id>", "Ticket id (ULID, display_id, or short_id)")
     .option("--ci", "Enable CI mode (exact id matching only)")
     .action(async (id: string, options: { ci?: boolean }) => {
       await runStart(process.cwd(), id, options);
@@ -124,7 +124,7 @@ async function main(): Promise<void> {
   program
     .command("done")
     .description("Move a ticket to done")
-    .argument("<id>", "Ticket id (ULID or short id)")
+    .argument("<id>", "Ticket id (ULID, display_id, or short_id)")
     .option("--ci", "Enable CI mode (exact id matching only)")
     .action(async (id: string, options: { ci?: boolean }) => {
       await runDone(process.cwd(), id, options);
@@ -133,7 +133,7 @@ async function main(): Promise<void> {
   program
     .command("assign")
     .description("Set the assignee for a ticket")
-    .argument("<id>", "Ticket id (ULID or short id)")
+    .argument("<id>", "Ticket id (ULID, display_id, or short_id)")
     .argument("<actor>", "Actor (human:<slug> or agent:<slug>)")
     .option("--ci", "Enable CI mode (exact id matching only)")
     .action(async (id: string, actor: string, options: { ci?: boolean }) => {
@@ -143,7 +143,7 @@ async function main(): Promise<void> {
   program
     .command("reviewer")
     .description("Set the reviewer for a ticket")
-    .argument("<id>", "Ticket id (ULID or short id)")
+    .argument("<id>", "Ticket id (ULID, display_id, or short_id)")
     .argument("<actor>", "Actor (human:<slug> or agent:<slug>)")
     .option("--ci", "Enable CI mode (exact id matching only)")
     .action(async (id: string, actor: string, options: { ci?: boolean }) => {
@@ -153,7 +153,7 @@ async function main(): Promise<void> {
   program
     .command("edit")
     .description("Edit ticket metadata")
-    .argument("<id>", "Ticket id (ULID or short id)")
+    .argument("<id>", "Ticket id (ULID, display_id, or short_id)")
     .option("--title <title>", "Replace ticket title")
     .option("--priority <priority>", "Change priority (p0-p3)")
     .option("--labels <labels>", "Label update or replacement", collectEditLabels, [])
@@ -166,7 +166,7 @@ async function main(): Promise<void> {
   program
     .command("branch")
     .description("Create or checkout a branch for a ticket")
-    .argument("<id>", "Ticket id (ULID or short id)")
+    .argument("<id>", "Ticket id (ULID, display_id, or short_id)")
     .option("--ci", "Print branch name only; do not switch branches")
     .action(async (id: string, options: { ci?: boolean }) => {
       await runBranch(process.cwd(), id, options);

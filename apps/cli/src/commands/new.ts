@@ -4,7 +4,6 @@ import { rebuildIndex } from "../lib/index.js";
 import { PRIORITY_ORDER, STATE_ORDER, type TicketPriority, type TicketState } from "../lib/constants.js";
 import { ERROR_CODE, EXIT_CODE, TicketError } from "../lib/errors.js";
 import { createTicket } from "../lib/ticket.js";
-import { displayId } from "../lib/ulid.js";
 
 export interface NewCommandOptions {
   priority: string;
@@ -61,9 +60,8 @@ export async function runNew(cwd: string, title: string, options: NewCommandOpti
     template: options.template
   });
 
-  await rebuildIndex(cwd);
-
-  const display = displayId(created.id);
+  const index = await rebuildIndex(cwd);
+  const display = index.tickets.find((ticket) => ticket.id === created.id)?.display_id ?? `TK-${created.id.slice(0, 8)}`;
   const indexPath = path.join(cwd, ".tickets/index.json");
 
   try {
