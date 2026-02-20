@@ -44,6 +44,7 @@ export interface PullRequestPayload {
 }
 
 export interface CheckPayload {
+  action?: string;
   check_run?: {
     status: string;
     conclusion: string | null;
@@ -132,6 +133,7 @@ interface ServiceResponse {
 }
 
 const SUPPORTED_PR_ACTIONS = new Set(["opened", "reopened", "synchronize", "closed"]);
+const SUPPORTED_CHECK_ACTIONS = new Set(["completed"]);
 
 export function extractShortIds(text: string): string[] {
   const out = new Set<string>();
@@ -274,19 +276,33 @@ export function createGithubWebhookService(deps: GithubWebhookServiceDeps) {
 
   async function handleCheckEvent(event: "check_run" | "check_suite", payload: CheckPayload): Promise<Record<string, unknown>> {
     const fullName = payload.repository.full_name;
+    const repo = await deps.store.findRepo(fullName);
+    if (!repo) {
+      return { ok: true, message: "Repo not connected" };
+    }
+
+    const action = payload.action ?? null;
+    if (action && !SUPPORTED_CHECK_ACTIONS.has(action)) {
+      return { ok: true, message: `Ignored ${event} action ${action}` };
+    }
+
     const check = event === "check_run" ? payload.check_run : payload.check_suite;
     if (!check) return { ok: true, message: "No check payload" };
+    if (!action && check.status !== "completed") {
+      return { ok: true, message: `Ignored ${event} status ${check.status}` };
+    }
 
     const prs = check.pull_requests ?? [];
     if (prs.length === 0) return { ok: true, message: "No PR links on check payload" };
 
     const checksState = mapChecksState(check.status, check.conclusion);
+    const prNumbers = Array.from(new Set(prs.map((pr) => pr.number)));
 
-    for (const pr of prs) {
-      await deps.store.updateTicketPrChecks(fullName, pr.number, checksState);
+    for (const prNumber of prNumbers) {
+      await deps.store.updateTicketPrChecks(fullName, prNumber, checksState);
     }
 
-    return { ok: true, message: `Updated checks for ${prs.length} PR(s)` };
+    return { ok: true, message: `Updated checks for ${prNumbers.length} PR(s)` };
   }
 
   async function processWebhook(input: ProcessWebhookInput): Promise<ServiceResponse> {

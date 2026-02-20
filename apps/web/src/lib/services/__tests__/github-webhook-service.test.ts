@@ -52,9 +52,13 @@ test("extractShortIds finds display IDs and branch IDs", () => {
 });
 
 test("mapChecksState maps GitHub status/conclusion consistently", () => {
+  assert.equal(mapChecksState(null, null), "unknown");
   assert.equal(mapChecksState("queued", null), "running");
   assert.equal(mapChecksState("completed", "success"), "pass");
   assert.equal(mapChecksState("completed", "failure"), "fail");
+  assert.equal(mapChecksState("completed", "cancelled"), "fail");
+  assert.equal(mapChecksState("completed", "timed_out"), "fail");
+  assert.equal(mapChecksState("completed", "action_required"), "fail");
   assert.equal(mapChecksState("completed", "neutral"), "unknown");
 });
 
@@ -401,6 +405,7 @@ test("check_run event updates check state for linked PRs", async () => {
   });
 
   const body = JSON.stringify({
+    action: "completed",
     check_run: {
       status: "completed",
       conclusion: "failure",
@@ -418,6 +423,215 @@ test("check_run event updates check state for linked PRs", async () => {
 
   assert.equal(result.status, 200);
   assert.deepEqual(updated, [4, 7]);
+});
+
+test("check_run event deduplicates repeated PR links", async () => {
+  const updated: number[] = [];
+
+  const service = createGithubWebhookService({
+    secret: SECRET,
+    store: createStoreMock({
+      updateTicketPrChecks: async (_repo, prNumber) => {
+        updated.push(prNumber);
+      },
+    }),
+    github: createGithubMock(),
+  });
+
+  const body = JSON.stringify({
+    action: "completed",
+    check_run: {
+      status: "completed",
+      conclusion: "success",
+      pull_requests: [{ number: 4 }, { number: 4 }, { number: 7 }],
+    },
+    repository: { full_name: "acme/repo" },
+  });
+
+  const result = await service.processWebhook({
+    rawBodyBytes: Buffer.from(body),
+    signature: signBody(body, SECRET),
+    event: "check_run",
+    deliveryId: "d5b",
+  });
+
+  assert.equal(result.status, 200);
+  assert.equal(result.body.message, "Updated checks for 2 PR(s)");
+  assert.deepEqual(updated, [4, 7]);
+});
+
+test("check_suite completed event updates checks state", async () => {
+  const updated: Array<{ pr: number; state: string }> = [];
+
+  const service = createGithubWebhookService({
+    secret: SECRET,
+    store: createStoreMock({
+      updateTicketPrChecks: async (_repo, prNumber, checksState) => {
+        updated.push({ pr: prNumber, state: checksState });
+      },
+    }),
+    github: createGithubMock(),
+  });
+
+  const body = JSON.stringify({
+    action: "completed",
+    check_suite: {
+      status: "completed",
+      conclusion: "success",
+      pull_requests: [{ number: 9 }],
+    },
+    repository: { full_name: "acme/repo" },
+  });
+
+  const result = await service.processWebhook({
+    rawBodyBytes: Buffer.from(body),
+    signature: signBody(body, SECRET),
+    event: "check_suite",
+    deliveryId: "d5c",
+  });
+
+  assert.equal(result.status, 200);
+  assert.deepEqual(updated, [{ pr: 9, state: "pass" }]);
+});
+
+test("check_run event ignores unsupported check action", async () => {
+  let updated = 0;
+
+  const service = createGithubWebhookService({
+    secret: SECRET,
+    store: createStoreMock({
+      updateTicketPrChecks: async () => {
+        updated += 1;
+      },
+    }),
+    github: createGithubMock(),
+  });
+
+  const body = JSON.stringify({
+    action: "requested_action",
+    check_run: {
+      status: "completed",
+      conclusion: "failure",
+      pull_requests: [{ number: 4 }],
+    },
+    repository: { full_name: "acme/repo" },
+  });
+
+  const result = await service.processWebhook({
+    rawBodyBytes: Buffer.from(body),
+    signature: signBody(body, SECRET),
+    event: "check_run",
+    deliveryId: "d5d",
+  });
+
+  assert.equal(result.status, 200);
+  assert.equal(result.body.message, "Ignored check_run action requested_action");
+  assert.equal(updated, 0);
+});
+
+test("check_run event ignores non-completed status when action is absent", async () => {
+  let updated = 0;
+
+  const service = createGithubWebhookService({
+    secret: SECRET,
+    store: createStoreMock({
+      updateTicketPrChecks: async () => {
+        updated += 1;
+      },
+    }),
+    github: createGithubMock(),
+  });
+
+  const body = JSON.stringify({
+    check_run: {
+      status: "in_progress",
+      conclusion: null,
+      pull_requests: [{ number: 4 }],
+    },
+    repository: { full_name: "acme/repo" },
+  });
+
+  const result = await service.processWebhook({
+    rawBodyBytes: Buffer.from(body),
+    signature: signBody(body, SECRET),
+    event: "check_run",
+    deliveryId: "d5e",
+  });
+
+  assert.equal(result.status, 200);
+  assert.equal(result.body.message, "Ignored check_run status in_progress");
+  assert.equal(updated, 0);
+});
+
+test("check_run event no-ops when repo is not connected", async () => {
+  let updated = 0;
+
+  const service = createGithubWebhookService({
+    secret: SECRET,
+    store: createStoreMock({
+      findRepo: async () => null,
+      updateTicketPrChecks: async () => {
+        updated += 1;
+      },
+    }),
+    github: createGithubMock(),
+  });
+
+  const body = JSON.stringify({
+    action: "completed",
+    check_run: {
+      status: "completed",
+      conclusion: "failure",
+      pull_requests: [{ number: 4 }],
+    },
+    repository: { full_name: "acme/repo" },
+  });
+
+  const result = await service.processWebhook({
+    rawBodyBytes: Buffer.from(body),
+    signature: signBody(body, SECRET),
+    event: "check_run",
+    deliveryId: "d5f",
+  });
+
+  assert.equal(result.status, 200);
+  assert.equal(result.body.message, "Repo not connected");
+  assert.equal(updated, 0);
+});
+
+test("check_run event acknowledges payload with no linked PRs", async () => {
+  let updated = 0;
+
+  const service = createGithubWebhookService({
+    secret: SECRET,
+    store: createStoreMock({
+      updateTicketPrChecks: async () => {
+        updated += 1;
+      },
+    }),
+    github: createGithubMock(),
+  });
+
+  const body = JSON.stringify({
+    action: "completed",
+    check_run: {
+      status: "completed",
+      conclusion: "failure",
+      pull_requests: [],
+    },
+    repository: { full_name: "acme/repo" },
+  });
+
+  const result = await service.processWebhook({
+    rawBodyBytes: Buffer.from(body),
+    signature: signBody(body, SECRET),
+    event: "check_run",
+    deliveryId: "d5g",
+  });
+
+  assert.equal(result.status, 200);
+  assert.equal(result.body.message, "No PR links on check payload");
+  assert.equal(updated, 0);
 });
 
 test("unknown events are acknowledged and ignored", async () => {
