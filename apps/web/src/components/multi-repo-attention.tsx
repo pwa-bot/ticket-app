@@ -88,7 +88,7 @@ export default function MultiRepoAttention({ repos }: MultiRepoAttentionProps) {
               params.set("refresh", "1");
             }
 
-            const response = await fetch(`/api/tickets?${params.toString()}`, { cache: "no-store" });
+            const response = await fetch(`/api/tickets?${params.toString()}`, { cache: forceRefresh ? "no-store" : "default" });
             if (!response.ok) {
               throw new Error(`Failed to load ${repo}`);
             }
@@ -139,7 +139,7 @@ export default function MultiRepoAttention({ repos }: MultiRepoAttentionProps) {
             }
 
             const response = await fetch(`/api/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/prs`, {
-              cache: "no-store",
+              cache: "default",
             });
 
             if (!response.ok) {
@@ -263,14 +263,14 @@ export default function MultiRepoAttention({ repos }: MultiRepoAttentionProps) {
     }
 
     const query = params.toString();
-    router.push(query ? `${pathname}?${query}` : pathname);
+    router.replace(query ? `${pathname}?${query}` : pathname);
   }
 
   function onOpenTicket(repo: string, ticketId: string) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("ticket", ticketId);
     params.set("ticketRepo", repo);
-    router.push(`${pathname}?${params.toString()}`);
+    router.replace(`${pathname}?${params.toString()}`);
   }
 
   function onCloseTicket() {
@@ -278,7 +278,7 @@ export default function MultiRepoAttention({ repos }: MultiRepoAttentionProps) {
     params.delete("ticket");
     params.delete("ticketRepo");
     const query = params.toString();
-    router.push(query ? `${pathname}?${query}` : pathname);
+    router.replace(query ? `${pathname}?${query}` : pathname);
   }
 
   const generatedLabel = useMemo(() => {

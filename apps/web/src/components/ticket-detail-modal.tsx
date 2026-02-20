@@ -125,7 +125,7 @@ export default function TicketDetailModal({ repo, ticketId, onClose, initialData
       try {
         const response = await fetch(`/api/ticket/${encodeURIComponent(ticketId)}?repo=${encodeURIComponent(repo)}`, {
           signal: controller.signal,
-          cache: "no-store",
+          cache: "default",
         });
 
         if (!response.ok) {

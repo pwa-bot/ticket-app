@@ -23,7 +23,7 @@ export default function RepoPicker() {
       try {
         const response = await fetch("/api/repos", {
           signal: controller.signal,
-          cache: "no-store",
+          cache: "default",
         });
 
         if (!response.ok) {

@@ -352,7 +352,7 @@ export default function PortfolioAttentionView() {
     }
 
     const query = params.toString();
-    router.push(query ? `${pathname}?${query}` : pathname);
+    router.replace(query ? `${pathname}?${query}` : pathname);
   }
 
   function onOpenTicket(repo: string, ticketId: string) {
@@ -361,7 +361,7 @@ export default function PortfolioAttentionView() {
     params.set("ticket", ticketId);
     params.set("ticketRepo", repo);
     const query = params.toString();
-    router.push(query ? `${pathname}?${query}` : pathname);
+    router.replace(query ? `${pathname}?${query}` : pathname);
   }
 
   function onCloseTicket() {
@@ -369,7 +369,7 @@ export default function PortfolioAttentionView() {
     params.delete("ticket");
     params.delete("ticketRepo");
     const query = params.toString();
-    router.push(query ? `${pathname}?${query}` : pathname);
+    router.replace(query ? `${pathname}?${query}` : pathname);
   }
 
   const allRepos = (attentionData?.repos ?? indexData?.repos ?? []) as EnabledRepoSummary[];

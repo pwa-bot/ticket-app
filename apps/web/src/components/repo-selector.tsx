@@ -53,7 +53,7 @@ export default function RepoSelector() {
     async function loadRepos() {
       try {
         const [reposResponse, installationsResponse] = await Promise.all([
-          fetch("/api/repos", { signal: controller.signal, cache: "no-store" }),
+          fetch("/api/repos", { signal: controller.signal, cache: "default" }),
           fetch("/api/github/installations", { signal: controller.signal }),
         ]);
 

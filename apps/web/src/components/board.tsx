@@ -485,7 +485,7 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
         }
 
         const response = await fetch(`/api/tickets?${params.toString()}`, {
-          cache: "no-store",
+          cache: forceRefresh ? "no-store" : "default",
           signal: controller.signal,
         });
 
@@ -618,7 +618,7 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
     }
 
     const query = params.toString();
-    router.push(query ? `${pathname}?${query}` : pathname);
+    router.replace(query ? `${pathname}?${query}` : pathname);
   }
 
   function onViewChange(nextView: "board" | "table") {

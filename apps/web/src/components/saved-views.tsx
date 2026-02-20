@@ -36,7 +36,7 @@ export function SavedViewsDropdown({ repo, basePath }: SavedViewsDropdownProps) 
 
   const handleSelectView = useCallback(
     (view: SavedView) => {
-      router.push(`${basePath}?${view.query}`);
+      router.replace(`${basePath}?${view.query}`);
       setIsOpen(false);
     },
     [router, basePath]
@@ -52,7 +52,7 @@ export function SavedViewsDropdown({ repo, basePath }: SavedViewsDropdownProps) 
   );
 
   const handleClearFilters = useCallback(() => {
-    router.push(basePath);
+    router.replace(basePath);
     setIsOpen(false);
   }, [router, basePath]);
 
