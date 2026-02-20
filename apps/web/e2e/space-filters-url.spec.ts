@@ -164,7 +164,7 @@ test("space filters sync to URL and back/forward restores state", async ({ page 
   await expect(page).toHaveURL(/q=failing/);
   await expect(search).toHaveValue("failing");
 
-  await page.getByRole("button", { name: "All Tickets" }).click();
+  await page.getByRole("button", { name: "All tickets" }).click();
   await expect(page).toHaveURL(/tab=tickets/);
 
   await page.goBack();

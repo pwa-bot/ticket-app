@@ -194,6 +194,8 @@ export default function PortfolioAttentionView() {
   const [jumpValue, setJumpValue] = useState("");
   const [jumpError, setJumpError] = useState<string | null>(null);
   const hasTrackedView = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const requestGenRef = useRef(0);
 
   const selectedRepos = useMemo(() => {
     if (!repoParam) {
@@ -204,6 +206,14 @@ export default function PortfolioAttentionView() {
   }, [repoParam]);
 
   const load = useCallback(async () => {
+    // Cancel any in-flight request from a previous invocation.
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    // Capture a generation token so late-arriving responses can be ignored.
+    const gen = ++requestGenRef.current;
+
     setLoading(true);
     setError(null);
 
@@ -215,27 +225,37 @@ export default function PortfolioAttentionView() {
 
       if (activeTab === "tickets") {
         const url = `/api/space/index${params.toString() ? `?${params.toString()}` : ""}`;
-        const res = await fetch(url, { cache: "no-store" });
+        const res = await fetch(url, { cache: "no-store", signal: controller.signal });
         if (!res.ok) {
           throw new Error(`Failed to load tickets (${res.status})`);
         }
 
         const json = (await res.json()) as SpaceIndexResponse;
+        // Discard if a newer request has already taken over.
+        if (gen !== requestGenRef.current) return;
         setIndexData(json);
       } else {
         const url = `/api/space/attention${params.toString() ? `?${params.toString()}` : ""}`;
-        const res = await fetch(url, { cache: "no-store" });
+        const res = await fetch(url, { cache: "no-store", signal: controller.signal });
         if (!res.ok) {
           throw new Error(`Failed to load attention data (${res.status})`);
         }
 
         const json = (await res.json()) as AttentionResponse;
+        // Discard if a newer request has already taken over.
+        if (gen !== requestGenRef.current) return;
         setAttentionData(json);
       }
     } catch (err) {
+      // AbortError is expected when a newer request cancels this one; don't surface it.
+      if (err instanceof Error && err.name === "AbortError") return;
+      if (gen !== requestGenRef.current) return;
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
-      setLoading(false);
+      // Only clear the loading flag if this is still the active request.
+      if (gen === requestGenRef.current) {
+        setLoading(false);
+      }
     }
   }, [activeTab, repoParam]);
 
@@ -468,7 +488,7 @@ export default function PortfolioAttentionView() {
         </div>
       </header>
 
-      <div className="mb-4 inline-flex rounded-lg border border-slate-300 bg-white p-1">
+      <div className="mb-4 inline-flex rounded-lg border border-slate-300 bg-white p-1" data-testid="tab-switcher">
         <button
           type="button"
           onClick={() => setQueryParam("tab", "attention")}
@@ -485,7 +505,7 @@ export default function PortfolioAttentionView() {
             activeTab === "tickets" ? "bg-slate-800 text-white" : "text-slate-700 hover:bg-slate-100"
           }`}
         >
-          All Tickets
+          All tickets
         </button>
       </div>
 
