@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T03:20:55.227Z",
+  "generated_at": "2026-02-20T03:47:14.718Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -207,20 +207,6 @@
       "path": ".tickets/tickets/01KHWGYAVFC7VSZ6A0EMFQT9K2.md"
     },
     {
-      "id": "01KHWGYB2SYQVJZYQSKTJ6NWFT",
-      "short_id": "01KHWGYB",
-      "display_id": "TK-01KHWGYB",
-      "title": "Migration tooling backfill squash noisy ticket churn into compact snapshots",
-      "state": "ready",
-      "priority": "p1",
-      "labels": [
-        "migration",
-        "storage",
-        "tooling"
-      ],
-      "path": ".tickets/tickets/01KHWGYB2SYQVJZYQSKTJ6NWFT.md"
-    },
-    {
       "id": "01KHT40T5MGCWRB1KQYB8M568T",
       "short_id": "01KHT40T",
       "display_id": "TK-01KHT40T",
@@ -248,6 +234,20 @@
         "git"
       ],
       "path": ".tickets/tickets/01KHWGY6QMV26C1242E9GTYBJ8.md"
+    },
+    {
+      "id": "01KHWGYB2SYQVJZYQSKTJ6NWFT",
+      "short_id": "01KHWGYB",
+      "display_id": "TK-01KHWGYB",
+      "title": "Migration tooling backfill squash noisy ticket churn into compact snapshots",
+      "state": "in_progress",
+      "priority": "p1",
+      "labels": [
+        "migration",
+        "storage",
+        "tooling"
+      ],
+      "path": ".tickets/tickets/01KHWGYB2SYQVJZYQSKTJ6NWFT.md"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
