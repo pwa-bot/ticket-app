@@ -5,7 +5,7 @@ import SettingsClient from "@/components/settings/settings-client";
 export default async function SettingsPage() {
   const token = await getAccessTokenFromCookies();
   if (!token) {
-    redirect("/");
+    redirect("/api/auth/github");
   }
 
   return (

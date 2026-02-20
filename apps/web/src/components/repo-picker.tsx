@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 interface RepoSummary {
@@ -72,7 +73,7 @@ export default function RepoPicker() {
         }
 
         return (
-          <a
+          <Link
             key={repo.id}
             href={`/space/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`}
             className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow"
@@ -80,7 +81,7 @@ export default function RepoPicker() {
             <p className="text-lg font-semibold">{repo.full_name}</p>
             <p className="mt-2 text-sm text-slate-600">{repo.private ? "Private" : "Public"} repository</p>
             <p className="mt-3 text-xs text-slate-500">Open board</p>
-          </a>
+          </Link>
         );
       })}
     </div>

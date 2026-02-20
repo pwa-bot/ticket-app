@@ -5,7 +5,7 @@ import OnboardingClient from "@/components/onboarding/onboarding-client";
 export default async function OnboardingPage() {
   const token = await getAccessTokenFromCookies();
   if (!token) {
-    redirect("/");
+    redirect("/api/auth/github");
   }
 
   return (

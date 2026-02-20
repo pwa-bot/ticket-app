@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { RateLimitError, isRateLimitError } from "@/components/rate-limit-error";
@@ -215,12 +216,12 @@ export default function RepoSelector() {
                   }
 
                   return (
-                    <a
+                    <Link
                       href={`/space/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`}
                       className="text-xs font-medium text-slate-600 underline"
                     >
                       Open board
-                    </a>
+                    </Link>
                   );
                 })()}
               </li>

@@ -10,7 +10,7 @@ export default async function DashboardHomePage({ searchParams }: DashboardHomeP
   const token = await getAccessTokenFromCookies();
 
   if (!token) {
-    redirect("/");
+    redirect("/api/auth/github");
   }
 
   await searchParams;

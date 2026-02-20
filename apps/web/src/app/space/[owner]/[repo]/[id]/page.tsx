@@ -9,7 +9,7 @@ interface RepoTicketPageProps {
 export default async function RepoTicketPage({ params }: RepoTicketPageProps) {
   const token = await getAccessTokenFromCookies();
   if (!token) {
-    redirect("/");
+    redirect("/api/auth/github");
   }
 
   const { owner, repo, id } = await params;

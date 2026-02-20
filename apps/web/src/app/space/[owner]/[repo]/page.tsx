@@ -9,7 +9,7 @@ interface RepoBoardPageProps {
 export default async function RepoBoardPage({ params }: RepoBoardPageProps) {
   const token = await getAccessTokenFromCookies();
   if (!token) {
-    redirect("/");
+    redirect("/api/auth/github");
   }
 
   const { owner, repo } = await params;

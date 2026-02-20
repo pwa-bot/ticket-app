@@ -14,7 +14,7 @@ function CallbackFallback() {
 export default async function OnboardingCallbackPage() {
   const token = await getAccessTokenFromCookies();
   if (!token) {
-    redirect("/");
+    redirect("/api/auth/github");
   }
 
   return (
