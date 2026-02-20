@@ -25,6 +25,14 @@ interface GlobalCliOptions {
   noCommit?: boolean;
 }
 
+function extractTicketErrorWarnings(error: TicketError): string[] {
+  const warnings = (error.details as { warnings?: unknown } | undefined)?.warnings;
+  if (!Array.isArray(warnings)) {
+    return [];
+  }
+  return warnings.filter((warning): warning is string => typeof warning === "string" && warning.length > 0);
+}
+
 function getGlobalOptions(command: Command): GlobalCliOptions {
   return command.optsWithGlobals<GlobalCliOptions>();
 }
@@ -276,6 +284,9 @@ main().catch((error) => {
   }
 
   if (error instanceof TicketError) {
+    for (const warning of extractTicketErrorWarnings(error)) {
+      console.error(`Warning: ${warning}`);
+    }
     console.error(error.message);
     process.exitCode = error.exitCode;
     return;

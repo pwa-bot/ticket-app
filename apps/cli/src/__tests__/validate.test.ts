@@ -356,4 +356,70 @@ Enough detail to satisfy quality checks.
     await expect(runValidate(cwd, { policyTier: "strict" })).rejects.toThrow("strict tier requires assignee");
     await expect(runValidate(cwd, { policyTier: "strict" })).rejects.toThrow("strict tier requires reviewer");
   });
+
+  it("opt-in tier warns on strict checks without failing", async () => {
+    const cwd = await mkTempRepo();
+    const id = "01ARZ3NDEKTSV4RRFFQ69G5FAQ";
+    await writeTicket(
+      cwd,
+      id,
+      `---
+id: ${id}
+title: Structured
+state: ready
+priority: p1
+labels: []
+---
+## Problem
+
+Enough detail to satisfy quality checks.
+
+## Acceptance Criteria
+
+- [ ] Something concrete
+
+## Spec
+
+Enough detail to satisfy quality checks.
+`
+    );
+    await rebuildIndex(cwd);
+
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    await expect(runValidate(cwd, { policyTier: "opt-in" })).resolves.toBeUndefined();
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("strict tier requires assignee"));
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("strict tier requires reviewer"));
+  });
+
+  it("hard tier matches strict failure behavior", async () => {
+    const cwd = await mkTempRepo();
+    const id = "01ARZ3NDEKTSV4RRFFQ69G5FAS";
+    await writeTicket(
+      cwd,
+      id,
+      `---
+id: ${id}
+title: Structured
+state: ready
+priority: p1
+labels: []
+---
+## Problem
+
+Enough detail to satisfy quality checks.
+
+## Acceptance Criteria
+
+- [ ] Something concrete
+
+## Spec
+
+Enough detail to satisfy quality checks.
+`
+    );
+    await rebuildIndex(cwd);
+
+    await expect(runValidate(cwd, { policyTier: "hard" })).rejects.toThrow("strict tier requires assignee");
+    await expect(runValidate(cwd, { policyTier: "hard" })).rejects.toThrow("strict tier requires reviewer");
+  });
 });

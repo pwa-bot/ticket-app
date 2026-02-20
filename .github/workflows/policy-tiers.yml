@@ -1,0 +1,83 @@
+name: Ticket Policy Tiers
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      strict_mode:
+        description: "Enable strict blocking policy checks"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+jobs:
+  integrity:
+    name: Hard Integrity (required)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup pnpm
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate integrity policy
+        run: pnpm --filter @ticketdotapp/cli exec tsx src/cli.ts validate --ci --policy-tier integrity
+
+  quality:
+    name: Warn Quality (advisory)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup pnpm
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate quality policy
+        run: pnpm --filter @ticketdotapp/cli exec tsx src/cli.ts validate --ci --policy-tier warn
+
+  strict:
+    name: Strict Policy (opt-in)
+    runs-on: ubuntu-latest
+    if: ${{ vars.TICKET_POLICY_STRICT == '1' || (github.event_name == 'workflow_dispatch' && inputs.strict_mode == 'true') }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup pnpm
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate strict policy
+        run: pnpm --filter @ticketdotapp/cli exec tsx src/cli.ts validate --ci --policy-tier strict

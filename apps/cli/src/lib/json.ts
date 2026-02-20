@@ -18,6 +18,14 @@ export interface JsonFailureEnvelope {
 
 export type JsonEnvelope<T> = JsonSuccessEnvelope<T> | JsonFailureEnvelope;
 
+function extractTicketErrorWarnings(error: TicketError): string[] {
+  const warnings = (error.details as { warnings?: unknown } | undefined)?.warnings;
+  if (!Array.isArray(warnings)) {
+    return [];
+  }
+  return warnings.filter((warning): warning is string => typeof warning === "string" && warning.length > 0);
+}
+
 export function successEnvelope<T>(data: T, warnings: string[] = []): JsonSuccessEnvelope<T> {
   return {
     ok: true,
@@ -28,6 +36,7 @@ export function successEnvelope<T>(data: T, warnings: string[] = []): JsonSucces
 
 export function failureEnvelope(error: unknown, warnings: string[] = []): JsonFailureEnvelope {
   if (error instanceof TicketError) {
+    const detailWarnings = extractTicketErrorWarnings(error);
     return {
       ok: false,
       error: {
@@ -35,7 +44,7 @@ export function failureEnvelope(error: unknown, warnings: string[] = []): JsonFa
         message: error.message,
         details: error.details
       },
-      warnings
+      warnings: [...detailWarnings, ...warnings]
     };
   }
 

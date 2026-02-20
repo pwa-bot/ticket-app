@@ -78,4 +78,10 @@ describe("resolvePolicyTier", () => {
       .rejects
       .toThrow("Invalid policy tier 'banana' from env");
   });
+
+  it("normalizes opt_in alias from env", async () => {
+    const cwd = await mkTempRepo();
+    const resolved = await resolvePolicyTier({ cwd, env: { TICKET_POLICY_TIER: "opt_in" } });
+    expect(resolved.tier).toBe("opt-in");
+  });
 });

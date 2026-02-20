@@ -98,6 +98,11 @@ Tier behavior:
 - `strict`: fail integrity + quality + strict checks
 - `hard`: alias of `strict` (full hard-fail mode)
 
+GitHub Actions policy workflow (`.github/workflows/policy-tiers.yml`):
+- `integrity` job is required and blocking.
+- `quality` job runs in advisory mode (`continue-on-error: true`).
+- `strict` job is opt-in via repository variable `TICKET_POLICY_STRICT=1` or manual dispatch input.
+
 Env overrides:
 - `TICKET_TELEMETRY_BACKEND`
 - `TICKET_TELEMETRY_NOTES_REF`

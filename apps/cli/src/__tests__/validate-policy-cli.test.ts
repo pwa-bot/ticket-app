@@ -69,4 +69,80 @@ labels: []
       expect(failed.stdout ?? "").toBe("");
     }
   });
+
+  it("prints warnings even when integrity failures block the run", async () => {
+    const cwd = await mkRepo();
+    const id = "NOT-A-ULID";
+
+    await fs.writeFile(
+      path.join(cwd, ".tickets/tickets", `${id}.md`),
+      `---
+id: ${id}
+title: Minimal
+state: backlog
+priority: p1
+labels: []
+---
+`,
+      "utf8"
+    );
+
+    try {
+      await runCli(cwd, ["validate", "--ci", "--policy-tier", "warn"]);
+      throw new Error("Expected warn tier validation to fail due to integrity errors");
+    } catch (error) {
+      const failed = error as { code?: number; stdout?: string; stderr?: string };
+      expect(failed.code).toBe(7);
+      expect(failed.stderr).toContain("Warning:");
+      expect(failed.stderr).toContain("missing checklist items under 'Acceptance Criteria'");
+      expect(failed.stderr).toContain("Validation failed:");
+      expect(failed.stderr).toContain("filename must be a valid ULID");
+    }
+  });
+
+  it("lets opt-in pass strict findings and keeps hard as full fail", async () => {
+    const cwd = await mkRepo();
+    const id = "01ARZ3NDEKTSV4RRFFQ69G5FAT";
+
+    await fs.writeFile(
+      path.join(cwd, ".tickets/tickets", `${id}.md`),
+      `---
+id: ${id}
+title: Structured
+state: ready
+priority: p1
+labels: []
+---
+## Problem
+
+Enough detail to satisfy quality checks.
+
+## Acceptance Criteria
+
+- [ ] Something concrete
+
+## Spec
+
+Enough detail to satisfy quality checks.
+`,
+      "utf8"
+    );
+
+    await runCli(cwd, ["rebuild-index"]);
+
+    const optInRun = await runCli(cwd, ["validate", "--ci", "--policy-tier", "opt-in"]);
+    expect(optInRun.stdout).toContain("Validation passed");
+    expect(optInRun.stderr).toContain("Warning:");
+    expect(optInRun.stderr).toContain("strict tier requires assignee");
+
+    try {
+      await runCli(cwd, ["validate", "--ci", "--policy-tier", "hard"]);
+      throw new Error("Expected hard tier validation to fail");
+    } catch (error) {
+      const failed = error as { code?: number; stdout?: string; stderr?: string };
+      expect(failed.code).toBe(7);
+      expect(failed.stderr).toContain("Validation failed:");
+      expect(failed.stderr).toContain("strict tier requires assignee");
+    }
+  });
 });

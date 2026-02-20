@@ -48,4 +48,47 @@ describe("cli json error envelope", () => {
       expect(payload.warnings).toEqual([]);
     }
   });
+
+  it("includes warnings from TicketError details in JSON failure envelope", async () => {
+    const cwd = await mkTempRepo();
+    const cliEntrypoint = path.resolve(process.cwd(), "src/cli.ts");
+    const tsxBin = path.resolve(process.cwd(), "node_modules/.bin/tsx");
+    await fs.mkdir(path.join(cwd, ".tickets/tickets"), { recursive: true });
+
+    const id = "NOT-A-ULID";
+    await fs.writeFile(
+      path.join(cwd, ".tickets/tickets", `${id}.md`),
+      `---
+id: ${id}
+title: Minimal
+state: backlog
+priority: p1
+labels: []
+---
+`,
+      "utf8"
+    );
+
+    try {
+      await execFileAsync(tsxBin, [cliEntrypoint, "validate", "--json", "--ci", "--policy-tier", "warn"], { cwd });
+      throw new Error("Expected command to fail");
+    } catch (error) {
+      const failed = error as { code?: number; stdout?: string; stderr?: string };
+      expect(failed.code).toBe(7);
+      expect((failed.stderr ?? "").trim()).toBe("");
+
+      const lines = (failed.stdout ?? "").trim().split("\n").filter(Boolean);
+      expect(lines).toHaveLength(1);
+      const payload = JSON.parse(lines[0]) as {
+        ok: boolean;
+        error: { code: string; message: string; details: Record<string, unknown> };
+        warnings: string[];
+      };
+
+      expect(payload.ok).toBe(false);
+      expect(payload.error.code).toBe("validation_failed");
+      expect(payload.warnings.length).toBeGreaterThan(0);
+      expect(payload.warnings.some((warning) => warning.includes("missing checklist items under 'Acceptance Criteria'"))).toBe(true);
+    }
+  });
 });
