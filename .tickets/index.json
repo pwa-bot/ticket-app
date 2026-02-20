@@ -1,22 +1,8 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T23:37:16.861Z",
+  "generated_at": "2026-02-20T23:37:32.150Z",
   "workflow": "simple-v1",
   "tickets": [
-    {
-      "id": "01KHYK08EC06SFT3G87TQV47ZN",
-      "short_id": "01KHYK08",
-      "title": "P1 Expose sync health in API and UI (last sync stale age error state)",
-      "state": "backlog",
-      "priority": "p1",
-      "labels": [
-        "ux",
-        "observability",
-        "sync"
-      ],
-      "path": ".tickets/tickets/01KHYK08EC06SFT3G87TQV47ZN.md",
-      "display_id": "TK-01KHYK08-2"
-    },
     {
       "id": "01KHYK08P2R9Z43ET50CVTFRGF",
       "short_id": "01KHYK08",
@@ -128,6 +114,20 @@
       ],
       "path": ".tickets/tickets/01KHYK09CZ428DT3D7SFXKW02F.md",
       "display_id": "TK-01KHYK09-2"
+    },
+    {
+      "id": "01KHYK08EC06SFT3G87TQV47ZN",
+      "short_id": "01KHYK08",
+      "title": "P1 Expose sync health in API and UI (last sync stale age error state)",
+      "state": "ready",
+      "priority": "p1",
+      "labels": [
+        "ux",
+        "observability",
+        "sync"
+      ],
+      "path": ".tickets/tickets/01KHYK08EC06SFT3G87TQV47ZN.md",
+      "display_id": "TK-01KHYK08-2"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
