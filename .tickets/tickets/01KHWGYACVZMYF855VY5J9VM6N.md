@@ -1,7 +1,7 @@
 ---
 id: 01KHWGYACVZMYF855VY5J9VM6N
 title: Implement telemetry lane using git notes with event-branch fallback
-state: backlog
+state: ready
 priority: p1
 labels:
   - protocol
