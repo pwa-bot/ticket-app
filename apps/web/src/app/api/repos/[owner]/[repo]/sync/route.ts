@@ -43,8 +43,9 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     const result = await syncRepo(fullName, session.token, force);
 
     if (!result.success) {
+      const status = result.errorCode === "sync_in_progress" ? 409 : 500;
       return apiError(result.error ?? "Sync failed", {
-        status: 500,
+        status,
         legacy: { errorCode: result.errorCode },
       });
     }

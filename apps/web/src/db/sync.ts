@@ -95,6 +95,30 @@ export async function isRepoConnected(fullName: string) {
   return !!repo;
 }
 
+/**
+ * Try to acquire a per-repo sync lock.
+ * Returns true if lock acquired, false if another sync is already running.
+ */
+export async function tryAcquireRepoSyncLock(repoFullName: string): Promise<boolean> {
+  const rows = await db
+    .insert(schema.repoSyncLocks)
+    .values({
+      repoFullName,
+      lockedAt: now(),
+    })
+    .onConflictDoNothing()
+    .returning({ repoFullName: schema.repoSyncLocks.repoFullName });
+
+  return rows.length > 0;
+}
+
+/**
+ * Release a per-repo sync lock.
+ */
+export async function releaseRepoSyncLock(repoFullName: string): Promise<void> {
+  await db.delete(schema.repoSyncLocks).where(eq(schema.repoSyncLocks.repoFullName, repoFullName));
+}
+
 // ============================================================================
 // BLOB CACHE
 // ============================================================================
@@ -278,14 +302,19 @@ export async function syncRepo(
   force = false
 ): Promise<SyncResult> {
   const [owner, repo] = fullName.split("/");
+  const lockAcquired = await tryAcquireRepoSyncLock(fullName);
 
-  // 0) Set sync_status=syncing
-  await db
-    .update(schema.repos)
-    .set({ syncStatus: "syncing", syncError: null, updatedAt: now() })
-    .where(eq(schema.repos.fullName, fullName));
+  if (!lockAcquired) {
+    return { success: false, changed: false, error: "Sync already in progress", errorCode: "sync_in_progress" };
+  }
 
   try {
+    // 0) Set sync_status=syncing
+    await db
+      .update(schema.repos)
+      .set({ syncStatus: "syncing", syncError: null, updatedAt: now() })
+      .where(eq(schema.repos.fullName, fullName));
+
     // 1) Fetch repo metadata (default branch)
     const repoInfoRes = await fetch(`https://api.github.com/repos/${fullName}`, {
       headers: {
@@ -416,6 +445,8 @@ export async function syncRepo(
     const message = e instanceof Error ? e.message : "Sync failed";
     await setSyncError(fullName, "sync_failed", message);
     return { success: false, changed: false, error: message, errorCode: "sync_failed" };
+  } finally {
+    await releaseRepoSyncLock(fullName);
   }
 }
 

@@ -92,8 +92,12 @@ interface RepoPushUpdate {
 
 export interface GithubWebhookStore {
   recordDeliveryIfNew(deliveryId: string | null, event: string): Promise<boolean>;
+  recordIdempotencyKeyIfNew(idempotencyKey: string, event: string, repoFullName: string | null): Promise<boolean>;
   findRepo(fullName: string): Promise<RepoRecord | null>;
   findGithubInstallationId(installationId: number): Promise<number | null>;
+  tryAcquireRepoSyncLock(repoFullName: string): Promise<boolean>;
+  releaseRepoSyncLock(repoFullName: string): Promise<void>;
+  setRepoSyncError(repoFullName: string, errorCode: string, errorMessage: string): Promise<void>;
   upsertBlob(repoFullName: string, path: string, sha: string, contentText: string): Promise<void>;
   upsertTicketFromIndexEntry(
     repoFullName: string,
@@ -158,6 +162,48 @@ export function mapChecksState(status: string | null, conclusion: string | null)
 }
 
 export function createGithubWebhookService(deps: GithubWebhookServiceDeps) {
+  function sha256Hex(value: string): string {
+    return crypto.createHash("sha256").update(value).digest("hex");
+  }
+
+  function findPayloadRepoFullName(payload: unknown): string | null {
+    if (!payload || typeof payload !== "object") return null;
+    const candidate = (payload as { repository?: { full_name?: string } }).repository?.full_name;
+    return typeof candidate === "string" && candidate.length > 0 ? candidate : null;
+  }
+
+  function buildIdempotencyKey(event: string, payload: unknown, rawBody: Buffer): string {
+    if (event === "push") {
+      const push = payload as PushPayload;
+      const fullName = push.repository?.full_name ?? "unknown";
+      const ref = push.ref ?? "unknown";
+      const after = push.after ?? "unknown";
+      return `push:${fullName}:${ref}:${after}`;
+    }
+
+    if (event === "pull_request") {
+      const prPayload = payload as PullRequestPayload;
+      const fullName = prPayload.repository?.full_name ?? "unknown";
+      const prNumber = prPayload.pull_request?.number ?? 0;
+      const action = prPayload.action ?? "unknown";
+      const headSha = prPayload.pull_request?.head?.sha ?? "unknown";
+      return `pull_request:${fullName}:${prNumber}:${action}:${headSha}`;
+    }
+
+    if (event === "check_run" || event === "check_suite") {
+      const checkPayload = payload as CheckPayload;
+      const fullName = checkPayload.repository?.full_name ?? "unknown";
+      const check = event === "check_run" ? checkPayload.check_run : checkPayload.check_suite;
+      const action = checkPayload.action ?? "none";
+      const status = check?.status ?? "unknown";
+      const conclusion = check?.conclusion ?? "unknown";
+      const prNumbers = Array.from(new Set((check?.pull_requests ?? []).map((pr) => pr.number))).sort((a, b) => a - b);
+      return `${event}:${fullName}:${action}:${status}:${conclusion}:${prNumbers.join(",")}`;
+    }
+
+    return `${event}:payload:${sha256Hex(rawBody.toString("utf8"))}`;
+  }
+
   function verifySignature(payload: Buffer, signature: string): boolean {
     if (!deps.secret) return false;
     const expected = `sha256=${crypto.createHmac("sha256", deps.secret).update(payload).digest("hex")}`;
@@ -192,45 +238,58 @@ export function createGithubWebhookService(deps: GithubWebhookServiceDeps) {
       return { ok: true, message: "Repo not connected" };
     }
 
-    const githubInstallationId = await resolveGithubInstallationId(fullName, payload.installation?.id);
-    if (!githubInstallationId) {
-      return { ok: true, message: "No installation for repo" };
+    const lockAcquired = await deps.store.tryAcquireRepoSyncLock(fullName);
+    if (!lockAcquired) {
+      return { ok: true, deduped: true, message: "Repo sync already in progress" };
     }
 
-    const content = await deps.github.getIndexJson({
-      fullName,
-      defaultBranch: payload.repository.default_branch,
-      installationId: githubInstallationId,
-    });
+    try {
+      const githubInstallationId = await resolveGithubInstallationId(fullName, payload.installation?.id);
+      if (!githubInstallationId) {
+        return { ok: true, message: "No installation for repo" };
+      }
 
-    const indexSha = content.sha;
-    const rawIndex = content.raw;
+      const content = await deps.github.getIndexJson({
+        fullName,
+        defaultBranch: payload.repository.default_branch,
+        installationId: githubInstallationId,
+      });
 
-    const parsed = JSON.parse(rawIndex) as IndexJson;
-    if (parsed.format_version !== 1 || !Array.isArray(parsed.tickets)) {
-      throw new Error("index.json format invalid");
+      const indexSha = content.sha;
+      const rawIndex = content.raw;
+
+      const parsed = JSON.parse(rawIndex) as IndexJson;
+      if (parsed.format_version !== 1 || !Array.isArray(parsed.tickets)) {
+        throw new Error("index.json format invalid");
+      }
+
+      await deps.store.upsertBlob(fullName, ".tickets/index.json", indexSha, rawIndex);
+
+      const idsInIndex = parsed.tickets.map((ticket) => String(ticket.id).toUpperCase());
+      for (const entry of parsed.tickets) {
+        await deps.store.upsertTicketFromIndexEntry(fullName, indexSha, headSha, entry);
+      }
+
+      if (idsInIndex.length === 0) {
+        await deps.store.deleteAllTickets(fullName);
+      } else {
+        await deps.store.deleteTicketsNotIn(fullName, idsInIndex);
+      }
+
+      await deps.store.updateRepoAfterPush(fullName, {
+        headSha,
+        indexSha,
+        now: new Date(),
+      });
+
+      return { ok: true, message: `Synced ${parsed.tickets.length} tickets` };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Push sync failed";
+      await deps.store.setRepoSyncError(fullName, "webhook_push_sync_failed", message);
+      throw error;
+    } finally {
+      await deps.store.releaseRepoSyncLock(fullName);
     }
-
-    await deps.store.upsertBlob(fullName, ".tickets/index.json", indexSha, rawIndex);
-
-    const idsInIndex = parsed.tickets.map((ticket) => String(ticket.id).toUpperCase());
-    for (const entry of parsed.tickets) {
-      await deps.store.upsertTicketFromIndexEntry(fullName, indexSha, headSha, entry);
-    }
-
-    if (idsInIndex.length === 0) {
-      await deps.store.deleteAllTickets(fullName);
-    } else {
-      await deps.store.deleteTicketsNotIn(fullName, idsInIndex);
-    }
-
-    await deps.store.updateRepoAfterPush(fullName, {
-      headSha,
-      indexSha,
-      now: new Date(),
-    });
-
-    return { ok: true, message: `Synced ${parsed.tickets.length} tickets` };
   }
 
   async function handlePullRequestEvent(payload: PullRequestPayload): Promise<Record<string, unknown>> {
@@ -318,12 +377,24 @@ export function createGithubWebhookService(deps: GithubWebhookServiceDeps) {
       return { status: 401, body: { ok: false, error: "invalid_signature" } };
     }
 
-    const isNew = await deps.store.recordDeliveryIfNew(input.deliveryId, input.event);
-    if (!isNew) {
-      return { status: 200, body: { ok: true, deduped: true } };
+    const isNewDelivery = await deps.store.recordDeliveryIfNew(input.deliveryId, input.event);
+    if (!isNewDelivery) {
+      return { status: 200, body: { ok: true, deduped: true, dedupeReason: "delivery_id" } };
     }
 
-    const payload = JSON.parse(input.rawBodyBytes.toString("utf8")) as unknown;
+    let payload: unknown;
+    try {
+      payload = JSON.parse(input.rawBodyBytes.toString("utf8")) as unknown;
+    } catch {
+      return { status: 400, body: { ok: false, error: "invalid_payload" } };
+    }
+
+    const repoFullName = findPayloadRepoFullName(payload);
+    const idempotencyKey = buildIdempotencyKey(input.event, payload, input.rawBodyBytes);
+    const isNewIdempotencyKey = await deps.store.recordIdempotencyKeyIfNew(idempotencyKey, input.event, repoFullName);
+    if (!isNewIdempotencyKey) {
+      return { status: 200, body: { ok: true, deduped: true, dedupeReason: "idempotency_key" } };
+    }
 
     if (input.event === "push") {
       return { status: 200, body: await handlePushEvent(payload as PushPayload) };

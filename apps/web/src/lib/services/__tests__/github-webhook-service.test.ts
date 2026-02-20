@@ -18,8 +18,12 @@ function signBody(body: string, secret: string): string {
 function createStoreMock(overrides: Partial<GithubWebhookStore> = {}): GithubWebhookStore {
   return {
     recordDeliveryIfNew: async () => true,
+    recordIdempotencyKeyIfNew: async () => true,
     findRepo: async () => ({ fullName: "acme/repo", installationId: 11 }),
     findGithubInstallationId: async () => 123,
+    tryAcquireRepoSyncLock: async () => true,
+    releaseRepoSyncLock: async () => undefined,
+    setRepoSyncError: async () => undefined,
     upsertBlob: async () => undefined,
     upsertTicketFromIndexEntry: async () => undefined,
     deleteAllTickets: async () => undefined,
@@ -97,6 +101,49 @@ test("processWebhook returns deduped when delivery is already seen", async () =>
 
   assert.equal(result.status, 200);
   assert.equal(result.body.deduped, true);
+  assert.equal(result.body.dedupeReason, "delivery_id");
+});
+
+test("processWebhook returns deduped when idempotency key is already seen", async () => {
+  const idempotencyKeys = new Set<string>();
+  const service = createGithubWebhookService({
+    secret: SECRET,
+    store: createStoreMock({
+      recordIdempotencyKeyIfNew: async (idempotencyKey) => {
+        if (idempotencyKeys.has(idempotencyKey)) return false;
+        idempotencyKeys.add(idempotencyKey);
+        return true;
+      },
+    }),
+    github: createGithubMock(),
+  });
+
+  const body = JSON.stringify({
+    ref: "refs/heads/main",
+    after: "head123",
+    repository: { full_name: "acme/repo", default_branch: "main" },
+  });
+  const signature = signBody(body, SECRET);
+
+  const first = await service.processWebhook({
+    rawBodyBytes: Buffer.from(body),
+    signature,
+    event: "push",
+    deliveryId: "d-idem-1",
+  });
+
+  const second = await service.processWebhook({
+    rawBodyBytes: Buffer.from(body),
+    signature,
+    event: "push",
+    deliveryId: "d-idem-2",
+  });
+
+  assert.equal(first.status, 200);
+  assert.equal(first.body.ok, true);
+  assert.equal(second.status, 200);
+  assert.equal(second.body.deduped, true);
+  assert.equal(second.body.dedupeReason, "idempotency_key");
 });
 
 test("processWebhook rejects invalid signature", async () => {
@@ -195,6 +242,81 @@ test("push event ignores non-default branch", async () => {
   assert.equal(result.status, 200);
   assert.equal(result.body.message, "Ignored non-default-branch push");
   assert.equal(githubCalled, false);
+});
+
+test("push event skips when repo sync lock is already held", async () => {
+  let githubCalled = false;
+
+  const service = createGithubWebhookService({
+    secret: SECRET,
+    store: createStoreMock({
+      tryAcquireRepoSyncLock: async () => false,
+    }),
+    github: createGithubMock({
+      getIndexJson: async () => {
+        githubCalled = true;
+        return { sha: "x", raw: "{}" };
+      },
+    }),
+  });
+
+  const body = JSON.stringify({
+    ref: "refs/heads/main",
+    after: "head123",
+    repository: { full_name: "acme/repo", default_branch: "main" },
+  });
+
+  const result = await service.processWebhook({
+    rawBodyBytes: Buffer.from(body),
+    signature: signBody(body, SECRET),
+    event: "push",
+    deliveryId: "d3b",
+  });
+
+  assert.equal(result.status, 200);
+  assert.equal(result.body.message, "Repo sync already in progress");
+  assert.equal(githubCalled, false);
+});
+
+test("push event releases lock and records sync error when processing fails", async () => {
+  let released = 0;
+  let markedError = 0;
+
+  const service = createGithubWebhookService({
+    secret: SECRET,
+    store: createStoreMock({
+      releaseRepoSyncLock: async () => {
+        released += 1;
+      },
+      setRepoSyncError: async () => {
+        markedError += 1;
+      },
+    }),
+    github: createGithubMock({
+      getIndexJson: async () => {
+        throw new Error("boom");
+      },
+    }),
+  });
+
+  const body = JSON.stringify({
+    ref: "refs/heads/main",
+    after: "head123",
+    repository: { full_name: "acme/repo", default_branch: "main" },
+  });
+
+  await assert.rejects(
+    service.processWebhook({
+      rawBodyBytes: Buffer.from(body),
+      signature: signBody(body, SECRET),
+      event: "push",
+      deliveryId: "d3c",
+    }),
+    /boom/
+  );
+
+  assert.equal(markedError, 1);
+  assert.equal(released, 1);
 });
 
 test("pull_request event replaces mappings and upserts matched ticket links", async () => {

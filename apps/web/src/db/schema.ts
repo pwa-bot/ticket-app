@@ -309,6 +309,20 @@ export const prChecksCache = pgTable(
 );
 
 /**
+ * Per-repo sync locks to serialize webhook/manual refresh processing.
+ */
+export const repoSyncLocks = pgTable(
+  "repo_sync_locks",
+  {
+    repoFullName: text("repo_full_name").primaryKey(),
+    lockedAt: timestamp("locked_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    lockedAtIdx: index("repo_sync_locks_locked_idx").on(t.lockedAt),
+  })
+);
+
+/**
  * Webhook delivery dedupe. Stores delivery IDs to prevent double-processing.
  */
 export const webhookDeliveries = pgTable(
@@ -320,6 +334,23 @@ export const webhookDeliveries = pgTable(
   },
   (t) => ({
     receivedAtIdx: index("webhook_deliveries_received_idx").on(t.receivedAt),
+  })
+);
+
+/**
+ * Webhook idempotency keys for payload-level dedupe.
+ */
+export const webhookIdempotencyKeys = pgTable(
+  "webhook_idempotency_keys",
+  {
+    idempotencyKey: text("idempotency_key").primaryKey(),
+    event: text("event").notNull(),
+    repoFullName: text("repo_full_name"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    repoCreatedIdx: index("webhook_idempotency_keys_repo_created_idx").on(t.repoFullName, t.createdAt),
+    createdAtIdx: index("webhook_idempotency_keys_created_idx").on(t.createdAt),
   })
 );
 
@@ -437,6 +468,8 @@ export type RepoSyncState = typeof repoSyncState.$inferSelect;
 export type TicketIndexSnapshot = typeof ticketIndexSnapshots.$inferSelect;
 export type PrCache = typeof prCache.$inferSelect;
 export type PrChecksCache = typeof prChecksCache.$inferSelect;
+export type RepoSyncLock = typeof repoSyncLocks.$inferSelect;
 export type WebhookDelivery = typeof webhookDeliveries.$inferSelect;
+export type WebhookIdempotencyKey = typeof webhookIdempotencyKeys.$inferSelect;
 export type ManualRefreshJob = typeof manualRefreshJobs.$inferSelect;
 export type AuthSession = typeof authSessions.$inferSelect;

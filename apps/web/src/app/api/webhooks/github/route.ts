@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { and, eq, inArray, notInArray } from "drizzle-orm";
 import { db, schema } from "@/db/client";
-import { upsertBlob, upsertTicketFromIndexEntry } from "@/db/sync";
+import { upsertBlob, upsertTicketFromIndexEntry, tryAcquireRepoSyncLock, releaseRepoSyncLock, setSyncError } from "@/db/sync";
 import { apiError, apiSuccess, readLegacyErrorMessage } from "@/lib/api/response";
 import { getInstallationOctokit } from "@/lib/github-app";
 import { createGithubWebhookService, type GithubWebhookStore } from "@/lib/services/github-webhook-service";
@@ -19,6 +19,16 @@ const webhookStore: GithubWebhookStore = {
     return rows.length > 0;
   },
 
+  async recordIdempotencyKeyIfNew(idempotencyKey, event, repoFullName) {
+    const rows = await db
+      .insert(schema.webhookIdempotencyKeys)
+      .values({ idempotencyKey, event, repoFullName })
+      .onConflictDoNothing()
+      .returning({ idempotencyKey: schema.webhookIdempotencyKeys.idempotencyKey });
+
+    return rows.length > 0;
+  },
+
   async findRepo(fullName) {
     const repo = await db.query.repos.findFirst({ where: eq(schema.repos.fullName, fullName) });
     return repo ?? null;
@@ -30,6 +40,18 @@ const webhookStore: GithubWebhookStore = {
     });
 
     return installation?.githubInstallationId ?? null;
+  },
+
+  async tryAcquireRepoSyncLock(repoFullName) {
+    return tryAcquireRepoSyncLock(repoFullName);
+  },
+
+  async releaseRepoSyncLock(repoFullName) {
+    await releaseRepoSyncLock(repoFullName);
+  },
+
+  async setRepoSyncError(repoFullName, errorCode, errorMessage) {
+    await setSyncError(repoFullName, errorCode, errorMessage);
   },
 
   async upsertBlob(repoFullName, path, sha, contentText) {
