@@ -1,7 +1,7 @@
 ---
 id: 01KHWGYACVZMYF855VY5J9VM6N
 title: 'Phase A: Implement telemetry lane using git notes with event-branch fallback'
-state: in_progress
+state: done
 priority: p1
 labels:
   - protocol
