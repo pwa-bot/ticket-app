@@ -14,7 +14,7 @@ import {
   type CiStatus,
   type MergeReadiness,
 } from "@/lib/attention";
-import type { AttentionReasonDetail } from "@/app/api/space/attention/route";
+import type { AttentionReasonDetail } from "@/lib/attention-contract";
 import type { TicketChangePatch } from "@ticketdotapp/core";
 
 interface AttentionTableProps {

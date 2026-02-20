@@ -11,10 +11,10 @@ import type { AttentionRow, CiStatus, MergeReadiness } from "@/lib/attention";
 import type { Actor } from "@/lib/types";
 import type {
   AttentionItem,
-  AttentionReasonDetail,
   AttentionResponse,
   EnabledRepoSummary,
 } from "@/app/api/space/attention/route";
+import type { AttentionReasonDetail } from "@/lib/attention-contract";
 import type { SpaceTicketsResponse } from "@/app/api/space/tickets/route";
 
 const TICKETS_PAGE_SIZE = 100;

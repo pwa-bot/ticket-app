@@ -3,18 +3,11 @@ import { eq, inArray, and, ne } from "drizzle-orm";
 import { db, schema } from "@/db/client";
 import { requireSession } from "@/lib/auth";
 import type { CiStatus, MergeReadiness } from "@/lib/attention";
+import { compareAttentionItems, getReasonCatalog, toReasonDetails, type AttentionReason } from "@/lib/attention-contract";
+import type { AttentionReasonDetail } from "@/lib/attention-contract";
 import { assertNoUnauthorizedRepos } from "@/lib/security/repo-access";
 
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
-
-type AttentionReason = "pending_pr" | "pr_waiting_review" | "ci_failing" | "blocked" | "stale_in_progress";
-
-export interface AttentionReasonDetail {
-  code: AttentionReason;
-  label: string;
-  description: string;
-  rank: number;
-}
 
 export interface AttentionPrSummary {
   prNumber: number;
@@ -71,40 +64,6 @@ export interface AttentionResponse {
   totals: AttentionTotals;
   reasonCatalog: AttentionReasonDetail[];
   loadedAt: string;
-}
-
-const ATTENTION_REASON_META: Record<AttentionReason, Omit<AttentionReasonDetail, "code">> = {
-  blocked: {
-    label: "Blocked",
-    description: "Ticket state is blocked and needs unblocking work.",
-    rank: 0,
-  },
-  ci_failing: {
-    label: "CI failing",
-    description: "At least one linked open PR has failing checks.",
-    rank: 1,
-  },
-  stale_in_progress: {
-    label: "Stale (>24h)",
-    description: "Ticket is in progress and cache data is older than 24 hours.",
-    rank: 2,
-  },
-  pr_waiting_review: {
-    label: "Open PR",
-    description: "Ticket has an open linked PR that likely needs reviewer attention.",
-    rank: 3,
-  },
-  pending_pr: {
-    label: "Pending change",
-    description: "A pending ticket-change PR exists and has not merged yet.",
-    rank: 4,
-  },
-};
-
-function toReasonDetails(reasons: AttentionReason[]): AttentionReasonDetail[] {
-  return Array.from(new Set(reasons))
-    .map((reason) => ({ code: reason, ...ATTENTION_REASON_META[reason] }))
-    .sort((a, b) => a.rank - b.rank);
 }
 
 function ticketLookupKey(repoFullName: string, ticketId: string): string {
@@ -187,7 +146,7 @@ export async function GET(req: NextRequest) {
         ticketsTotal: 0,
         ticketsAttention: 0,
       },
-      reasonCatalog: toReasonDetails(Object.keys(ATTENTION_REASON_META) as AttentionReason[]),
+      reasonCatalog: getReasonCatalog(),
       loadedAt: new Date().toISOString(),
     } satisfies AttentionResponse);
   }
@@ -228,7 +187,7 @@ export async function GET(req: NextRequest) {
         ticketsTotal: 0,
         ticketsAttention: 0,
       },
-      reasonCatalog: toReasonDetails(Object.keys(ATTENTION_REASON_META) as AttentionReason[]),
+      reasonCatalog: getReasonCatalog(),
       loadedAt: new Date().toISOString(),
     } satisfies AttentionResponse);
   }
@@ -374,30 +333,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Sort: blocked first, then stale_in_progress, then priority, then age
-  const priorityOrder: Record<string, number> = { p0: 0, p1: 1, p2: 2, p3: 3 };
-  const mergeReadinessOrder: Record<MergeReadiness, number> = {
-    CONFLICT: 0,
-    FAILING_CHECKS: 1,
-    WAITING_REVIEW: 2,
-    UNKNOWN: 3,
-    MERGEABLE_NOW: 4,
-  };
-
-  items.sort((a, b) => {
-    const aReason = ATTENTION_REASON_META[a.primaryReason].rank;
-    const bReason = ATTENTION_REASON_META[b.primaryReason].rank;
-    if (aReason !== bReason) return aReason - bReason;
-
-    const aReadiness = mergeReadinessOrder[a.mergeReadiness];
-    const bReadiness = mergeReadinessOrder[b.mergeReadiness];
-    if (aReadiness !== bReadiness) return aReadiness - bReadiness;
-
-    const aPriority = priorityOrder[a.priority] ?? 99;
-    const bPriority = priorityOrder[b.priority] ?? 99;
-    if (aPriority !== bPriority) return aPriority - bPriority;
-
-    return (a.createdAt ?? "").localeCompare(b.createdAt ?? "");
-  });
+  items.sort(compareAttentionItems);
 
   const enabledRepos: EnabledRepoSummary[] = repos.map((r) => ({
     fullName: r.fullName,
@@ -416,7 +352,7 @@ export async function GET(req: NextRequest) {
       ticketsTotal: tickets.length,
       ticketsAttention: items.length,
     },
-    reasonCatalog: toReasonDetails(Object.keys(ATTENTION_REASON_META) as AttentionReason[]),
+    reasonCatalog: getReasonCatalog(),
     loadedAt: new Date().toISOString(),
   } satisfies AttentionResponse);
 }
