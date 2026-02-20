@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T23:27:52.049Z",
+  "generated_at": "2026-02-20T23:27:52.286Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -133,7 +133,7 @@
       "id": "01KHYK086MC5KPMBJZ9C0DCDNS",
       "short_id": "01KHYK08",
       "title": "P1 Add per-repo sync locks and idempotency keys for webhook refresh races",
-      "state": "ready",
+      "state": "in_progress",
       "priority": "p1",
       "labels": [
         "reliability",
