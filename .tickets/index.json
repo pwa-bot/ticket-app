@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T00:16:13.266Z",
+  "generated_at": "2026-02-20T00:16:13.504Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -267,6 +267,20 @@
         "indexing"
       ],
       "path": ".tickets/tickets/01KHW6EY6MS5WYZFZA3Y3ZCC8R.md"
+    },
+    {
+      "id": "01KHW6EYNJV864W99AV18FC15P",
+      "short_id": "01KHW6EY",
+      "display_id": "TK-01KHW6EY",
+      "title": "Saved views v1 shareable operational queues",
+      "state": "backlog",
+      "priority": "p1",
+      "labels": [
+        "dashboard",
+        "saved-views",
+        "product"
+      ],
+      "path": ".tickets/tickets/01KHW6EYNJV864W99AV18FC15P.md"
     },
     {
       "id": "01KHS9PFF2Z37S54PZD6QGW8DJ",
