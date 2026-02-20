@@ -13,7 +13,7 @@ import {
   type AttentionTicket,
   type CiStatus,
 } from "@/lib/attention";
-import type { Priority, TicketIndex, TicketState } from "@/lib/types";
+import type { Priority, TicketIndex, TicketState } from "@ticketdotapp/core";
 import { BOARD_LABELS, BOARD_STATES } from "@/lib/utils";
 import { unwrapApiData } from "@/lib/api/client";
 

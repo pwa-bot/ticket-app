@@ -1,4 +1,4 @@
-import type { Ticket, TicketFrontmatter, TicketIndex } from "@/lib/types";
+import type { Ticket, TicketFrontmatter, TicketIndex } from "@ticketdotapp/core";
 import matter from "gray-matter";
 
 const GITHUB_API_BASE = "https://api.github.com";

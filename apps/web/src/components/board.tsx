@@ -1,6 +1,6 @@
 "use client";
 
-import type { Priority, TicketIndex, TicketIndexEntry, TicketState } from "@/lib/types";
+import type { Priority, TicketIndex, TicketIndexEntry, TicketState } from "@ticketdotapp/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";

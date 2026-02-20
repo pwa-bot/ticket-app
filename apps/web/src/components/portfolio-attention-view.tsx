@@ -8,7 +8,7 @@ import { SavedViewsDropdown } from "@/components/saved-views";
 import TicketDetailModal from "@/components/ticket-detail-modal";
 import type { LinkedPrSummary } from "@/components/pr-status-badge";
 import type { AttentionRow, CiStatus, MergeReadiness } from "@/lib/attention";
-import type { Actor } from "@/lib/types";
+import type { Actor } from "@ticketdotapp/core";
 import type {
   AttentionItem,
   AttentionResponse,

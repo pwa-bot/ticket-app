@@ -7,7 +7,7 @@ import { usePendingChangesSafe } from "@/lib/pending-changes";
 import { getApiErrorMessage } from "@/lib/api/client";
 import PendingBadge from "@/components/pending-badge";
 import { EditableSelect, EditableText } from "@/components/editable-field";
-import type { TicketState } from "@/lib/types";
+import type { TicketState } from "@ticketdotapp/core";
 import type { TicketChangePatch } from "@ticketdotapp/core";
 
 interface TicketDetail {

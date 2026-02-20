@@ -1,4 +1,4 @@
-import type { Priority, TicketIndexEntry } from "@/lib/types";
+import type { Priority, TicketIndexEntry } from "@ticketdotapp/core";
 
 export type CiStatus = "success" | "failure" | "pending" | "unknown";
 export type MergeReadiness = "MERGEABLE_NOW" | "WAITING_REVIEW" | "FAILING_CHECKS" | "CONFLICT" | "UNKNOWN";

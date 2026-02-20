@@ -3,7 +3,7 @@ import { and, asc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { db, schema } from "@/db/client";
 import { apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
-import type { Priority, TicketState } from "@/lib/types";
+import type { Priority, TicketState } from "@ticketdotapp/core";
 import { assertNoUnauthorizedRepos } from "@/lib/security/repo-access";
 
 const VALID_STATES: TicketState[] = ["backlog", "ready", "in_progress", "blocked", "done"];

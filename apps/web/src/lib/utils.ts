@@ -1,4 +1,4 @@
-import type { Priority, TicketIndexEntry, TicketState } from "@/lib/types";
+import type { Priority, TicketIndexEntry, TicketState } from "@ticketdotapp/core";
 
 export const BOARD_STATES: TicketState[] = ["backlog", "ready", "in_progress", "blocked", "done"];
 

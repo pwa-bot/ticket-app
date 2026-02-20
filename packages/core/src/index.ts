@@ -1,5 +1,5 @@
 // Protocol types and validation
-import type { TicketState, TicketPriority, ActorRef } from "./protocol.js";
+import type { TicketState } from "./protocol.js";
 
 export {
   type TicketState,
@@ -50,9 +50,17 @@ export {
 } from "./naming.js";
 export { summarizePatch } from "./summarize-patch.js";
 
-// Legacy types for backwards compatibility with existing code
-export type Actor = ActorRef;
-export type Priority = TicketPriority;
+// Shared ticket domain types
+export {
+  type Actor,
+  type Priority,
+  type TicketFrontmatter,
+  type Ticket,
+  type TicketIndexEntry,
+  type TicketIndex,
+  type TicketConfig,
+  formatShortId,
+} from "./ticket-types.js";
 
 // State transitions (legacy export)
 export const STATE_TRANSITIONS: Record<TicketState, TicketState[]> = {
@@ -62,30 +70,3 @@ export const STATE_TRANSITIONS: Record<TicketState, TicketState[]> = {
   blocked: ["ready", "in_progress"],
   done: [],
 };
-
-// Format short ID for display (first 8 chars of ULID)
-export function formatShortId(id: string, prefix: string = "TK"): string {
-  return `${prefix}-${id.slice(0, 8)}`;
-}
-
-// Index types
-export interface TicketIndexEntry {
-  id: string;
-  short_id: string;
-  display_id: string;
-  title: string;
-  state: TicketState;
-  priority: TicketPriority;
-  labels: string[];
-  path: string;
-  assignee?: ActorRef;
-  reviewer?: ActorRef;
-  extras?: Record<string, unknown>;
-}
-
-export interface TicketIndex {
-  format_version: 1;
-  generated_at: string;
-  workflow: "simple-v1";
-  tickets: TicketIndexEntry[];
-}
