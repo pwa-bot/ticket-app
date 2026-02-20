@@ -1,13 +1,13 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T08:17:06.494Z",
+  "generated_at": "2026-02-20T08:17:36.891Z",
   "workflow": "simple-v1",
   "tickets": [
     {
       "id": "01KHW6EXFRJ818M63EJ0356D0H",
       "short_id": "01KHW6EX",
       "title": "Frontend ignore stale responses during rapid search and filter",
-      "state": "backlog",
+      "state": "ready",
       "priority": "p1",
       "labels": [
         "dashboard",
