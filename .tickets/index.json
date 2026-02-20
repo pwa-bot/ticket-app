@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T07:57:28.262Z",
+  "generated_at": "2026-02-20T08:07:05.421Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -22,7 +22,7 @@
       "id": "01KHS9PFF2Z37S54PZD6QGW8DJ",
       "short_id": "01KHS9PF",
       "title": "Task G - Manual refresh endpoint and job",
-      "state": "backlog",
+      "state": "ready",
       "priority": "p2",
       "labels": [
         "refresh",
@@ -44,20 +44,6 @@
       ],
       "path": ".tickets/tickets/01KHVQ0B6VR7M2HAWB9QPEMBED.md",
       "display_id": "TK-01KHVQ0B"
-    },
-    {
-      "id": "01KHW6EYNJV864W99AV18FC15P",
-      "short_id": "01KHW6EY",
-      "title": "Saved views v1 shareable operational queues",
-      "state": "in_progress",
-      "priority": "p1",
-      "labels": [
-        "dashboard",
-        "saved-views",
-        "product"
-      ],
-      "path": ".tickets/tickets/01KHW6EYNJV864W99AV18FC15P.md",
-      "display_id": "TK-01KHW6EY-3"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
@@ -683,6 +669,20 @@
       ],
       "path": ".tickets/tickets/01KHW6EY6MS5WYZFZA3Y3ZCC8R.md",
       "display_id": "TK-01KHW6EY"
+    },
+    {
+      "id": "01KHW6EYNJV864W99AV18FC15P",
+      "short_id": "01KHW6EY",
+      "title": "Saved views v1 shareable operational queues",
+      "state": "done",
+      "priority": "p1",
+      "labels": [
+        "dashboard",
+        "saved-views",
+        "product"
+      ],
+      "path": ".tickets/tickets/01KHW6EYNJV864W99AV18FC15P.md",
+      "display_id": "TK-01KHW6EY-3"
     },
     {
       "id": "01KHWGYACVZMYF855VY5J9VM6N",
