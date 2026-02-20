@@ -20,12 +20,7 @@ export default function SettingsClient() {
   const [installUrl, setInstallUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    loadData().then(() => {
-      // Auto-refresh if no installations found (user might have just installed)
-      setTimeout(() => {
-        refreshInstallations();
-      }, 500);
-    });
+    void loadData();
   }, []);
 
   async function loadData() {

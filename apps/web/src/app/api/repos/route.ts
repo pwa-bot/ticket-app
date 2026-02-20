@@ -11,7 +11,7 @@ interface GithubInstallation {
 }
 
 const INSTALLATION_REHYDRATE_TTL_MS = 10 * 60 * 1000;
-const MAX_STALE_INSTALLATION_REHYDRATES_PER_REQUEST = 1;
+const MAX_STALE_INSTALLATION_REHYDRATES_PER_REQUEST = 0;
 
 function shouldRefresh(request: NextRequest): boolean {
   const value = request.nextUrl.searchParams.get("refresh");

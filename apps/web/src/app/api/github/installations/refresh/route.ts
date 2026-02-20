@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { db, schema } from "@/db/client";
 import { apiError, apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
@@ -22,6 +22,33 @@ export async function POST() {
   const { userId, token } = await requireSession();
 
   try {
+    const recentInstallations = await db.query.userInstallations.findMany({
+      where: eq(schema.userInstallations.userId, userId),
+    });
+    if (recentInstallations.length > 0) {
+      const installationIds = recentInstallations.map((row) => row.installationId);
+      const installations = await db.query.installations.findMany({
+        where: inArray(schema.installations.id, installationIds),
+      });
+      const newestRefreshMs = installations.reduce<number>((acc, installation) => {
+        const ts = installation.updatedAt?.getTime() ?? 0;
+        return ts > acc ? ts : acc;
+      }, 0);
+      if (newestRefreshMs && Date.now() - newestRefreshMs < 60_000) {
+        return apiSuccess({
+          installations: installations.map((inst) => ({
+            installationId: inst.githubInstallationId,
+            accountLogin: inst.githubAccountLogin,
+            accountType: inst.githubAccountType,
+          })),
+          count: installations.length,
+          hydratedRepoCount: 0,
+          skipped: true,
+          reason: "cooldown",
+        });
+      }
+    }
+
     const response = await fetch("https://api.github.com/user/installations", {
       headers: {
         Authorization: `Bearer ${token}`,
