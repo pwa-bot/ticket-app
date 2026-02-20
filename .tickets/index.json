@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T03:19:23.262Z",
+  "generated_at": "2026-02-20T03:19:23.495Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -206,6 +206,20 @@
         "policy"
       ],
       "path": ".tickets/tickets/01KHWGYAVFC7VSZ6A0EMFQT9K2.md"
+    },
+    {
+      "id": "01KHWGYB2SYQVJZYQSKTJ6NWFT",
+      "short_id": "01KHWGYB",
+      "display_id": "TK-01KHWGYB",
+      "title": "Migration tooling backfill squash noisy ticket churn into compact snapshots",
+      "state": "backlog",
+      "priority": "p1",
+      "labels": [
+        "migration",
+        "storage",
+        "tooling"
+      ],
+      "path": ".tickets/tickets/01KHWGYB2SYQVJZYQSKTJ6NWFT.md"
     },
     {
       "id": "01KHS9PFF2Z37S54PZD6QGW8DJ",
