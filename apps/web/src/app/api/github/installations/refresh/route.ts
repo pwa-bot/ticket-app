@@ -32,6 +32,12 @@ export async function POST() {
     if (!response.ok) {
       const text = await response.text();
       console.error("[refresh installations] GitHub API error:", response.status, text);
+
+      // Preserve auth/permission semantics so clients can prompt reconnect only when appropriate.
+      if (response.status === 401 || response.status === 403) {
+        return apiError("GitHub authorization expired or insufficient scope", { status: response.status });
+      }
+
       return apiError(`GitHub API error: ${response.status}`, { status: 502 });
     }
 

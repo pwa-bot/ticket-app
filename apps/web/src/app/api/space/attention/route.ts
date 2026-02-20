@@ -202,7 +202,8 @@ function buildRepoTicketFilter(
  * Query param ?repos=owner/repo,owner/repo2 to filter to specific repos.
  */
 export async function GET(req: NextRequest) {
-  const { userId } = await requireSession();
+  try {
+    const { userId } = await requireSession();
 
   // Parse optional repo filter
   const { searchParams } = new URL(req.url);
@@ -468,16 +469,34 @@ export async function GET(req: NextRequest) {
     attentionTickets: attentionByRepo.get(r.fullName) ?? 0,
   }));
 
-  return apiSuccess({
-    items,
-    repos: enabledRepos,
-    totals: {
-      reposEnabled: repos.length,
-      reposSelected: targetRepos.length,
-      ticketsTotal: Array.from(totalByRepo.values()).reduce((sum, value) => sum + value, 0),
-      ticketsAttention: items.length,
-    },
-    reasonCatalog: getReasonCatalog(),
-    loadedAt: new Date().toISOString(),
-  } satisfies AttentionResponse);
+    return apiSuccess({
+      items,
+      repos: enabledRepos,
+      totals: {
+        reposEnabled: repos.length,
+        reposSelected: targetRepos.length,
+        ticketsTotal: Array.from(totalByRepo.values()).reduce((sum, value) => sum + value, 0),
+        ticketsAttention: items.length,
+      },
+      reasonCatalog: getReasonCatalog(),
+      loadedAt: new Date().toISOString(),
+    } satisfies AttentionResponse);
+  } catch (error) {
+    if (error instanceof Response) {
+      return error;
+    }
+    console.error("[/api/space/attention] Error:", error);
+    return apiSuccess({
+      items: [],
+      repos: [],
+      totals: {
+        reposEnabled: 0,
+        reposSelected: 0,
+        ticketsTotal: 0,
+        ticketsAttention: 0,
+      },
+      reasonCatalog: getReasonCatalog(),
+      loadedAt: new Date().toISOString(),
+    } satisfies AttentionResponse);
+  }
 }

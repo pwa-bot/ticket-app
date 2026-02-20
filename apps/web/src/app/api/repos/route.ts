@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, ne } from "drizzle-orm";
 import { db, schema } from "@/db/client";
 import { apiError, apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
@@ -101,6 +101,20 @@ export async function GET(request: NextRequest) {
     }
 
     const installationIds = userInstallations.map((ui) => ui.installationId);
+
+    // Self-heal legacy installation-id drift: if installation IDs rotated but owner login is unchanged,
+    // relink owner-matching repos to the user's current installation IDs.
+    const installations = await db.query.installations.findMany({
+      where: inArray(schema.installations.id, installationIds),
+    });
+    for (const installation of installations) {
+      const ownerLogin = installation.githubAccountLogin?.trim();
+      if (!ownerLogin) continue;
+      await db
+        .update(schema.repos)
+        .set({ installationId: installation.id, updatedAt: new Date() })
+        .where(and(eq(schema.repos.owner, ownerLogin), ne(schema.repos.installationId, installation.id)));
+    }
 
     let repos = await db.query.repos.findMany({
       where: inArray(schema.repos.installationId, installationIds),

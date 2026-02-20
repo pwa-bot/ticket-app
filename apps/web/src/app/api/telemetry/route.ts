@@ -16,30 +16,38 @@ interface TelemetryPayload {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await requireSession();
-
-  let payload: TelemetryPayload;
   try {
-    payload = (await req.json()) as TelemetryPayload;
-  } catch {
-    return apiError("Invalid JSON", { status: 400 });
+    const session = await requireSession();
+
+    let payload: TelemetryPayload;
+    try {
+      payload = (await req.json()) as TelemetryPayload;
+    } catch {
+      return apiError("Invalid JSON", { status: 400 });
+    }
+
+    if (!payload?.event || !WEB_EVENTS.has(payload.event)) {
+      return apiError("Invalid telemetry event", { status: 400 });
+    }
+
+    // MVP sink: structured server logs. Replace with DB/warehouse sink in follow-up.
+    console.info(
+      JSON.stringify({
+        channel: "telemetry",
+        source: payload.source ?? "web",
+        event: payload.event,
+        userId: session.userId,
+        properties: payload.properties ?? {},
+        at: new Date().toISOString(),
+      }),
+    );
+
+    return apiSuccess({ tracked: true });
+  } catch (error) {
+    if (error instanceof Response) {
+      return error;
+    }
+    console.error("[/api/telemetry] Error:", error);
+    return apiError("Telemetry failed", { status: 500 });
   }
-
-  if (!payload?.event || !WEB_EVENTS.has(payload.event)) {
-    return apiError("Invalid telemetry event", { status: 400 });
-  }
-
-  // MVP sink: structured server logs. Replace with DB/warehouse sink in follow-up.
-  console.info(
-    JSON.stringify({
-      channel: "telemetry",
-      source: payload.source ?? "web",
-      event: payload.event,
-      userId: session.userId,
-      properties: payload.properties ?? {},
-      at: new Date().toISOString(),
-    }),
-  );
-
-  return apiSuccess({ tracked: true });
 }
