@@ -1,13 +1,13 @@
 ---
 id: 01KHT40T5MGCWRB1KQYB8M568T
 title: Ticket templates (bug/feature/chore) for consistent creation
-state: backlog
+state: ready
 priority: p2
 labels:
   - templates
   - cli
-assignee: agent:openclaw
-reviewer: human:morgan
+assignee: 'agent:openclaw'
+reviewer: 'human:morgan'
 ---
 
 ## Problem
