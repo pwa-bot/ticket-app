@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T06:47:29.198Z",
+  "generated_at": "2026-02-20T06:57:07.871Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -139,18 +139,6 @@
       ],
       "path": ".tickets/tickets/01KHVQ0B6VR7M2HAWB9QPEMBED.md",
       "display_id": "TK-01KHVQ0B"
-    },
-    {
-      "id": "01KHVX91YVAGJWRWS254K53RJR",
-      "short_id": "01KHVX91",
-      "title": "Standardize API response envelopes and error handling",
-      "state": "in_progress",
-      "priority": "p1",
-      "labels": [
-        "refactor"
-      ],
-      "path": ".tickets/tickets/01KHVX91YVAGJWRWS254K53RJR.md",
-      "display_id": "TK-01KHVX91-2"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
@@ -659,6 +647,18 @@
       "labels": [],
       "path": ".tickets/tickets/01KHQKCTHCSF6REBDAGMHF9W9B.md",
       "display_id": "TK-01KHQKCT"
+    },
+    {
+      "id": "01KHVX91YVAGJWRWS254K53RJR",
+      "short_id": "01KHVX91",
+      "title": "Standardize API response envelopes and error handling",
+      "state": "done",
+      "priority": "p1",
+      "labels": [
+        "refactor"
+      ],
+      "path": ".tickets/tickets/01KHVX91YVAGJWRWS254K53RJR.md",
+      "display_id": "TK-01KHVX91-2"
     },
     {
       "id": "01KHVX926CZJ9WFMBNJSENJ97K",
