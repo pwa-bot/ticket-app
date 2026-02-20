@@ -1,7 +1,7 @@
 ---
 id: 01KHVQ07RFJNSWWTGRF9EG0NDB
 title: Dashboard fix Attention search and add Jump-to-ID
-state: backlog
+state: done
 priority: p0
 labels:
   - dashboard
@@ -16,15 +16,15 @@ On `/space` (Attention mode), search feels broken because it only filters the at
 
 ## Acceptance Criteria
 
-- [ ] Search filters *attention items* by:
+- [x] Search filters *attention items* by:
   - displayId (e.g. `TK-01KHM550`)
   - shortId
   - title
   - repoFullName
   - labels
   - (optional) assignee/reviewer
-- [ ] If `totals.ticketsAttention === 0`, disable search input (or show helper text) with link/CTA to “All tickets”.
-- [ ] Add Jump-to-ID input:
+- [x] If `totals.ticketsAttention === 0`, disable search input (or show helper text) with link/CTA to “All tickets”.
+- [x] Add Jump-to-ID input:
   - Accept `TK-...` and shortId forms
   - Opens ticket detail modal directly when found
 

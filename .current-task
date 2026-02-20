@@ -3,9 +3,9 @@
 
 ## Queue (in order)
 1. [DONE] 01KHT40QS0ATEZA86AEW9E94R9 - Saved views and shareable filter links
-2. [IN PROGRESS] 01KHVQ02ZX1SX13ZB6HZPK4A1N - Dashboard add totals and repo counts to attention endpoint; fix empty states
-3. 01KHVQ07RFJNSWWTGRF9EG0NDB - Dashboard fix Attention search and add Jump-to-ID
-4. 01KHVX92DSSK48NP4HZ7H9WGQC - Fix O(n²) attention endpoint - use Map instead of find()
+2. [DONE] 01KHVQ02ZX1SX13ZB6HZPK4A1N - Dashboard add totals and repo counts to attention endpoint; fix empty states
+3. [DONE] 01KHVQ07RFJNSWWTGRF9EG0NDB - Dashboard fix Attention search and add Jump-to-ID
+4. [IN PROGRESS] 01KHVX92DSSK48NP4HZ7H9WGQC - Fix O(n²) attention endpoint - use Map instead of find()
 5. 01KHW6EB9RAKEYEESTRJP0SP3E - Attention contract + reason explainability in /space
 6. 01KHW6ERTAS4MW29ZBGXSH325X - E2E filters URL sync and browser nav correctness
 7. 01KHW6EX837MYH0V9AN8C25930 - E2E modal deep link loads ticket outside current page filter

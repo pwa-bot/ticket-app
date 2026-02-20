@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import AttentionTable from "@/components/attention-table";
@@ -122,10 +122,31 @@ function filterItemsBySearch(items: AttentionItem[], search: string): AttentionI
   return items.filter((item) =>
     item.title.toLowerCase().includes(lowered) ||
     item.displayId.toLowerCase().includes(lowered) ||
+    item.shortId.toLowerCase().includes(lowered) ||
     item.repoFullName.toLowerCase().includes(lowered) ||
     item.labels.some((label) => label.toLowerCase().includes(lowered)) ||
-    (item.assignee ?? "").toLowerCase().includes(lowered),
+    (item.assignee ?? "").toLowerCase().includes(lowered) ||
+    (item.reviewer ?? "").toLowerCase().includes(lowered),
   );
+}
+
+function normalizeJumpId(value: string): { shortId: string; displayId: string; raw: string } | null {
+  const raw = value.trim();
+  if (!raw) {
+    return null;
+  }
+
+  const uppercase = raw.toUpperCase();
+  const shortId = uppercase.startsWith("TK-") ? uppercase.slice(3) : uppercase;
+  if (!shortId) {
+    return null;
+  }
+
+  return {
+    shortId,
+    displayId: `TK-${shortId}`,
+    raw,
+  };
 }
 
 export default function PortfolioAttentionView() {
@@ -142,6 +163,8 @@ export default function PortfolioAttentionView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [ticketsOffset, setTicketsOffset] = useState(0);
+  const [jumpValue, setJumpValue] = useState("");
+  const [jumpError, setJumpError] = useState<string | null>(null);
 
   const selectedRepos = useMemo(() => {
     if (!repoParam) {
@@ -295,11 +318,55 @@ export default function PortfolioAttentionView() {
   const reposEnabled = attentionTotals?.reposEnabled ?? allRepos.length;
   const ticketsTotal = attentionTotals?.ticketsTotal ?? 0;
   const ticketsAttention = attentionTotals?.ticketsAttention ?? 0;
+  const attentionSearchDisabled = activeTab === "attention" && ticketsAttention === 0;
   const showNoReposEnabled = activeTab === "attention" && !loading && !error && reposEnabled === 0;
   const showNoTickets = activeTab === "attention" && !loading && !error && reposEnabled > 0 && ticketsTotal === 0;
   const showAllClear = activeTab === "attention" && !loading && !error && ticketsTotal > 0 && ticketsAttention === 0;
   const showNoResults =
     activeTab === "attention" && !loading && !error && ticketsAttention > 0 && filteredAttentionItems.length === 0;
+
+  function onJumpToIdSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setJumpError(null);
+
+    const normalized = normalizeJumpId(jumpValue);
+    if (!normalized) {
+      setJumpError("Enter a ticket ID like TK-ABC12345 or ABC12345.");
+      return;
+    }
+
+    const ticketPool =
+      activeTab === "attention"
+        ? visibleAttentionItems.map((item) => ({
+            repoFullName: item.repoFullName,
+            ticketId: item.ticketId,
+            shortId: item.shortId,
+            displayId: item.displayId,
+          }))
+        : (ticketsData?.tickets ?? []).map((ticket) => ({
+            repoFullName: ticket.repoFullName,
+            ticketId: ticket.id,
+            shortId: ticket.shortId,
+            displayId: ticket.displayId,
+          }));
+
+    const match = ticketPool.find((ticket) => {
+      const ticketShortId = ticket.shortId.toUpperCase();
+      const ticketDisplayId = ticket.displayId.toUpperCase();
+      return (
+        ticketShortId === normalized.shortId ||
+        ticketDisplayId === normalized.displayId ||
+        ticket.ticketId === normalized.raw
+      );
+    });
+
+    if (!match) {
+      setJumpError("Not found in current repos.");
+      return;
+    }
+
+    onOpenTicket(match.repoFullName, match.ticketId);
+  }
 
   return (
     <div className="mx-auto max-w-7xl">
@@ -405,13 +472,15 @@ export default function PortfolioAttentionView() {
               type="search"
               value={searchQuery}
               onChange={(event) => setQueryParam("q", event.target.value || undefined)}
+              disabled={attentionSearchDisabled}
               placeholder={activeTab === "attention" ? "Filter attention items..." : "Search title, ID, labels..."}
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 pr-9 text-sm placeholder-slate-400 focus:border-slate-500 focus:outline-none"
+              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 pr-9 text-sm placeholder-slate-400 focus:border-slate-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
             />
             {searchQuery ? (
               <button
                 type="button"
                 onClick={() => setQueryParam("q", undefined)}
+                disabled={attentionSearchDisabled}
                 className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
                 title="Clear search"
               >
@@ -421,6 +490,49 @@ export default function PortfolioAttentionView() {
               </button>
             ) : null}
           </div>
+          {attentionSearchDisabled ? (
+            <p className="mt-2 text-xs text-slate-500">
+              All clear. Search is disabled while there are no attention items.{" "}
+              <button type="button" className="text-blue-600 underline" onClick={() => setQueryParam("tab", "tickets")}>
+                Open All tickets
+              </button>
+              .
+            </p>
+          ) : null}
+        </div>
+
+        <div className="w-72">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">Jump to ticket ID</p>
+          <form onSubmit={onJumpToIdSubmit} className="flex gap-2">
+            <input
+              type="text"
+              value={jumpValue}
+              onChange={(event) => {
+                setJumpValue(event.target.value);
+                if (jumpError) {
+                  setJumpError(null);
+                }
+              }}
+              placeholder="TK-ABC12345 or ABC12345"
+              className="min-w-0 flex-1 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm placeholder-slate-400 focus:border-slate-500 focus:outline-none"
+            />
+            <button
+              type="submit"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Open
+            </button>
+          </form>
+          {jumpError ? (
+            <p className="mt-2 text-xs text-slate-500">
+              {jumpError}{" "}
+              {jumpError === "Not found in current repos." ? (
+                <button type="button" className="text-blue-600 underline" onClick={() => setQueryParam("tab", "tickets")}>
+                  Switch to All tickets
+                </button>
+              ) : null}
+            </p>
+          ) : null}
         </div>
       </div>
 

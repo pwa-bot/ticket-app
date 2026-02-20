@@ -1,29 +1,14 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T01:21:04.244Z",
+  "generated_at": "2026-02-20T01:23:03.252Z",
   "workflow": "simple-v1",
   "tickets": [
-    {
-      "id": "01KHVQ02ZX1SX13ZB6HZPK4A1N",
-      "short_id": "01KHVQ02",
-      "display_id": "TK-01KHVQ02",
-      "title": "Dashboard add totals and repo counts to attention endpoint; fix empty states",
-      "state": "backlog",
-      "priority": "p0",
-      "labels": [
-        "dashboard",
-        "api",
-        "attention",
-        "p0"
-      ],
-      "path": ".tickets/tickets/01KHVQ02ZX1SX13ZB6HZPK4A1N.md"
-    },
     {
       "id": "01KHVQ07RFJNSWWTGRF9EG0NDB",
       "short_id": "01KHVQ07",
       "display_id": "TK-01KHVQ07",
       "title": "Dashboard fix Attention search and add Jump-to-ID",
-      "state": "backlog",
+      "state": "done",
       "priority": "p0",
       "labels": [
         "dashboard",
@@ -494,6 +479,21 @@
       "assignee": "agent:openclaw",
       "reviewer": "human:morgan",
       "path": ".tickets/tickets/01KHT40SNQEEQW7G0DP1CWW6VM.md"
+    },
+    {
+      "id": "01KHVQ02ZX1SX13ZB6HZPK4A1N",
+      "short_id": "01KHVQ02",
+      "display_id": "TK-01KHVQ02",
+      "title": "Dashboard add totals and repo counts to attention endpoint; fix empty states",
+      "state": "done",
+      "priority": "p0",
+      "labels": [
+        "dashboard",
+        "api",
+        "attention",
+        "p0"
+      ],
+      "path": ".tickets/tickets/01KHVQ02ZX1SX13ZB6HZPK4A1N.md"
     },
     {
       "id": "01KHMG84AJMCWQCCE84328MF5G",
