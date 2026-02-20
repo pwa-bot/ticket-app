@@ -314,6 +314,12 @@ export async function GET(request: Request) {
   return response;
   } catch (error) {
     console.error("[/api/auth/github] Error:", error);
-    return apiError("OAuth callback failed", { status: 500 });
+
+    if (error instanceof Response) {
+      return error;
+    }
+
+    const message = error instanceof Error ? error.message : "OAuth callback failed";
+    return apiError(message, { status: 500 });
   }
 }
