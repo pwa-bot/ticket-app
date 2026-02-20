@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T03:19:23.028Z",
+  "generated_at": "2026-02-20T03:19:23.262Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -192,6 +192,20 @@
         "perf"
       ],
       "path": ".tickets/tickets/01KHWGYAM6JM3RPHPHKP5EA6D8.md"
+    },
+    {
+      "id": "01KHWGYAVFC7VSZ6A0EMFQT9K2",
+      "short_id": "01KHWGYA",
+      "display_id": "TK-01KHWGYA",
+      "title": "Policy tiers hard protocol checks warn execution quality opt-in strict",
+      "state": "backlog",
+      "priority": "p1",
+      "labels": [
+        "governance",
+        "ci",
+        "policy"
+      ],
+      "path": ".tickets/tickets/01KHWGYAVFC7VSZ6A0EMFQT9K2.md"
     },
     {
       "id": "01KHS9PFF2Z37S54PZD6QGW8DJ",
