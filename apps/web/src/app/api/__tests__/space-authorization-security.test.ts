@@ -11,6 +11,7 @@ const cacheBackedSpaceRoutes = [
   "app/api/space/index/route.ts",
   "app/api/space/attention/route.ts",
   "app/api/space/tickets/route.ts",
+  "app/api/space/sync-health/route.ts",
 ] as const;
 
 test("cache-backed /api/space routes enforce installation-scoped repo authorization", async () => {
@@ -29,9 +30,11 @@ test("cache-backed /api/space routes enforce installation-scoped repo authorizat
 test("repo-specific /api/space routes enforce server-side repo guards", async () => {
   const boardSource = await readSource("app/api/space/repos/[owner]/[repo]/board/route.ts");
   const refreshSource = await readSource("app/api/space/repos/[owner]/[repo]/refresh/route.ts");
+  const syncHealthSource = await readSource("app/api/space/repos/[owner]/[repo]/sync-health/route.ts");
 
   assert.match(boardSource, /requireRepoAccess\(/, "board route should enforce repo access guard");
   assert.match(refreshSource, /requireRepoAccess\(/, "refresh route should enforce repo access guard");
+  assert.match(syncHealthSource, /requireRepoAccess\(/, "sync health route should enforce repo access guard");
 });
 
 test("/api/space/jobs/refresh remains secret-protected for server-side workers", async () => {

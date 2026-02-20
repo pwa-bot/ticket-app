@@ -16,9 +16,11 @@ import type {
 } from "@/app/api/space/attention/route";
 import type { AttentionReasonDetail } from "@/lib/attention-contract";
 import type { SpaceIndexResponse, SpaceIndexTicket } from "@/app/api/space/index/route";
+import type { SpaceSyncHealthResponse } from "@/app/api/space/sync-health/route";
 import { trackWebEvent } from "@/lib/telemetry";
 import { logoutWithPost, reconnectWithPost } from "@/lib/auth-actions";
 import { fetchWithQueryCache, readFreshQueryCache, readQueryCache } from "@/lib/space-query-cache";
+import { SyncHealthBadge } from "@/components/sync-health-badge";
 
 function prKey(repo: string, ticketId: string): string {
   return `${repo}:${ticketId}`;
@@ -202,6 +204,7 @@ export default function PortfolioAttentionView() {
 
   const [attentionData, setAttentionData] = useState<AttentionResponse | null>(null);
   const [indexData, setIndexData] = useState<SpaceIndexResponse | null>(null);
+  const [syncHealthData, setSyncHealthData] = useState<SpaceSyncHealthResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -212,6 +215,7 @@ export default function PortfolioAttentionView() {
   const requestGenRef = useRef(0);
   const attentionDataRef = useRef<AttentionResponse | null>(null);
   const indexDataRef = useRef<SpaceIndexResponse | null>(null);
+  const syncHealthDataRef = useRef<SpaceSyncHealthResponse | null>(null);
 
   useEffect(() => {
     attentionDataRef.current = attentionData;
@@ -220,6 +224,10 @@ export default function PortfolioAttentionView() {
   useEffect(() => {
     indexDataRef.current = indexData;
   }, [indexData]);
+
+  useEffect(() => {
+    syncHealthDataRef.current = syncHealthData;
+  }, [syncHealthData]);
 
   const selectedRepos = useMemo(() => {
     if (!repoParam) {
@@ -249,10 +257,17 @@ export default function PortfolioAttentionView() {
     const endpoint = activeTab === "tickets" ? "index" : "attention";
     const url = `/api/space/${endpoint}${query ? `?${query}` : ""}`;
     const cacheKey = `${endpoint}:${query || "all"}`;
+    const syncHealthUrl = `/api/space/sync-health${query ? `?${query}` : ""}`;
+    const syncHealthKey = `sync-health:${query || "all"}`;
 
     setError(null);
 
     if (!hardRefresh) {
+      const cachedSyncHealth = readQueryCache<SpaceSyncHealthResponse>(syncHealthKey);
+      if (cachedSyncHealth) {
+        setSyncHealthData(cachedSyncHealth);
+      }
+
       if (activeTab === "tickets") {
         const cached = readQueryCache<SpaceIndexResponse>(cacheKey);
         if (cached) {
@@ -271,12 +286,29 @@ export default function PortfolioAttentionView() {
       activeTab === "tickets"
         ? !!readFreshQueryCache<SpaceIndexResponse>(cacheKey, 15_000)
         : !!readFreshQueryCache<AttentionResponse>(cacheKey, 15_000);
+    const hasFreshSyncHealth = !!readFreshQueryCache<SpaceSyncHealthResponse>(syncHealthKey, 15_000);
 
-    const blockView = hardRefresh || (!hasCurrentData && !hasFreshCache);
+    const blockView =
+      hardRefresh || ((!hasCurrentData && !hasFreshCache) || (!syncHealthDataRef.current && !hasFreshSyncHealth));
     setLoading(blockView);
     setRefreshing(!blockView);
 
     try {
+      const syncHealthPromise = fetchWithQueryCache<SpaceSyncHealthResponse>(
+        syncHealthKey,
+        async () => {
+          const res = await fetch(syncHealthUrl, {
+            cache: hardRefresh ? "no-store" : "default",
+            signal: controller.signal,
+          });
+          if (!res.ok) {
+            throw new Error(`Failed to load sync health (${res.status})`);
+          }
+          return (await res.json()) as SpaceSyncHealthResponse;
+        },
+        { force: hardRefresh },
+      );
+
       if (activeTab === "tickets") {
         const fetcher = async (): Promise<SpaceIndexResponse> => {
           const res = await fetch(url, {
@@ -290,11 +322,13 @@ export default function PortfolioAttentionView() {
           return (await res.json()) as SpaceIndexResponse;
         };
 
-        const json = await fetchWithQueryCache<SpaceIndexResponse>(cacheKey, fetcher, {
-          force: hardRefresh,
-        });
+        const [json, syncHealthJson] = await Promise.all([
+          fetchWithQueryCache<SpaceIndexResponse>(cacheKey, fetcher, { force: hardRefresh }),
+          syncHealthPromise,
+        ]);
         if (gen !== requestGenRef.current) return;
         setIndexData(json);
+        setSyncHealthData(syncHealthJson);
       } else {
         const fetcher = async (): Promise<AttentionResponse> => {
           const res = await fetch(url, {
@@ -308,11 +342,13 @@ export default function PortfolioAttentionView() {
           return (await res.json()) as AttentionResponse;
         };
 
-        const json = await fetchWithQueryCache<AttentionResponse>(cacheKey, fetcher, {
-          force: hardRefresh,
-        });
+        const [json, syncHealthJson] = await Promise.all([
+          fetchWithQueryCache<AttentionResponse>(cacheKey, fetcher, { force: hardRefresh }),
+          syncHealthPromise,
+        ]);
         if (gen !== requestGenRef.current) return;
         setAttentionData(json);
+        setSyncHealthData(syncHealthJson);
       }
     } catch (err) {
       // AbortError is expected when a newer request cancels this one; don't surface it.
@@ -403,7 +439,14 @@ export default function PortfolioAttentionView() {
     );
   }
 
-  const allRepos = (attentionData?.repos ?? indexData?.repos ?? []) as EnabledRepoSummary[];
+  const allRepos = useMemo(
+    () => (attentionData?.repos ?? indexData?.repos ?? []) as EnabledRepoSummary[],
+    [attentionData?.repos, indexData?.repos],
+  );
+  const syncHealthByRepo = useMemo(() => {
+    const entries = syncHealthData?.repos ?? [];
+    return new Map(entries.map((repo) => [repo.fullName, repo.health]));
+  }, [syncHealthData]);
   const allRepoNames = useMemo(() => new Set(allRepos.map((repo) => repo.fullName)), [allRepos]);
   const activeRepos = selectedRepos ?? allRepoNames;
   const singleSelectedRepo = useMemo(() => {
@@ -767,6 +810,38 @@ export default function PortfolioAttentionView() {
               ) : null}
             </p>
           ) : null}
+        </div>
+
+        <div className="w-72">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">Sync health</p>
+          <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+            <p className="text-xs text-slate-600">
+              Healthy {syncHealthData?.summary.healthy ?? 0} · Stale {syncHealthData?.summary.stale ?? 0} · Error{" "}
+              {syncHealthData?.summary.error ?? 0}
+            </p>
+            <div className="mt-2 max-h-32 space-y-1 overflow-y-auto pr-1">
+              {allRepos.length === 0 ? (
+                <p className="text-xs text-slate-500">No repos selected.</p>
+              ) : (
+                allRepos.map((repo) => {
+                  const health = syncHealthByRepo.get(repo.fullName);
+                  return (
+                    <div key={repo.fullName} className="rounded border border-slate-200 bg-white px-2 py-1.5">
+                      <p className="truncate text-xs font-medium text-slate-700" title={repo.fullName}>
+                        {repo.fullName}
+                      </p>
+                      <div className="mt-1 flex items-center justify-between gap-2">
+                        {health ? <SyncHealthBadge health={health} /> : <span className="text-xs text-slate-400">Loading…</span>}
+                        <span className="text-[11px] text-slate-500">
+                          {health?.lastSyncedAt ? new Date(health.lastSyncedAt).toLocaleString() : "Never"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

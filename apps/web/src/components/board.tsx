@@ -11,12 +11,14 @@ import PendingBadge from "@/components/pending-badge";
 import { SavedViewsDropdown } from "@/components/saved-views";
 import { AutoMergeToggle } from "@/components/auto-merge-toggle";
 import { RateLimitError } from "@/components/rate-limit-error";
+import { SyncHealthBadge } from "@/components/sync-health-badge";
 import { logoutWithPost } from "@/lib/auth-actions";
 import { getCreatedTimestamp, priorityRank, type AttentionRow, type CiStatus } from "@/lib/attention";
 import { BOARD_LABELS, BOARD_STATES, PRIORITY_STYLES, groupTicketsForBoard } from "@/lib/utils";
 import { PendingChangesProvider, usePendingChanges } from "@/lib/pending-changes";
 import { isValidTransition, type TicketChangePatch } from "@ticketdotapp/core";
 import type { LinkedPrSummary } from "@/components/pr-status-badge";
+import type { SyncHealthSnapshot } from "@/lib/sync-health";
 
 // Format a date as "X ago" (e.g., "2m ago", "1h ago")
 function formatTimeAgo(date: Date): string {
@@ -431,6 +433,7 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
     syncStatus?: string;
     syncError?: string;
     warning?: string;
+    syncHealth?: SyncHealthSnapshot;
   } | null>(null);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(ticketId ?? null);
   const [view, setView] = useState<"board" | "table">("board");
@@ -652,6 +655,11 @@ export default function Board({ owner, repo, ticketId }: BoardProps) {
               "Dashboard"
             )}
           </p>
+          {syncMeta?.syncHealth ? (
+            <div className="mt-2">
+              <SyncHealthBadge health={syncMeta.syncHealth} />
+            </div>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <SavedViewsDropdown repo={fullRepo} basePath={`/space/${owner}/${repo}`} />

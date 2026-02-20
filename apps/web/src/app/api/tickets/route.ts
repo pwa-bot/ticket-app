@@ -4,6 +4,7 @@ import { apiError, apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
 import { hasRepoAccess } from "@/lib/security/repo-access";
 import { getManualRefreshJobService } from "@/lib/services/manual-refresh-job-service";
+import { computeSyncHealth } from "@/lib/sync-health";
 
 export async function GET(request: Request) {
   const { userId } = await requireSession();
@@ -44,6 +45,11 @@ export async function GET(request: Request) {
     db.query.repos.findFirst({ where: eq(schema.repos.fullName, repo) }),
     db.query.tickets.findMany({ where: eq(schema.tickets.repoFullName, repo) }),
   ]);
+  const syncHealth = computeSyncHealth({
+    syncStatus: repoRow?.syncStatus ?? "idle",
+    syncError: repoRow?.syncError ?? null,
+    lastSyncedAt: repoRow?.lastSyncedAt ?? null,
+  });
 
   return apiSuccess({
     format_version: 1,
@@ -69,6 +75,7 @@ export async function GET(request: Request) {
       webhookSyncedAt: repoRow?.webhookSyncedAt?.toISOString() ?? null,
       syncStatus: repoRow?.syncStatus ?? "idle",
       stale: !repoRow?.webhookSyncedAt,
+      syncHealth,
     },
     refreshJob,
   });

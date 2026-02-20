@@ -4,6 +4,7 @@ import { isAuthFailureResponse } from "@/lib/auth";
 import { syncRepo, getRepo, reconcilePendingChanges } from "@/db/sync";
 import { applyMutationGuards } from "@/lib/security/mutation-guard";
 import { requireRepoAccess } from "@/lib/security/repo-access";
+import { computeSyncHealth } from "@/lib/sync-health";
 
 interface RouteParams {
   params: Promise<{ owner: string; repo: string }>;
@@ -94,6 +95,11 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       lastSyncedAt: repoRow.lastSyncedAt?.toISOString(),
       lastIndexSha: repoRow.lastIndexSha,
       syncError: repoRow.syncError,
+      syncHealth: computeSyncHealth({
+        syncStatus: repoRow.syncStatus,
+        syncError: repoRow.syncError,
+        lastSyncedAt: repoRow.lastSyncedAt,
+      }),
     });
   } catch (error) {
     if (isAuthFailureResponse(error)) {

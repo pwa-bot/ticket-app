@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { db, schema } from "@/db/client";
 import { apiError, apiSuccess } from "@/lib/api/response";
 import { requireRepoAccess } from "@/lib/security/repo-access";
+import { computeSyncHealth } from "@/lib/sync-health";
 
 interface Params {
   params: Promise<{ owner: string; repo: string }>;
@@ -77,6 +78,11 @@ export async function GET(_req: NextRequest, { params }: Params) {
     stale: !repo.webhookSyncedAt,
     source: "postgres_cache",
     syncStatus: repo.syncStatus,
+    syncHealth: computeSyncHealth({
+      syncStatus: repo.syncStatus,
+      syncError: repo.syncError,
+      lastSyncedAt: repo.lastSyncedAt,
+    }),
     syncError: repo.syncError
       ? {
           code: "sync_error",

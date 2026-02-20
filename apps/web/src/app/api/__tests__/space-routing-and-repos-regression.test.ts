@@ -87,7 +87,9 @@ test("passive /api/space GET endpoints stay read-only and avoid GitHub/network c
     "app/api/space/index/route.ts",
     "app/api/space/tickets/route.ts",
     "app/api/space/attention/route.ts",
+    "app/api/space/sync-health/route.ts",
     "app/api/space/repos/[owner]/[repo]/board/route.ts",
+    "app/api/space/repos/[owner]/[repo]/sync-health/route.ts",
   ];
 
   for (const routePath of passiveSpaceRoutes) {
