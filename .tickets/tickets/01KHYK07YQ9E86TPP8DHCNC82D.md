@@ -1,7 +1,7 @@
 ---
 id: 01KHYK07YQ9E86TPP8DHCNC82D
 title: P0 Add server-side authorization guards to all cache-backed space APIs
-state: ready
+state: in_progress
 priority: p0
 labels:
   - security
