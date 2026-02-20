@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T00:16:12.783Z",
+  "generated_at": "2026-02-20T00:16:13.026Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -239,6 +239,20 @@
         "audit"
       ],
       "path": ".tickets/tickets/01KHW6EXZ1SPHTEQZND9EZWA9T.md"
+    },
+    {
+      "id": "01KHW6EY6MS5WYZFZA3Y3ZCC8R",
+      "short_id": "01KHW6EY",
+      "display_id": "TK-01KHW6EY",
+      "title": "Attention index tuning with explain analyze baselines",
+      "state": "backlog",
+      "priority": "p1",
+      "labels": [
+        "data",
+        "perf",
+        "indexing"
+      ],
+      "path": ".tickets/tickets/01KHW6EY6MS5WYZFZA3Y3ZCC8R.md"
     },
     {
       "id": "01KHS9PFF2Z37S54PZD6QGW8DJ",
