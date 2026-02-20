@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T06:57:33.446Z",
+  "generated_at": "2026-02-20T07:07:05.742Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -127,18 +127,6 @@
       ],
       "path": ".tickets/tickets/01KHVQ0B6VR7M2HAWB9QPEMBED.md",
       "display_id": "TK-01KHVQ0B"
-    },
-    {
-      "id": "01KHVX91Q5116N3E8H3JF4J9H5",
-      "short_id": "01KHVX91",
-      "title": "Eliminate duplicated types between apps/web and packages/core",
-      "state": "in_progress",
-      "priority": "p1",
-      "labels": [
-        "refactor"
-      ],
-      "path": ".tickets/tickets/01KHVX91Q5116N3E8H3JF4J9H5.md",
-      "display_id": "TK-01KHVX91"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
@@ -647,6 +635,18 @@
       "labels": [],
       "path": ".tickets/tickets/01KHQKCTHCSF6REBDAGMHF9W9B.md",
       "display_id": "TK-01KHQKCT"
+    },
+    {
+      "id": "01KHVX91Q5116N3E8H3JF4J9H5",
+      "short_id": "01KHVX91",
+      "title": "Eliminate duplicated types between apps/web and packages/core",
+      "state": "done",
+      "priority": "p1",
+      "labels": [
+        "refactor"
+      ],
+      "path": ".tickets/tickets/01KHVX91Q5116N3E8H3JF4J9H5.md",
+      "display_id": "TK-01KHVX91"
     },
     {
       "id": "01KHVX91YVAGJWRWS254K53RJR",
