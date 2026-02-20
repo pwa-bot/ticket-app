@@ -1,7 +1,7 @@
 ---
 id: 01KHWT95ZWQX2FCQXKEVZ85AD8
 title: Guardrail require explicit confirmation before spawning sub-agents
-state: in_progress
+state: done
 priority: p0
 labels:
   - orchestration
