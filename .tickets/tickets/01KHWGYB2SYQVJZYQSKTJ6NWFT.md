@@ -1,7 +1,7 @@
 ---
 id: 01KHWGYB2SYQVJZYQSKTJ6NWFT
 title: Migration tooling backfill squash noisy ticket churn into compact snapshots
-state: in_progress
+state: done
 priority: p1
 labels:
   - migration
