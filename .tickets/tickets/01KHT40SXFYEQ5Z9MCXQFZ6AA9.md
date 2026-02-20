@@ -1,13 +1,13 @@
 ---
 id: 01KHT40SXFYEQ5Z9MCXQFZ6AA9
 title: Slack integration v1 (digest + deep links + review reminders)
-state: backlog
+state: ready
 priority: p1
 labels:
   - slack
   - notifications
-assignee: agent:openclaw
-reviewer: human:morgan
+assignee: 'agent:openclaw'
+reviewer: 'human:morgan'
 ---
 
 ## Problem
