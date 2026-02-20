@@ -61,6 +61,7 @@ Commands:
 - `ticket move <id> <state>` — Change state
 - `ticket edit <id>` — Edit metadata
 - `ticket validate` — Check for errors
+- `ticket telemetry-compact` — Build/apply telemetry compaction snapshots (`--apply` required to write)
 
 Telemetry lane (optional, non-authoritative) can be configured in `.tickets/config.yml`:
 
@@ -80,6 +81,15 @@ Env overrides:
 - `TICKET_TELEMETRY_WRITE_FALLBACK`
 - `TICKET_TELEMETRY_READ_FALLBACK`
 - `TICKET_APP_TELEMETRY_URL` (legacy HTTP sink; default backend becomes `http` if set)
+
+Backfill noisy history into compact snapshots:
+```bash
+# dry-run (default)
+ticket telemetry-compact
+
+# explicit apply mode
+ticket telemetry-compact --apply
+```
 
 ## License
 

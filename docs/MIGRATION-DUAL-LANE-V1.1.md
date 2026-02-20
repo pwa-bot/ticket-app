@@ -95,6 +95,34 @@ Exit criteria:
 - Canonical rebuild remains deterministic without telemetry.
 - Telemetry read failures do not block ticket operations.
 
+### Phase 2.5: Backfill compaction snapshots
+
+Use the compaction command to collapse noisy historical telemetry into compact snapshots.
+
+Commands:
+```bash
+# Preview only (non-destructive)
+ticket telemetry-compact
+
+# Explicit write mode
+ticket telemetry-compact --apply
+```
+
+Verification commands:
+```bash
+ticket validate --ci
+git notes --ref refs/notes/ticket-events show HEAD
+git show refs/tickets/events
+```
+
+Rollback instructions:
+- The `--apply` command prints backup refs under `refs/tickets/backups/*`.
+- Restore using:
+```bash
+git update-ref refs/notes/ticket-events <printed-notes-backup-ref>
+git update-ref refs/tickets/events <printed-event-backup-ref>
+```
+
 ### Phase 3: CI tier rollout
 
 1. Set hard integrity checks as required.
@@ -162,6 +190,7 @@ git log --show-notes=ticket-events -n 10
 - [ ] Telemetry lane enabled outside canonical history
 - [ ] Notes-first storage policy documented
 - [ ] Event-ref fallback documented and tested
+- [ ] Backfill compaction tooling exercised in dry-run and apply modes
 - [ ] Deterministic rebuild proven from canonical files alone
 - [ ] CI tiers configured: hard fail, warn quality, opt-in strict
 - [ ] Rollback tested and documented

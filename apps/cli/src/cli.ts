@@ -12,6 +12,7 @@ import { runEdit } from "./commands/edit.js";
 import { runBranch } from "./commands/branch.js";
 import { runValidate } from "./commands/validate.js";
 import { runInstallHooks } from "./commands/install-hooks.js";
+import { runTelemetryCompact } from "./commands/telemetry-compact.js";
 import { EXIT_CODE, TicketError } from "./lib/errors.js";
 import { failureEnvelope, writeEnvelope } from "./lib/json.js";
 import { setNoCommitMode, setQuietMode } from "./lib/output.js";
@@ -195,8 +196,15 @@ async function main(): Promise<void> {
       await runRebuildIndex(process.cwd());
     });
 
+  program
+    .command("telemetry-compact")
+    .description("Backfill telemetry history into compact snapshots (dry-run by default)")
+    .option("--apply", "Apply compaction plan and rewrite telemetry refs")
+    .action(async (options: { apply?: boolean }) => {
+      await runTelemetryCompact(process.cwd(), options);
+    });
+
   // TODO(TK-01KHWGYAM6): add `ticket events` read/write commands for high-frequency agent chatter.
-  // TODO(TK-01KHWGYAM6): add compaction tooling/commands for telemetry lane retention control.
 
   await program.parseAsync(process.argv);
 }
