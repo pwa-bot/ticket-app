@@ -1,7 +1,7 @@
 ---
 id: 01KHWJNQWDNXQN0CWXMDPDQM17
 title: Fix short-id collision handling for same-prefix ULIDs
-state: in_progress
+state: done
 priority: p1
 labels:
   - cli

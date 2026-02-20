@@ -1,12 +1,11 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T06:13:05.954Z",
+  "generated_at": "2026-02-20T06:14:14.968Z",
   "workflow": "simple-v1",
   "tickets": [
     {
       "id": "01KHS9PF0AGVDSF6G0FER0W2R7",
       "short_id": "01KHS9PF",
-      "display_id": "TK-01KHS9PF",
       "title": "Task E - PR cache worker Phase B",
       "state": "backlog",
       "priority": "p1",
@@ -14,12 +13,12 @@
         "worker",
         "pull-request"
       ],
-      "path": ".tickets/tickets/01KHS9PF0AGVDSF6G0FER0W2R7.md"
+      "path": ".tickets/tickets/01KHS9PF0AGVDSF6G0FER0W2R7.md",
+      "display_id": "TK-01KHS9PF"
     },
     {
       "id": "01KHS9PF7Q5KP7EQDSVS8QQM6Q",
       "short_id": "01KHS9PF",
-      "display_id": "TK-01KHS9PF",
       "title": "Task F - Checks cache worker Phase C",
       "state": "backlog",
       "priority": "p1",
@@ -27,12 +26,12 @@
         "worker",
         "checks"
       ],
-      "path": ".tickets/tickets/01KHS9PF7Q5KP7EQDSVS8QQM6Q.md"
+      "path": ".tickets/tickets/01KHS9PF7Q5KP7EQDSVS8QQM6Q.md",
+      "display_id": "TK-01KHS9PF-2"
     },
     {
       "id": "01KHT40SXFYEQ5Z9MCXQFZ6AA9",
       "short_id": "01KHT40S",
-      "display_id": "TK-01KHT40S",
       "title": "Slack integration v1 (digest + deep links + review reminders)",
       "state": "backlog",
       "priority": "p1",
@@ -42,48 +41,48 @@
       ],
       "assignee": "agent:openclaw",
       "reviewer": "human:morgan",
-      "path": ".tickets/tickets/01KHT40SXFYEQ5Z9MCXQFZ6AA9.md"
+      "path": ".tickets/tickets/01KHT40SXFYEQ5Z9MCXQFZ6AA9.md",
+      "display_id": "TK-01KHT40S-2"
     },
     {
       "id": "01KHVX91Q5116N3E8H3JF4J9H5",
       "short_id": "01KHVX91",
-      "display_id": "TK-01KHVX91",
       "title": "Eliminate duplicated types between apps/web and packages/core",
       "state": "backlog",
       "priority": "p1",
       "labels": [
         "refactor"
       ],
-      "path": ".tickets/tickets/01KHVX91Q5116N3E8H3JF4J9H5.md"
+      "path": ".tickets/tickets/01KHVX91Q5116N3E8H3JF4J9H5.md",
+      "display_id": "TK-01KHVX91"
     },
     {
       "id": "01KHVX91YVAGJWRWS254K53RJR",
       "short_id": "01KHVX91",
-      "display_id": "TK-01KHVX91",
       "title": "Standardize API response envelopes and error handling",
       "state": "backlog",
       "priority": "p1",
       "labels": [
         "refactor"
       ],
-      "path": ".tickets/tickets/01KHVX91YVAGJWRWS254K53RJR.md"
+      "path": ".tickets/tickets/01KHVX91YVAGJWRWS254K53RJR.md",
+      "display_id": "TK-01KHVX91-2"
     },
     {
       "id": "01KHVX92N5768VHV0DTKNEB9YA",
       "short_id": "01KHVX92",
-      "display_id": "TK-01KHVX92",
       "title": "Extract webhook handler into service module with unit tests",
       "state": "backlog",
       "priority": "p1",
       "labels": [
         "refactor"
       ],
-      "path": ".tickets/tickets/01KHVX92N5768VHV0DTKNEB9YA.md"
+      "path": ".tickets/tickets/01KHVX92N5768VHV0DTKNEB9YA.md",
+      "display_id": "TK-01KHVX92-3"
     },
     {
       "id": "01KHW6EXFRJ818M63EJ0356D0H",
       "short_id": "01KHW6EX",
-      "display_id": "TK-01KHW6EX",
       "title": "Frontend ignore stale responses during rapid search and filter",
       "state": "backlog",
       "priority": "p1",
@@ -93,12 +92,12 @@
         "perf",
         "qa"
       ],
-      "path": ".tickets/tickets/01KHW6EXFRJ818M63EJ0356D0H.md"
+      "path": ".tickets/tickets/01KHW6EXFRJ818M63EJ0356D0H.md",
+      "display_id": "TK-01KHW6EX-2"
     },
     {
       "id": "01KHW6EXZ1SPHTEQZND9EZWA9T",
       "short_id": "01KHW6EX",
-      "display_id": "TK-01KHW6EX",
       "title": "Data integrity audit orphan repo names and cross scope checks",
       "state": "backlog",
       "priority": "p1",
@@ -107,12 +106,12 @@
         "integrity",
         "audit"
       ],
-      "path": ".tickets/tickets/01KHW6EXZ1SPHTEQZND9EZWA9T.md"
+      "path": ".tickets/tickets/01KHW6EXZ1SPHTEQZND9EZWA9T.md",
+      "display_id": "TK-01KHW6EX-4"
     },
     {
       "id": "01KHW6EY6MS5WYZFZA3Y3ZCC8R",
       "short_id": "01KHW6EY",
-      "display_id": "TK-01KHW6EY",
       "title": "Attention index tuning with explain analyze baselines",
       "state": "backlog",
       "priority": "p1",
@@ -121,12 +120,12 @@
         "perf",
         "indexing"
       ],
-      "path": ".tickets/tickets/01KHW6EY6MS5WYZFZA3Y3ZCC8R.md"
+      "path": ".tickets/tickets/01KHW6EY6MS5WYZFZA3Y3ZCC8R.md",
+      "display_id": "TK-01KHW6EY"
     },
     {
       "id": "01KHW6EYNJV864W99AV18FC15P",
       "short_id": "01KHW6EY",
-      "display_id": "TK-01KHW6EY",
       "title": "Saved views v1 shareable operational queues",
       "state": "backlog",
       "priority": "p1",
@@ -135,12 +134,12 @@
         "saved-views",
         "product"
       ],
-      "path": ".tickets/tickets/01KHW6EYNJV864W99AV18FC15P.md"
+      "path": ".tickets/tickets/01KHW6EYNJV864W99AV18FC15P.md",
+      "display_id": "TK-01KHW6EY-3"
     },
     {
       "id": "01KHS9PFF2Z37S54PZD6QGW8DJ",
       "short_id": "01KHS9PF",
-      "display_id": "TK-01KHS9PF",
       "title": "Task G - Manual refresh endpoint and job",
       "state": "backlog",
       "priority": "p2",
@@ -148,12 +147,12 @@
         "refresh",
         "api"
       ],
-      "path": ".tickets/tickets/01KHS9PFF2Z37S54PZD6QGW8DJ.md"
+      "path": ".tickets/tickets/01KHS9PFF2Z37S54PZD6QGW8DJ.md",
+      "display_id": "TK-01KHS9PF-3"
     },
     {
       "id": "01KHWGY6QMV26C1242E9GTYBJ8",
       "short_id": "01KHWGY6",
-      "display_id": "TK-01KHWGY6",
       "title": "Protocol v1.1 dual-lane state model to prevent repo bloat",
       "state": "in_progress",
       "priority": "p0",
@@ -162,12 +161,12 @@
         "storage",
         "git"
       ],
-      "path": ".tickets/tickets/01KHWGY6QMV26C1242E9GTYBJ8.md"
+      "path": ".tickets/tickets/01KHWGY6QMV26C1242E9GTYBJ8.md",
+      "display_id": "TK-01KHWGY6"
     },
     {
       "id": "01KHVQ0B6VR7M2HAWB9QPEMBED",
       "short_id": "01KHVQ0B",
-      "display_id": "TK-01KHVQ0B",
       "title": "Dashboard wire All tickets view (board/table)",
       "state": "in_progress",
       "priority": "p1",
@@ -176,12 +175,12 @@
         "board",
         "p1"
       ],
-      "path": ".tickets/tickets/01KHVQ0B6VR7M2HAWB9QPEMBED.md"
+      "path": ".tickets/tickets/01KHVQ0B6VR7M2HAWB9QPEMBED.md",
+      "display_id": "TK-01KHVQ0B"
     },
     {
       "id": "01KHWGYAVFC7VSZ6A0EMFQT9K2",
       "short_id": "01KHWGYA",
-      "display_id": "TK-01KHWGYA",
       "title": "Phase C: Policy tiers hard integrity warn quality opt-in strict",
       "state": "in_progress",
       "priority": "p1",
@@ -190,26 +189,12 @@
         "ci",
         "policy"
       ],
-      "path": ".tickets/tickets/01KHWGYAVFC7VSZ6A0EMFQT9K2.md"
-    },
-    {
-      "id": "01KHWJNQWDNXQN0CWXMDPDQM17",
-      "short_id": "01KHWJNQ",
-      "display_id": "TK-01KHWJNQ",
-      "title": "Fix short-id collision handling for same-prefix ULIDs",
-      "state": "in_progress",
-      "priority": "p1",
-      "labels": [
-        "cli",
-        "ids",
-        "reliability"
-      ],
-      "path": ".tickets/tickets/01KHWJNQWDNXQN0CWXMDPDQM17.md"
+      "path": ".tickets/tickets/01KHWGYAVFC7VSZ6A0EMFQT9K2.md",
+      "display_id": "TK-01KHWGYA-3"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
       "short_id": "01KHQ0K0",
-      "display_id": "TK-01KHQ0K0",
       "title": "Dashboard write actions via PR-based ticket changes",
       "state": "done",
       "priority": "p0",
@@ -221,12 +206,12 @@
       ],
       "assignee": "agent:openclaw",
       "reviewer": "human:morgan",
-      "path": ".tickets/tickets/01KHQ0K0JMG4HGT2A78FDWJ5BX.md"
+      "path": ".tickets/tickets/01KHQ0K0JMG4HGT2A78FDWJ5BX.md",
+      "display_id": "TK-01KHQ0K0"
     },
     {
       "id": "01KHQ0K7AG8W8MGND7R7TKB5MX",
       "short_id": "01KHQ0K7",
-      "display_id": "TK-01KHQ0K7",
       "title": "API endpoint to create ticket-change PR",
       "state": "done",
       "priority": "p0",
@@ -235,12 +220,12 @@
         "github",
         "api"
       ],
-      "path": ".tickets/tickets/01KHQ0K7AG8W8MGND7R7TKB5MX.md"
+      "path": ".tickets/tickets/01KHQ0K7AG8W8MGND7R7TKB5MX.md",
+      "display_id": "TK-01KHQ0K7"
     },
     {
       "id": "01KHQ0K7S8KF3008MGBJP99AMX",
       "short_id": "01KHQ0K7",
-      "display_id": "TK-01KHQ0K7",
       "title": "UI pending change model and PR status badges",
       "state": "done",
       "priority": "p0",
@@ -249,12 +234,12 @@
         "ui",
         "pending"
       ],
-      "path": ".tickets/tickets/01KHQ0K7S8KF3008MGBJP99AMX.md"
+      "path": ".tickets/tickets/01KHQ0K7S8KF3008MGBJP99AMX.md",
+      "display_id": "TK-01KHQ0K7-3"
     },
     {
       "id": "01KHQ0K87Y27S53B8ZTT6QJ6JA",
       "short_id": "01KHQ0K8",
-      "display_id": "TK-01KHQ0K8",
       "title": "Implement frontmatter patch algorithm with semantic preservation",
       "state": "done",
       "priority": "p0",
@@ -263,12 +248,12 @@
         "yaml",
         "protocol"
       ],
-      "path": ".tickets/tickets/01KHQ0K87Y27S53B8ZTT6QJ6JA.md"
+      "path": ".tickets/tickets/01KHQ0K87Y27S53B8ZTT6QJ6JA.md",
+      "display_id": "TK-01KHQ0K8-2"
     },
     {
       "id": "01KHQ0K8F90AJMSY7WBVGV2KGB",
       "short_id": "01KHQ0K8",
-      "display_id": "TK-01KHQ0K8",
       "title": "Patch index.json entry and re-sort deterministically",
       "state": "done",
       "priority": "p0",
@@ -277,12 +262,12 @@
         "index",
         "protocol"
       ],
-      "path": ".tickets/tickets/01KHQ0K8F90AJMSY7WBVGV2KGB.md"
+      "path": ".tickets/tickets/01KHQ0K8F90AJMSY7WBVGV2KGB.md",
+      "display_id": "TK-01KHQ0K8-3"
     },
     {
       "id": "01KHS9NX93EJ2H4YQRY45FFXW8",
       "short_id": "01KHS9NX",
-      "display_id": "TK-01KHS9NX",
       "title": "GitHub App + webhooks + derived Postgres cache for dashboard",
       "state": "done",
       "priority": "p0",
@@ -291,12 +276,12 @@
         "webhooks",
         "cache"
       ],
-      "path": ".tickets/tickets/01KHS9NX93EJ2H4YQRY45FFXW8.md"
+      "path": ".tickets/tickets/01KHS9NX93EJ2H4YQRY45FFXW8.md",
+      "display_id": "TK-01KHS9NX"
     },
     {
       "id": "01KHS9P9K2VG9WY9KWKY3T13X1",
       "short_id": "01KHS9P9",
-      "display_id": "TK-01KHS9P9",
       "title": "Task A - GitHub App setup and install flow",
       "state": "done",
       "priority": "p0",
@@ -304,12 +289,12 @@
         "github-app",
         "auth"
       ],
-      "path": ".tickets/tickets/01KHS9P9K2VG9WY9KWKY3T13X1.md"
+      "path": ".tickets/tickets/01KHS9P9K2VG9WY9KWKY3T13X1.md",
+      "display_id": "TK-01KHS9P9"
     },
     {
       "id": "01KHS9PEAA0N73R7B5RDV35EVQ",
       "short_id": "01KHS9PE",
-      "display_id": "TK-01KHS9PE",
       "title": "Task B - Webhook handler with signature verification and dedupe",
       "state": "done",
       "priority": "p0",
@@ -317,12 +302,12 @@
         "webhooks",
         "security"
       ],
-      "path": ".tickets/tickets/01KHS9PEAA0N73R7B5RDV35EVQ.md"
+      "path": ".tickets/tickets/01KHS9PEAA0N73R7B5RDV35EVQ.md",
+      "display_id": "TK-01KHS9PE"
     },
     {
       "id": "01KHS9PEHNNAVY89FZD943BPDV",
       "short_id": "01KHS9PE",
-      "display_id": "TK-01KHS9PE",
       "title": "Task C - Worker push sync index.json into Postgres",
       "state": "done",
       "priority": "p0",
@@ -330,12 +315,12 @@
         "worker",
         "push"
       ],
-      "path": ".tickets/tickets/01KHS9PEHNNAVY89FZD943BPDV.md"
+      "path": ".tickets/tickets/01KHS9PEHNNAVY89FZD943BPDV.md",
+      "display_id": "TK-01KHS9PE-2"
     },
     {
       "id": "01KHS9PES0SP0ZAJAAVQYW98E4",
       "short_id": "01KHS9PE",
-      "display_id": "TK-01KHS9PE",
       "title": "Task D - UI reads from DB only for board and table",
       "state": "done",
       "priority": "p0",
@@ -343,12 +328,12 @@
         "frontend",
         "cache"
       ],
-      "path": ".tickets/tickets/01KHS9PES0SP0ZAJAAVQYW98E4.md"
+      "path": ".tickets/tickets/01KHS9PES0SP0ZAJAAVQYW98E4.md",
+      "display_id": "TK-01KHS9PE-3"
     },
     {
       "id": "01KHT40QGXG6EWEA41J6ZJEVTC",
       "short_id": "01KHT40Q",
-      "display_id": "TK-01KHT40Q",
       "title": "Multi-repo portfolio view with Attention default",
       "state": "done",
       "priority": "p0",
@@ -358,12 +343,12 @@
       ],
       "assignee": "agent:openclaw",
       "reviewer": "human:morgan",
-      "path": ".tickets/tickets/01KHT40QGXG6EWEA41J6ZJEVTC.md"
+      "path": ".tickets/tickets/01KHT40QGXG6EWEA41J6ZJEVTC.md",
+      "display_id": "TK-01KHT40Q"
     },
     {
       "id": "01KHT40QS0ATEZA86AEW9E94R9",
       "short_id": "01KHT40Q",
-      "display_id": "TK-01KHT40Q",
       "title": "Saved views and shareable filter links",
       "state": "done",
       "priority": "p0",
@@ -373,12 +358,12 @@
       ],
       "assignee": "agent:openclaw",
       "reviewer": "human:morgan",
-      "path": ".tickets/tickets/01KHT40QS0ATEZA86AEW9E94R9.md"
+      "path": ".tickets/tickets/01KHT40QS0ATEZA86AEW9E94R9.md",
+      "display_id": "TK-01KHT40Q-2"
     },
     {
       "id": "01KHT40R161HJ71E5QEKP02SM8",
       "short_id": "01KHT40R",
-      "display_id": "TK-01KHT40R",
       "title": "Merge readiness signal (checks + review + mergeable)",
       "state": "done",
       "priority": "p0",
@@ -388,12 +373,12 @@
       ],
       "assignee": "agent:openclaw",
       "reviewer": "human:morgan",
-      "path": ".tickets/tickets/01KHT40R161HJ71E5QEKP02SM8.md"
+      "path": ".tickets/tickets/01KHT40R161HJ71E5QEKP02SM8.md",
+      "display_id": "TK-01KHT40R"
     },
     {
       "id": "01KHT40SNQEEQW7G0DP1CWW6VM",
       "short_id": "01KHT40S",
-      "display_id": "TK-01KHT40S",
       "title": "GitHub check-run policy enforcement for Ticket Protocol",
       "state": "done",
       "priority": "p0",
@@ -404,12 +389,12 @@
       ],
       "assignee": "agent:openclaw",
       "reviewer": "human:morgan",
-      "path": ".tickets/tickets/01KHT40SNQEEQW7G0DP1CWW6VM.md"
+      "path": ".tickets/tickets/01KHT40SNQEEQW7G0DP1CWW6VM.md",
+      "display_id": "TK-01KHT40S"
     },
     {
       "id": "01KHVQ02ZX1SX13ZB6HZPK4A1N",
       "short_id": "01KHVQ02",
-      "display_id": "TK-01KHVQ02",
       "title": "Dashboard add totals and repo counts to attention endpoint; fix empty states",
       "state": "done",
       "priority": "p0",
@@ -419,12 +404,12 @@
         "attention",
         "p0"
       ],
-      "path": ".tickets/tickets/01KHVQ02ZX1SX13ZB6HZPK4A1N.md"
+      "path": ".tickets/tickets/01KHVQ02ZX1SX13ZB6HZPK4A1N.md",
+      "display_id": "TK-01KHVQ02"
     },
     {
       "id": "01KHVQ07RFJNSWWTGRF9EG0NDB",
       "short_id": "01KHVQ07",
-      "display_id": "TK-01KHVQ07",
       "title": "Dashboard fix Attention search and add Jump-to-ID",
       "state": "done",
       "priority": "p0",
@@ -434,24 +419,24 @@
         "attention",
         "p0"
       ],
-      "path": ".tickets/tickets/01KHVQ07RFJNSWWTGRF9EG0NDB.md"
+      "path": ".tickets/tickets/01KHVQ07RFJNSWWTGRF9EG0NDB.md",
+      "display_id": "TK-01KHVQ07"
     },
     {
       "id": "01KHVX92DSSK48NP4HZ7H9WGQC",
       "short_id": "01KHVX92",
-      "display_id": "TK-01KHVX92",
       "title": "Fix O(n²) attention endpoint - use Map instead of find()",
       "state": "done",
       "priority": "p0",
       "labels": [
         "perf"
       ],
-      "path": ".tickets/tickets/01KHVX92DSSK48NP4HZ7H9WGQC.md"
+      "path": ".tickets/tickets/01KHVX92DSSK48NP4HZ7H9WGQC.md",
+      "display_id": "TK-01KHVX92-2"
     },
     {
       "id": "01KHW6EB9RAKEYEESTRJP0SP3E",
       "short_id": "01KHW6EB",
-      "display_id": "TK-01KHW6EB",
       "title": "Attention contract + reason explainability in /space",
       "state": "done",
       "priority": "p0",
@@ -461,12 +446,12 @@
         "ux",
         "trust"
       ],
-      "path": ".tickets/tickets/01KHW6EB9RAKEYEESTRJP0SP3E.md"
+      "path": ".tickets/tickets/01KHW6EB9RAKEYEESTRJP0SP3E.md",
+      "display_id": "TK-01KHW6EB"
     },
     {
       "id": "01KHW6ERTAS4MW29ZBGXSH325X",
       "short_id": "01KHW6ER",
-      "display_id": "TK-01KHW6ER",
       "title": "E2E filters URL sync and browser nav correctness",
       "state": "done",
       "priority": "p0",
@@ -476,12 +461,12 @@
         "e2e",
         "filters"
       ],
-      "path": ".tickets/tickets/01KHW6ERTAS4MW29ZBGXSH325X.md"
+      "path": ".tickets/tickets/01KHW6ERTAS4MW29ZBGXSH325X.md",
+      "display_id": "TK-01KHW6ER"
     },
     {
       "id": "01KHW6EX837MYH0V9AN8C25930",
       "short_id": "01KHW6EX",
-      "display_id": "TK-01KHW6EX",
       "title": "E2E modal deep link loads ticket outside current page filter",
       "state": "done",
       "priority": "p0",
@@ -491,12 +476,12 @@
         "e2e",
         "modal"
       ],
-      "path": ".tickets/tickets/01KHW6EX837MYH0V9AN8C25930.md"
+      "path": ".tickets/tickets/01KHW6EX837MYH0V9AN8C25930.md",
+      "display_id": "TK-01KHW6EX"
     },
     {
       "id": "01KHW6EXQC308GTC9EV697NEA4",
       "short_id": "01KHW6EX",
-      "display_id": "TK-01KHW6EX",
       "title": "API attention precedence and multi reason contract tests",
       "state": "done",
       "priority": "p0",
@@ -506,12 +491,12 @@
         "qa",
         "contract"
       ],
-      "path": ".tickets/tickets/01KHW6EXQC308GTC9EV697NEA4.md"
+      "path": ".tickets/tickets/01KHW6EXQC308GTC9EV697NEA4.md",
+      "display_id": "TK-01KHW6EX-3"
     },
     {
       "id": "01KHW6EYE44BXJKWXY17C9MSVK",
       "short_id": "01KHW6EY",
-      "display_id": "TK-01KHW6EY",
       "title": "Instrumentation MVP funnel events for CLI and dashboard activation",
       "state": "done",
       "priority": "p0",
@@ -520,12 +505,12 @@
         "product",
         "dashboard"
       ],
-      "path": ".tickets/tickets/01KHW6EYE44BXJKWXY17C9MSVK.md"
+      "path": ".tickets/tickets/01KHW6EYE44BXJKWXY17C9MSVK.md",
+      "display_id": "TK-01KHW6EY-2"
     },
     {
       "id": "01KHWT95ZWQX2FCQXKEVZ85AD8",
       "short_id": "01KHWT95",
-      "display_id": "TK-01KHWT95",
       "title": "Guardrail require explicit confirmation before spawning sub-agents",
       "state": "done",
       "priority": "p0",
@@ -533,12 +518,12 @@
         "orchestration",
         "reliability"
       ],
-      "path": ".tickets/tickets/01KHWT95ZWQX2FCQXKEVZ85AD8.md"
+      "path": ".tickets/tickets/01KHWT95ZWQX2FCQXKEVZ85AD8.md",
+      "display_id": "TK-01KHWT95"
     },
     {
       "id": "01KHMG84AJMCWQCCE84328MF5G",
       "short_id": "01KHMG84",
-      "display_id": "TK-01KHMG84",
       "title": "Standardize error model and exit codes",
       "state": "done",
       "priority": "p1",
@@ -546,12 +531,12 @@
         "refactor",
         "contract-v1"
       ],
-      "path": ".tickets/tickets/01KHMG84AJMCWQCCE84328MF5G.md"
+      "path": ".tickets/tickets/01KHMG84AJMCWQCCE84328MF5G.md",
+      "display_id": "TK-01KHMG84"
     },
     {
       "id": "01KHMG85TGQZ1TDCBJ6JDYA10V",
       "short_id": "01KHMG85",
-      "display_id": "TK-01KHMG85",
       "title": "Implement JSON envelope (--json flag)",
       "state": "done",
       "priority": "p1",
@@ -559,12 +544,12 @@
         "refactor",
         "contract-v1"
       ],
-      "path": ".tickets/tickets/01KHMG85TGQZ1TDCBJ6JDYA10V.md"
+      "path": ".tickets/tickets/01KHMG85TGQZ1TDCBJ6JDYA10V.md",
+      "display_id": "TK-01KHMG85"
     },
     {
       "id": "01KHMG868YHD8BK7DA7FGT89RB",
       "short_id": "01KHMG86",
-      "display_id": "TK-01KHMG86",
       "title": "Make ticket init idempotent",
       "state": "done",
       "priority": "p1",
@@ -572,12 +557,12 @@
         "refactor",
         "contract-v1"
       ],
-      "path": ".tickets/tickets/01KHMG868YHD8BK7DA7FGT89RB.md"
+      "path": ".tickets/tickets/01KHMG868YHD8BK7DA7FGT89RB.md",
+      "display_id": "TK-01KHMG86-2"
     },
     {
       "id": "01KHMG8CHHZ5875CGTFYQHD9XP",
       "short_id": "01KHMG8C",
-      "display_id": "TK-01KHMG8C",
       "title": "Formalize ticket schema parsing and rendering",
       "state": "done",
       "priority": "p1",
@@ -585,12 +570,12 @@
         "refactor",
         "contract-v1"
       ],
-      "path": ".tickets/tickets/01KHMG8CHHZ5875CGTFYQHD9XP.md"
+      "path": ".tickets/tickets/01KHMG8CHHZ5875CGTFYQHD9XP.md",
+      "display_id": "TK-01KHMG8C"
     },
     {
       "id": "01KHMG8CRR5CXBDBBKWBF5D2K0",
       "short_id": "01KHMG8C",
-      "display_id": "TK-01KHMG8C",
       "title": "Deterministic ordering everywhere",
       "state": "done",
       "priority": "p1",
@@ -598,12 +583,12 @@
         "refactor",
         "contract-v1"
       ],
-      "path": ".tickets/tickets/01KHMG8CRR5CXBDBBKWBF5D2K0.md"
+      "path": ".tickets/tickets/01KHMG8CRR5CXBDBBKWBF5D2K0.md",
+      "display_id": "TK-01KHMG8C-2"
     },
     {
       "id": "01KHMG8D05HYTQ1D1RYTQXYYE0",
       "short_id": "01KHMG8D",
-      "display_id": "TK-01KHMG8D",
       "title": "index.json generation and recovery",
       "state": "done",
       "priority": "p1",
@@ -611,12 +596,12 @@
         "refactor",
         "contract-v1"
       ],
-      "path": ".tickets/tickets/01KHMG8D05HYTQ1D1RYTQXYYE0.md"
+      "path": ".tickets/tickets/01KHMG8D05HYTQ1D1RYTQXYYE0.md",
+      "display_id": "TK-01KHMG8D"
     },
     {
       "id": "01KHPTPPBVD1JCWQ7RZV0TRBEJ",
       "short_id": "01KHPTPP",
-      "display_id": "TK-01KHPTPP",
       "title": "Multi-repo portfolio view",
       "state": "done",
       "priority": "p1",
@@ -624,12 +609,12 @@
         "dashboard",
         "phase-2"
       ],
-      "path": ".tickets/tickets/01KHPTPPBVD1JCWQ7RZV0TRBEJ.md"
+      "path": ".tickets/tickets/01KHPTPPBVD1JCWQ7RZV0TRBEJ.md",
+      "display_id": "TK-01KHPTPP"
     },
     {
       "id": "01KHPTPPK4J0QS0J4TGA7YHWM7",
       "short_id": "01KHPTPP",
-      "display_id": "TK-01KHPTPP",
       "title": "Attention table view (supervisory control plane)",
       "state": "done",
       "priority": "p1",
@@ -637,12 +622,12 @@
         "dashboard",
         "phase-2"
       ],
-      "path": ".tickets/tickets/01KHPTPPK4J0QS0J4TGA7YHWM7.md"
+      "path": ".tickets/tickets/01KHPTPPK4J0QS0J4TGA7YHWM7.md",
+      "display_id": "TK-01KHPTPP-2"
     },
     {
       "id": "01KHPTPPTCQABJH5VA0HZGYAQ9",
       "short_id": "01KHPTPP",
-      "display_id": "TK-01KHPTPP",
       "title": "PR linking and CI status in ticket cards",
       "state": "done",
       "priority": "p1",
@@ -650,12 +635,12 @@
         "dashboard",
         "phase-2"
       ],
-      "path": ".tickets/tickets/01KHPTPPTCQABJH5VA0HZGYAQ9.md"
+      "path": ".tickets/tickets/01KHPTPPTCQABJH5VA0HZGYAQ9.md",
+      "display_id": "TK-01KHPTPP-3"
     },
     {
       "id": "01KHQ0K7HVXXBNSFGT0PEGHE5T",
       "short_id": "01KHQ0K7",
-      "display_id": "TK-01KHQ0K7",
       "title": "API endpoint to fetch PR status for pending changes",
       "state": "done",
       "priority": "p1",
@@ -664,12 +649,12 @@
         "github",
         "polling"
       ],
-      "path": ".tickets/tickets/01KHQ0K7HVXXBNSFGT0PEGHE5T.md"
+      "path": ".tickets/tickets/01KHQ0K7HVXXBNSFGT0PEGHE5T.md",
+      "display_id": "TK-01KHQ0K7-2"
     },
     {
       "id": "01KHQ0K80HSQ3SKRHKSG08D8P9",
       "short_id": "01KHQ0K8",
-      "display_id": "TK-01KHQ0K8",
       "title": "Drag and drop state change creates ticket-change PR",
       "state": "done",
       "priority": "p1",
@@ -678,44 +663,44 @@
         "dnd",
         "workflow"
       ],
-      "path": ".tickets/tickets/01KHQ0K80HSQ3SKRHKSG08D8P9.md"
+      "path": ".tickets/tickets/01KHQ0K80HSQ3SKRHKSG08D8P9.md",
+      "display_id": "TK-01KHQ0K8"
     },
     {
       "id": "01KHQKCJ1K4PNWXQ0NW1DKQ0H7",
       "short_id": "01KHQKCJ",
-      "display_id": "TK-01KHQKCJ",
       "title": "Auto-merge PRs for ticket state changes",
       "state": "done",
       "priority": "p1",
       "labels": [],
-      "path": ".tickets/tickets/01KHQKCJ1K4PNWXQ0NW1DKQ0H7.md"
+      "path": ".tickets/tickets/01KHQKCJ1K4PNWXQ0NW1DKQ0H7.md",
+      "display_id": "TK-01KHQKCJ"
     },
     {
       "id": "01KHQKCTHCSF6REBDAGMHF9W9B",
       "short_id": "01KHQKCT",
-      "display_id": "TK-01KHQKCT",
       "title": "Persist pending changes across page refresh",
       "state": "done",
       "priority": "p1",
       "labels": [],
-      "path": ".tickets/tickets/01KHQKCTHCSF6REBDAGMHF9W9B.md"
+      "path": ".tickets/tickets/01KHQKCTHCSF6REBDAGMHF9W9B.md",
+      "display_id": "TK-01KHQKCT"
     },
     {
       "id": "01KHVX926CZJ9WFMBNJSENJ97K",
       "short_id": "01KHVX92",
-      "display_id": "TK-01KHVX92",
       "title": "Consolidate auth/session helpers into requireSession()",
       "state": "done",
       "priority": "p1",
       "labels": [
         "refactor"
       ],
-      "path": ".tickets/tickets/01KHVX926CZJ9WFMBNJSENJ97K.md"
+      "path": ".tickets/tickets/01KHVX926CZJ9WFMBNJSENJ97K.md",
+      "display_id": "TK-01KHVX92"
     },
     {
       "id": "01KHWGYACVZMYF855VY5J9VM6N",
       "short_id": "01KHWGYA",
-      "display_id": "TK-01KHWGYA",
       "title": "Phase A: Implement telemetry lane using git notes with event-branch fallback",
       "state": "done",
       "priority": "p1",
@@ -724,12 +709,12 @@
         "telemetry",
         "git-notes"
       ],
-      "path": ".tickets/tickets/01KHWGYACVZMYF855VY5J9VM6N.md"
+      "path": ".tickets/tickets/01KHWGYACVZMYF855VY5J9VM6N.md",
+      "display_id": "TK-01KHWGYA"
     },
     {
       "id": "01KHWGYAM6JM3RPHPHKP5EA6D8",
       "short_id": "01KHWGYA",
-      "display_id": "TK-01KHWGYA",
       "title": "Phase B: CLI support for ticket events write/read/compact",
       "state": "done",
       "priority": "p1",
@@ -738,12 +723,12 @@
         "telemetry",
         "perf"
       ],
-      "path": ".tickets/tickets/01KHWGYAM6JM3RPHPHKP5EA6D8.md"
+      "path": ".tickets/tickets/01KHWGYAM6JM3RPHPHKP5EA6D8.md",
+      "display_id": "TK-01KHWGYA-2"
     },
     {
       "id": "01KHWGYB2SYQVJZYQSKTJ6NWFT",
       "short_id": "01KHWGYB",
-      "display_id": "TK-01KHWGYB",
       "title": "Migration tooling backfill squash noisy ticket churn into compact snapshots",
       "state": "done",
       "priority": "p1",
@@ -752,12 +737,26 @@
         "storage",
         "tooling"
       ],
-      "path": ".tickets/tickets/01KHWGYB2SYQVJZYQSKTJ6NWFT.md"
+      "path": ".tickets/tickets/01KHWGYB2SYQVJZYQSKTJ6NWFT.md",
+      "display_id": "TK-01KHWGYB"
+    },
+    {
+      "id": "01KHWJNQWDNXQN0CWXMDPDQM17",
+      "short_id": "01KHWJNQ",
+      "title": "Fix short-id collision handling for same-prefix ULIDs",
+      "state": "done",
+      "priority": "p1",
+      "labels": [
+        "cli",
+        "ids",
+        "reliability"
+      ],
+      "path": ".tickets/tickets/01KHWJNQWDNXQN0CWXMDPDQM17.md",
+      "display_id": "TK-01KHWJNQ"
     },
     {
       "id": "01KHMG86G7ZPTKKE8PWBTVYRYZ",
       "short_id": "01KHMG86",
-      "display_id": "TK-01KHMG86",
       "title": "Add --clear-labels and finalize label semantics",
       "state": "done",
       "priority": "p2",
@@ -765,12 +764,12 @@
         "refactor",
         "contract-v1"
       ],
-      "path": ".tickets/tickets/01KHMG86G7ZPTKKE8PWBTVYRYZ.md"
+      "path": ".tickets/tickets/01KHMG86G7ZPTKKE8PWBTVYRYZ.md",
+      "display_id": "TK-01KHMG86-3"
     },
     {
       "id": "01KHMG8D7XQXNCPTTVPMG5V72V",
       "short_id": "01KHMG8D",
-      "display_id": "TK-01KHMG8D",
       "title": "Determinism hooks for tests (ULID, SOURCE_DATE_EPOCH)",
       "state": "done",
       "priority": "p2",
@@ -779,12 +778,12 @@
         "contract-v1",
         "testing"
       ],
-      "path": ".tickets/tickets/01KHMG8D7XQXNCPTTVPMG5V72V.md"
+      "path": ".tickets/tickets/01KHMG8D7XQXNCPTTVPMG5V72V.md",
+      "display_id": "TK-01KHMG8D-2"
     },
     {
       "id": "01KHMG8DF4Z75CFS4EGBK4P1X9",
       "short_id": "01KHMG8D",
-      "display_id": "TK-01KHMG8D",
       "title": "Integration test harness (Vitest)",
       "state": "done",
       "priority": "p2",
@@ -792,12 +791,12 @@
         "testing",
         "contract-v1"
       ],
-      "path": ".tickets/tickets/01KHMG8DF4Z75CFS4EGBK4P1X9.md"
+      "path": ".tickets/tickets/01KHMG8DF4Z75CFS4EGBK4P1X9.md",
+      "display_id": "TK-01KHMG8D-3"
     },
     {
       "id": "01KHPT0CRPS33T28RHM1E3RH4N",
       "short_id": "01KHPT0C",
-      "display_id": "TK-01KHPT0C",
       "title": "Dogfooding feedback collection",
       "state": "done",
       "priority": "p2",
@@ -806,12 +805,12 @@
         "meta"
       ],
       "created": "2026-02-17T22:01:00.000Z",
-      "path": ".tickets/tickets/01KHPT0CRPS33T28RHM1E3RH4N.md"
+      "path": ".tickets/tickets/01KHPT0CRPS33T28RHM1E3RH4N.md",
+      "display_id": "TK-01KHPT0C"
     },
     {
       "id": "01KHPTPQ1JFRRABBXV22NVET6G",
       "short_id": "01KHPTPQ",
-      "display_id": "TK-01KHPTPQ",
       "title": "Ticket detail modal with PR/activity info",
       "state": "done",
       "priority": "p2",
@@ -819,12 +818,12 @@
         "dashboard",
         "phase-2"
       ],
-      "path": ".tickets/tickets/01KHPTPQ1JFRRABBXV22NVET6G.md"
+      "path": ".tickets/tickets/01KHPTPQ1JFRRABBXV22NVET6G.md",
+      "display_id": "TK-01KHPTPQ"
     },
     {
       "id": "01KHPTPQ8PNKT4NWNAMPV8WZX2",
       "short_id": "01KHPTPQ",
-      "display_id": "TK-01KHPTPQ",
       "title": "Saved views and filters",
       "state": "done",
       "priority": "p2",
@@ -832,12 +831,12 @@
         "dashboard",
         "phase-2"
       ],
-      "path": ".tickets/tickets/01KHPTPQ8PNKT4NWNAMPV8WZX2.md"
+      "path": ".tickets/tickets/01KHPTPQ8PNKT4NWNAMPV8WZX2.md",
+      "display_id": "TK-01KHPTPQ-2"
     },
     {
       "id": "01KHQ0K8PK9TVGX26XBE13A2JA",
       "short_id": "01KHQ0K8",
-      "display_id": "TK-01KHQ0K8",
       "title": "Optional auto-merge enablement when policy allows",
       "state": "done",
       "priority": "p2",
@@ -845,12 +844,12 @@
         "github",
         "automerge"
       ],
-      "path": ".tickets/tickets/01KHQ0K8PK9TVGX26XBE13A2JA.md"
+      "path": ".tickets/tickets/01KHQ0K8PK9TVGX26XBE13A2JA.md",
+      "display_id": "TK-01KHQ0K8-4"
     },
     {
       "id": "01KHT40T5MGCWRB1KQYB8M568T",
       "short_id": "01KHT40T",
-      "display_id": "TK-01KHT40T",
       "title": "Ticket templates (bug/feature/chore) for consistent creation",
       "state": "done",
       "priority": "p2",
@@ -860,12 +859,12 @@
       ],
       "assignee": "agent:openclaw",
       "reviewer": "human:morgan",
-      "path": ".tickets/tickets/01KHT40T5MGCWRB1KQYB8M568T.md"
+      "path": ".tickets/tickets/01KHT40T5MGCWRB1KQYB8M568T.md",
+      "display_id": "TK-01KHT40T"
     },
     {
       "id": "01KHMG861RFP1FWRX8BXP68D9P",
       "short_id": "01KHMG86",
-      "display_id": "TK-01KHMG86",
       "title": "Implement --quiet flag",
       "state": "done",
       "priority": "p3",
@@ -873,12 +872,12 @@
         "refactor",
         "contract-v1"
       ],
-      "path": ".tickets/tickets/01KHMG861RFP1FWRX8BXP68D9P.md"
+      "path": ".tickets/tickets/01KHMG861RFP1FWRX8BXP68D9P.md",
+      "display_id": "TK-01KHMG86"
     },
     {
       "id": "01KHMG8J3N02BB6BZM61GK5VSX",
       "short_id": "01KHMG8J",
-      "display_id": "TK-01KHMG8J",
       "title": "Skill doc placement and install script",
       "state": "done",
       "priority": "p3",
@@ -886,12 +885,12 @@
         "docs",
         "contract-v1"
       ],
-      "path": ".tickets/tickets/01KHMG8J3N02BB6BZM61GK5VSX.md"
+      "path": ".tickets/tickets/01KHMG8J3N02BB6BZM61GK5VSX.md",
+      "display_id": "TK-01KHMG8J"
     },
     {
       "id": "01KHMG8JASDQ7VC5YZK8NFBKZP",
       "short_id": "01KHMG8J",
-      "display_id": "TK-01KHMG8J",
       "title": "Add --no-commit flag for dev/testing",
       "state": "done",
       "priority": "p3",
@@ -899,7 +898,8 @@
         "refactor",
         "testing"
       ],
-      "path": ".tickets/tickets/01KHMG8JASDQ7VC5YZK8NFBKZP.md"
+      "path": ".tickets/tickets/01KHMG8JASDQ7VC5YZK8NFBKZP.md",
+      "display_id": "TK-01KHMG8J-2"
     }
   ]
 }
