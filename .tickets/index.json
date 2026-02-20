@@ -23,7 +23,7 @@
       "short_id": "01KHVX92",
       "display_id": "TK-01KHVX92",
       "title": "Fix O(n²) attention endpoint - use Map instead of find()",
-      "state": "backlog",
+      "state": "done",
       "priority": "p0",
       "labels": [
         "perf"
