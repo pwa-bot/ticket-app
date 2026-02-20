@@ -43,7 +43,7 @@ async function main(): Promise<void> {
   program
     .name("ticket")
     .description("Git-native issue tracking CLI")
-    .version("0.1.0")
+    .version("0.1.2")
     .option("--json", "Emit a JSON envelope")
     .option("-q, --quiet", "Suppress success output")
     .option("--no-commit", "Skip auto-commit (for dev/testing)")
