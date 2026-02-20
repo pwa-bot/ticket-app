@@ -1,326 +1,162 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "node:crypto";
 import { and, eq, inArray, notInArray } from "drizzle-orm";
 import { db, schema } from "@/db/client";
-import { getInstallationOctokit } from "@/lib/github-app";
 import { upsertBlob, upsertTicketFromIndexEntry } from "@/db/sync";
+import { getInstallationOctokit } from "@/lib/github-app";
+import { createGithubWebhookService, type GithubWebhookStore } from "@/lib/services/github-webhook-service";
 
-const WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET;
+const webhookStore: GithubWebhookStore = {
+  async recordDeliveryIfNew(deliveryId, event) {
+    if (!deliveryId) return true;
 
-interface IndexJson {
-  format_version: number;
-  tickets: Array<{
-    id: string;
-    short_id?: string;
-    display_id?: string;
-    title?: string;
-    state?: string;
-    priority?: string;
-    labels?: string[];
-    assignee?: string | null;
-    reviewer?: string | null;
-    path?: string;
-  }>;
-}
+    const rows = await db
+      .insert(schema.webhookDeliveries)
+      .values({ deliveryId, event })
+      .onConflictDoNothing()
+      .returning({ deliveryId: schema.webhookDeliveries.deliveryId });
 
-interface PushPayload {
-  ref: string;
-  after: string;
-  repository: {
-    full_name: string;
-    default_branch: string;
-  };
-  installation?: { id: number };
-}
+    return rows.length > 0;
+  },
 
-interface PullRequestPayload {
-  action: string;
-  pull_request: {
-    number: number;
-    html_url: string;
-    title: string;
-    body: string | null;
-    state: string;
-    merged: boolean;
-    mergeable_state?: string | null;
-    head: { ref: string; sha: string };
-  };
-  repository: {
-    full_name: string;
-  };
-}
+  async findRepo(fullName) {
+    const repo = await db.query.repos.findFirst({ where: eq(schema.repos.fullName, fullName) });
+    return repo ?? null;
+  },
 
-interface CheckPayload {
-  check_run?: {
-    status: string;
-    conclusion: string | null;
-    pull_requests: Array<{ number: number }>;
-  };
-  check_suite?: {
-    status: string;
-    conclusion: string | null;
-    pull_requests: Array<{ number: number }>;
-  };
-  repository: {
-    full_name: string;
-  };
-}
+  async findGithubInstallationId(installationId) {
+    const installation = await db.query.installations.findFirst({
+      where: eq(schema.installations.id, installationId),
+    });
 
-function verifySignature(payload: Buffer, signature: string): boolean {
-  if (!WEBHOOK_SECRET) return false;
-  const expected = `sha256=${crypto.createHmac("sha256", WEBHOOK_SECRET).update(payload).digest("hex")}`;
+    return installation?.githubInstallationId ?? null;
+  },
 
-  try {
-    return crypto.timingSafeEqual(Buffer.from(signature, "utf8"), Buffer.from(expected, "utf8"));
-  } catch {
-    return false;
-  }
-}
+  async upsertBlob(repoFullName, path, sha, contentText) {
+    await upsertBlob(repoFullName, path, sha, contentText);
+  },
 
-async function recordDeliveryIfNew(deliveryId: string | null, event: string): Promise<boolean> {
-  if (!deliveryId) return true;
+  async upsertTicketFromIndexEntry(repoFullName, indexSha, headSha, entry) {
+    await upsertTicketFromIndexEntry(repoFullName, indexSha, headSha, entry);
+  },
 
-  const rows = await db
-    .insert(schema.webhookDeliveries)
-    .values({ deliveryId, event })
-    .onConflictDoNothing()
-    .returning({ deliveryId: schema.webhookDeliveries.deliveryId });
+  async deleteAllTickets(repoFullName) {
+    await db.delete(schema.tickets).where(eq(schema.tickets.repoFullName, repoFullName));
+  },
 
-  return rows.length > 0;
-}
-
-function extractShortIds(text: string): string[] {
-  const out = new Set<string>();
-
-  const displayRe = /\bTK-([A-Z0-9]{8})\b/gi;
-  let m: RegExpExecArray | null;
-  while ((m = displayRe.exec(text))) out.add(m[1].toUpperCase());
-
-  const branchRe = /\btk-([a-z0-9]{8})\b/gi;
-  while ((m = branchRe.exec(text))) out.add(m[1].toUpperCase());
-
-  return Array.from(out);
-}
-
-function mapChecksState(status: string | null, conclusion: string | null): "pass" | "fail" | "running" | "unknown" {
-  if (!status) return "unknown";
-  if (status !== "completed") return "running";
-  if (!conclusion) return "unknown";
-  if (conclusion === "success") return "pass";
-  if (["failure", "cancelled", "timed_out", "action_required"].includes(conclusion)) return "fail";
-  return "unknown";
-}
-
-async function resolveGithubInstallationId(fullName: string, fromPayload?: number): Promise<number | null> {
-  if (fromPayload) return fromPayload;
-
-  const repo = await db.query.repos.findFirst({ where: eq(schema.repos.fullName, fullName) });
-  if (!repo?.installationId) return null;
-
-  const installation = await db.query.installations.findFirst({
-    where: eq(schema.installations.id, repo.installationId),
-  });
-
-  return installation?.githubInstallationId ?? null;
-}
-
-async function handlePushEvent(payload: PushPayload): Promise<{ ok: boolean; message: string }> {
-  const branch = payload.ref.replace("refs/heads/", "");
-  if (branch !== payload.repository.default_branch) {
-    return { ok: true, message: "Ignored non-default-branch push" };
-  }
-
-  const fullName = payload.repository.full_name;
-  const headSha = payload.after;
-  const repo = await db.query.repos.findFirst({ where: eq(schema.repos.fullName, fullName) });
-  if (!repo) {
-    return { ok: true, message: "Repo not connected" };
-  }
-
-  const githubInstallationId = await resolveGithubInstallationId(fullName, payload.installation?.id);
-  if (!githubInstallationId) {
-    return { ok: true, message: "No installation for repo" };
-  }
-
-  const [owner, repoName] = fullName.split("/");
-  const octokit = getInstallationOctokit(githubInstallationId);
-
-  const content = await octokit.rest.repos.getContent({
-    owner,
-    repo: repoName,
-    path: ".tickets/index.json",
-    ref: payload.repository.default_branch,
-  });
-
-  if (Array.isArray(content.data) || content.data.type !== "file") {
-    throw new Error("index.json is not a file");
-  }
-
-  const indexSha = content.data.sha;
-  const rawIndex = Buffer.from(content.data.content, "base64").toString("utf8");
-
-  const parsed = JSON.parse(rawIndex) as IndexJson;
-  if (parsed.format_version !== 1 || !Array.isArray(parsed.tickets)) {
-    throw new Error("index.json format invalid");
-  }
-
-  await upsertBlob(fullName, ".tickets/index.json", indexSha, rawIndex);
-
-  const idsInIndex = parsed.tickets.map((t) => String(t.id).toUpperCase());
-  for (const entry of parsed.tickets) {
-    await upsertTicketFromIndexEntry(fullName, indexSha, headSha, entry);
-  }
-
-  if (idsInIndex.length === 0) {
-    await db.delete(schema.tickets).where(eq(schema.tickets.repoFullName, fullName));
-  } else {
+  async deleteTicketsNotIn(repoFullName, ticketIds) {
     await db
       .delete(schema.tickets)
-      .where(and(eq(schema.tickets.repoFullName, fullName), notInArray(schema.tickets.id, idsInIndex)));
-  }
+      .where(and(eq(schema.tickets.repoFullName, repoFullName), notInArray(schema.tickets.id, ticketIds)));
+  },
 
-  await db
-    .update(schema.repos)
-    .set({
-      headSha,
-      webhookSyncedAt: new Date(),
-      lastSeenHeadSha: headSha,
-      lastIndexSha: indexSha,
-      lastSyncedAt: new Date(),
-      syncStatus: "idle",
-      syncError: null,
-      updatedAt: new Date(),
-    })
-    .where(eq(schema.repos.fullName, fullName));
+  async updateRepoAfterPush(repoFullName, update) {
+    await db
+      .update(schema.repos)
+      .set({
+        headSha: update.headSha,
+        webhookSyncedAt: update.now,
+        lastSeenHeadSha: update.headSha,
+        lastIndexSha: update.indexSha,
+        lastSyncedAt: update.now,
+        syncStatus: "idle",
+        syncError: null,
+        updatedAt: update.now,
+      })
+      .where(eq(schema.repos.fullName, repoFullName));
+  },
 
-  return { ok: true, message: `Synced ${parsed.tickets.length} tickets` };
-}
+  async replaceTicketPrMappings(repoFullName, prNumber) {
+    await db
+      .delete(schema.ticketPrs)
+      .where(and(eq(schema.ticketPrs.repoFullName, repoFullName), eq(schema.ticketPrs.prNumber, prNumber)));
+  },
 
-async function handlePullRequestEvent(payload: PullRequestPayload): Promise<{ ok: boolean; message: string }> {
-  const fullName = payload.repository.full_name;
-  const pr = payload.pull_request;
+  async findTicketsByShortIds(repoFullName, shortIds) {
+    return db.query.tickets.findMany({
+      where: and(eq(schema.tickets.repoFullName, repoFullName), inArray(schema.tickets.shortId, shortIds)),
+    });
+  },
 
-  const repo = await db.query.repos.findFirst({ where: eq(schema.repos.fullName, fullName) });
-  if (!repo) {
-    return { ok: true, message: "Repo not connected" };
-  }
-
-  const haystack = `${pr.title}\n${pr.body ?? ""}\n${pr.head.ref}`;
-  const shortIds = extractShortIds(haystack);
-
-  // Replace cached mappings for this PR with newly resolved ticket links.
-  await db
-    .delete(schema.ticketPrs)
-    .where(and(eq(schema.ticketPrs.repoFullName, fullName), eq(schema.ticketPrs.prNumber, pr.number)));
-
-  if (shortIds.length === 0) {
-    return { ok: true, message: "PR cached with no ticket links" };
-  }
-
-  const matchedTickets = await db.query.tickets.findMany({
-    where: and(eq(schema.tickets.repoFullName, fullName), inArray(schema.tickets.shortId, shortIds)),
-  });
-
-  const links = matchedTickets;
-
-  for (const ticket of links) {
+  async upsertTicketPr(input) {
     await db
       .insert(schema.ticketPrs)
       .values({
-        repoFullName: fullName,
-        ticketId: ticket.id,
-        prNumber: pr.number,
-        prUrl: pr.html_url,
-        title: pr.title,
-        state: pr.state,
-        merged: pr.merged,
-        mergeableState: pr.mergeable_state ?? null,
-        headRef: pr.head.ref,
-        headSha: pr.head.sha,
+        repoFullName: input.repoFullName,
+        ticketId: input.ticketId,
+        prNumber: input.prNumber,
+        prUrl: input.prUrl,
+        title: input.title,
+        state: input.state,
+        merged: input.merged,
+        mergeableState: input.mergeableState,
+        headRef: input.headRef,
+        headSha: input.headSha,
         updatedAt: new Date(),
       })
       .onConflictDoUpdate({
         target: [schema.ticketPrs.repoFullName, schema.ticketPrs.ticketId, schema.ticketPrs.prNumber],
         set: {
-          prUrl: pr.html_url,
-          title: pr.title,
-          state: pr.state,
-          merged: pr.merged,
-          mergeableState: pr.mergeable_state ?? null,
-          headRef: pr.head.ref,
-          headSha: pr.head.sha,
+          prUrl: input.prUrl,
+          title: input.title,
+          state: input.state,
+          merged: input.merged,
+          mergeableState: input.mergeableState,
+          headRef: input.headRef,
+          headSha: input.headSha,
           updatedAt: new Date(),
         },
       });
-  }
+  },
 
-  return { ok: true, message: `Cached PR links for ${links.length} ticket(s)` };
-}
-
-async function handleCheckEvent(event: "check_run" | "check_suite", payload: CheckPayload): Promise<{ ok: boolean; message: string }> {
-  const fullName = payload.repository.full_name;
-  const check = event === "check_run" ? payload.check_run : payload.check_suite;
-  if (!check) return { ok: true, message: "No check payload" };
-
-  const prs = check.pull_requests ?? [];
-  if (prs.length === 0) return { ok: true, message: "No PR links on check payload" };
-
-  const checksState = mapChecksState(check.status, check.conclusion);
-
-  for (const pr of prs) {
+  async updateTicketPrChecks(repoFullName, prNumber, checksState) {
     await db
       .update(schema.ticketPrs)
       .set({ checksState, updatedAt: new Date() })
-      .where(and(eq(schema.ticketPrs.repoFullName, fullName), eq(schema.ticketPrs.prNumber, pr.number)));
-  }
+      .where(and(eq(schema.ticketPrs.repoFullName, repoFullName), eq(schema.ticketPrs.prNumber, prNumber)));
+  },
+};
 
-  return { ok: true, message: `Updated checks for ${prs.length} PR(s)` };
-}
+const webhookService = createGithubWebhookService({
+  secret: process.env.GITHUB_WEBHOOK_SECRET,
+  store: webhookStore,
+  github: {
+    async getIndexJson({ fullName, defaultBranch, installationId }) {
+      const [owner, repo] = fullName.split("/");
+      const octokit = getInstallationOctokit(installationId);
+
+      const content = await octokit.rest.repos.getContent({
+        owner,
+        repo,
+        path: ".tickets/index.json",
+        ref: defaultBranch,
+      });
+
+      if (Array.isArray(content.data) || content.data.type !== "file") {
+        throw new Error("index.json is not a file");
+      }
+
+      return {
+        sha: content.data.sha,
+        raw: Buffer.from(content.data.content, "base64").toString("utf8"),
+      };
+    },
+  },
+});
 
 export async function POST(req: NextRequest) {
   try {
-    const rawBodyBytes = Buffer.from(await req.arrayBuffer());
-    const rawBody = rawBodyBytes.toString("utf8");
-    const signature = req.headers.get("x-hub-signature-256");
-    const event = req.headers.get("x-github-event") ?? "";
-    const deliveryId = req.headers.get("x-github-delivery");
+    const response = await webhookService.processWebhook({
+      rawBodyBytes: Buffer.from(await req.arrayBuffer()),
+      signature: req.headers.get("x-hub-signature-256"),
+      event: req.headers.get("x-github-event") ?? "",
+      deliveryId: req.headers.get("x-github-delivery"),
+    });
 
-    if (!WEBHOOK_SECRET) {
-      return NextResponse.json({ ok: false, error: "webhook_secret_not_configured" }, { status: 500 });
-    }
-
-    if (!signature) {
-      return NextResponse.json({ ok: false, error: "missing_signature" }, { status: 401 });
-    }
-
-    if (!verifySignature(rawBodyBytes, signature)) {
-      return NextResponse.json({ ok: false, error: "invalid_signature" }, { status: 401 });
-    }
-
-    const isNew = await recordDeliveryIfNew(deliveryId, event);
-    if (!isNew) {
-      return NextResponse.json({ ok: true, deduped: true });
-    }
-
-    const payload = JSON.parse(rawBody) as unknown;
-
-    if (event === "push") {
-      return NextResponse.json(await handlePushEvent(payload as PushPayload));
-    }
-
-    if (event === "pull_request") {
-      return NextResponse.json(await handlePullRequestEvent(payload as PullRequestPayload));
-    }
-
-    if (event === "check_run" || event === "check_suite") {
-      return NextResponse.json(await handleCheckEvent(event, payload as CheckPayload));
-    }
-
-    return NextResponse.json({ ok: true, message: `Ignored ${event}` });
+    return NextResponse.json(response.body, { status: response.status });
   } catch (error) {
     return NextResponse.json(
       { ok: false, error: error instanceof Error ? error.message : "webhook_failed" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
