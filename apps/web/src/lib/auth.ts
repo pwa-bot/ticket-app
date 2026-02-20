@@ -165,34 +165,8 @@ export async function getSession(): Promise<SessionData | null> {
     return null;
   }
 
-  // Legacy fallback: encrypted JSON payload stored directly in cookie.
   if (!isOpaqueSessionId(cookieValue)) {
-    const decrypted = decryptToken(cookieValue);
-    if (!decrypted) {
-      return null;
-    }
-
-    try {
-      const parsed = JSON.parse(decrypted) as {
-        token?: string;
-        userId?: string;
-        githubLogin?: string;
-      };
-
-      if (!parsed.token || !parsed.userId) {
-        return null;
-      }
-
-      return {
-        sessionId: "legacy-cookie-session",
-        token: parsed.token,
-        userId: parsed.userId,
-        githubLogin: parsed.githubLogin ?? "unknown",
-        expiresAt: new Date(Date.now() + SESSION_TTL_MS),
-      };
-    } catch {
-      return null;
-    }
+    return null;
   }
 
   const sessionId = cookieValue;

@@ -1,6 +1,9 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
+
 const SPACE_FALLBACK = "/space";
 const OAUTH_STATE_BINDING_VERSION = "v1";
 const AUTH_RETURN_TO_ALLOWLIST_PREFIXES = ["/space", "/board", "/repos"] as const;
+const OAUTH_STATE_SIGNATURE_ALGORITHM = "sha256";
 
 export function isSafeInternalReturnTo(value: string | null | undefined): value is string {
   if (!value) {
@@ -40,15 +43,38 @@ export function normalizeReturnTo(value: string | null | undefined, fallback = S
 }
 
 function timingSafeEqualString(a: string, b: string): boolean {
-  return a === b;
+  const leftBuffer = Buffer.from(a, "utf8");
+  const rightBuffer = Buffer.from(b, "utf8");
+
+  if (leftBuffer.length !== rightBuffer.length) {
+    return false;
+  }
+
+  return timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function getOAuthStateBindingSecret(env: NodeJS.ProcessEnv): string {
+  const secret = env.NEXTAUTH_SECRET;
+  if (!secret) {
+    throw new Error("NEXTAUTH_SECRET is required");
+  }
+  return secret;
+}
+
+function createOAuthStateSignature(state: string, returnTo: string, secret: string): string {
+  return createHmac(OAUTH_STATE_SIGNATURE_ALGORITHM, secret)
+    .update(`${OAUTH_STATE_BINDING_VERSION}:${state}:${returnTo}`)
+    .digest("hex");
 }
 
 export function createOAuthStateBinding(
   state: string,
-  _returnTo: string,
-  _env: NodeJS.ProcessEnv = process.env,
+  returnTo: string,
+  env: NodeJS.ProcessEnv = process.env,
 ): string {
-  return `${OAUTH_STATE_BINDING_VERSION}:${state}`;
+  const secret = getOAuthStateBindingSecret(env);
+  const signature = createOAuthStateSignature(state, returnTo, secret);
+  return `${OAUTH_STATE_BINDING_VERSION}:${state}:${signature}`;
 }
 
 export function validateOAuthStateBinding(input: {
@@ -80,15 +106,24 @@ export function validateOAuthStateBinding(input: {
   }
 
   if (!signature) {
-    return false; // Signature required for security
+    return false;
   }
 
-  // Validate signature matches expected format
   if (!/^[a-f0-9]{64}$/i.test(signature)) {
     return false;
   }
 
-  return true;
+  if (!isSafeInternalReturnTo(returnTo)) {
+    return false;
+  }
+
+  try {
+    const secret = getOAuthStateBindingSecret(env ?? process.env);
+    const expectedSignature = createOAuthStateSignature(boundState, returnTo, secret);
+    return timingSafeEqualString(signature, expectedSignature);
+  } catch {
+    return false;
+  }
 }
 
 export function buildGithubAuthPath(returnTo: string): string {
