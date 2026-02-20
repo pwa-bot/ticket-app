@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T06:37:02.345Z",
+  "generated_at": "2026-02-20T06:37:32.655Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -67,18 +67,6 @@
       ],
       "path": ".tickets/tickets/01KHVX91YVAGJWRWS254K53RJR.md",
       "display_id": "TK-01KHVX91-2"
-    },
-    {
-      "id": "01KHVX92N5768VHV0DTKNEB9YA",
-      "short_id": "01KHVX92",
-      "title": "Extract webhook handler into service module with unit tests",
-      "state": "backlog",
-      "priority": "p1",
-      "labels": [
-        "refactor"
-      ],
-      "path": ".tickets/tickets/01KHVX92N5768VHV0DTKNEB9YA.md",
-      "display_id": "TK-01KHVX92-3"
     },
     {
       "id": "01KHW6EXFRJ818M63EJ0356D0H",
@@ -149,6 +137,18 @@
       ],
       "path": ".tickets/tickets/01KHS9PFF2Z37S54PZD6QGW8DJ.md",
       "display_id": "TK-01KHS9PF-3"
+    },
+    {
+      "id": "01KHVX92N5768VHV0DTKNEB9YA",
+      "short_id": "01KHVX92",
+      "title": "Extract webhook handler into service module with unit tests",
+      "state": "ready",
+      "priority": "p1",
+      "labels": [
+        "refactor"
+      ],
+      "path": ".tickets/tickets/01KHVX92N5768VHV0DTKNEB9YA.md",
+      "display_id": "TK-01KHVX92-3"
     },
     {
       "id": "01KHVQ0B6VR7M2HAWB9QPEMBED",
