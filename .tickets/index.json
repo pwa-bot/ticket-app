@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-21T00:28:09.533Z",
+  "generated_at": "2026-02-21T00:37:39.192Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -72,20 +72,6 @@
       ],
       "path": ".tickets/tickets/01KHYK09CZ428DT3D7SFXKW02F.md",
       "display_id": "TK-01KHYK09-2"
-    },
-    {
-      "id": "01KHYK09MJSB6HPX303CYRN4K0",
-      "short_id": "01KHYK09",
-      "title": "Process Define QA handoff rules and ticket surfacing conventions",
-      "state": "in_progress",
-      "priority": "p1",
-      "labels": [
-        "process",
-        "qa",
-        "workflow"
-      ],
-      "path": ".tickets/tickets/01KHYK09MJSB6HPX303CYRN4K0.md",
-      "display_id": "TK-01KHYK09-3"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
@@ -937,6 +923,20 @@
       ],
       "path": ".tickets/tickets/01KHYK08XSFYB8G5WTG1PE0TH8.md",
       "display_id": "TK-01KHYK08-4"
+    },
+    {
+      "id": "01KHYK09MJSB6HPX303CYRN4K0",
+      "short_id": "01KHYK09",
+      "title": "Process Define QA handoff rules and ticket surfacing conventions",
+      "state": "done",
+      "priority": "p1",
+      "labels": [
+        "process",
+        "qa",
+        "workflow"
+      ],
+      "path": ".tickets/tickets/01KHYK09MJSB6HPX303CYRN4K0.md",
+      "display_id": "TK-01KHYK09-3"
     },
     {
       "id": "01KHMG86G7ZPTKKE8PWBTVYRYZ",

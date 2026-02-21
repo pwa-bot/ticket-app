@@ -1,7 +1,7 @@
 ---
 id: 01KHYK09MJSB6HPX303CYRN4K0
 title: Process Define QA handoff rules and ticket surfacing conventions
-state: in_progress
+state: done
 priority: p1
 labels:
   - process
