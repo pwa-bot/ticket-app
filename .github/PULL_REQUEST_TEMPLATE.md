@@ -78,6 +78,14 @@ Why is this needed? What problem does it solve?
 - [ ] Integration tests added/updated
 - [ ] Manual test steps included below
 
+## QA Signaling (required when ticket uses x_ticket.qa.required=true)
+
+- [ ] `ticket qa ready <id> --env <value>` recorded before QA handoff
+- [ ] QA handoff comment/message includes `QA READY`, ticket ID, test steps, risk callouts, and requested failure evidence
+- [ ] If QA failed: `ticket qa fail <id> --reason "<reason>"` + `ticket qa reset <id>`
+- [ ] If QA passed: `ticket qa pass <id> --env <value>` before `ticket done <id>`
+- [ ] Ticket kept in `state: in_progress` during QA cycle until `qa_passed`
+
 ### Manual test steps
 
 1. 

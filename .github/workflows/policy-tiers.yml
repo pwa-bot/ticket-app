@@ -38,6 +38,13 @@ jobs:
       - name: Validate integrity policy
         run: pnpm --filter @ticketdotapp/cli exec tsx src/cli.ts validate --ci --policy-tier integrity
 
+      - name: Surface QA queue signals
+        run: |
+          echo "QA ready queue:"
+          pnpm --filter @ticketdotapp/cli exec tsx src/cli.ts list --ci --qa-status ready_for_qa --json
+          echo "QA failed queue:"
+          pnpm --filter @ticketdotapp/cli exec tsx src/cli.ts list --ci --qa-status qa_failed --json
+
   quality:
     name: Warn Quality (advisory)
     runs-on: ubuntu-latest

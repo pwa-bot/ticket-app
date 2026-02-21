@@ -111,9 +111,17 @@ backlog → ready → in_progress → done
 ### B) After Completing Work
 
 1. **For QA-required tickets, perform QA handoff first:**
-   - Fill the `## QA` section in the ticket body.
-   - Set `x_ticket.qa.required: true` and move QA status to `ready_for_qa`.
-   - Post handoff message with marker `QA READY`, ticket ID, exact steps, and risk callouts.
+   - Ensure acceptance criteria are implemented and local checks/tests are complete.
+   - Fill the `## QA` section in the ticket body (see `docs/QA-HANDOFF-CONTRACT.md`).
+   - Move QA status to `ready_for_qa`:
+     ```bash
+     ticket qa ready <id> --env <local|staging|prod>
+     ```
+   - Confirm signal output:
+     ```bash
+     ticket show <id> --json --ci
+     ```
+   - Post handoff message with marker `QA READY`, ticket ID, exact steps, risk callouts, and requested failure evidence.
 
 2. **Mark done** (only after QA pass when `x_ticket.qa.required: true`):
    ```bash
@@ -133,13 +141,37 @@ backlog → ready → in_progress → done
 ### C) QA Result Handling (required when QA is requested)
 
 1. **If QA fails:**
-   - Mark QA status `qa_failed` with a concise reason.
+   - Post failure response with marker `QA FAILED`, ticket ID, reason, and observed evidence.
+   - Mark QA status `qa_failed` with a concise reason:
+     ```bash
+     ticket qa fail <id> --reason "<reason>"
+     ```
    - Keep ticket in `in_progress`.
-   - Implement fix, then return to `ready_for_qa`.
+   - Before implementing fixes, move status back to implementation:
+     ```bash
+     ticket qa reset <id> --ci
+     ```
+   - Implement fix, run checks, then return to `ready_for_qa`:
+     ```bash
+     ticket qa ready <id> --env <local|staging|prod>
+     ```
 
 2. **If QA passes:**
-   - Mark QA status `qa_passed`.
-   - Then move ticket to `done`.
+   - Mark QA status `qa_passed`:
+     ```bash
+     ticket qa pass <id> --env <local|staging|prod>
+     ```
+   - Then move ticket to `done`:
+     ```bash
+     ticket done <id> --ci
+     ```
+
+**QA state notes (from CLI contract):**
+- `ticket qa ready`: allowed from `unset|pending_impl|qa_failed`
+- `ticket qa fail`: allowed only from `ready_for_qa`
+- `ticket qa pass`: allowed only from `ready_for_qa`
+- `ticket qa reset`: allowed from `ready_for_qa|qa_failed|qa_passed`
+- All `ticket qa` transitions require `state: in_progress`
 
 ---
 
@@ -301,6 +333,12 @@ When idle or on heartbeat:
    ticket validate --json --ci
    ```
 
+4. **Surface QA queue in automation loops:**
+   ```bash
+   ticket list --qa-status ready_for_qa --json --ci
+   ticket list --qa-status qa_failed --json --ci
+   ```
+
 ---
 
 ## Anti-Patterns
@@ -341,6 +379,7 @@ ticket validate --json --ci
 ticket qa ready <id> --env <local|staging|prod>
 ticket qa fail <id> --reason "<reason>"
 ticket qa pass <id> --env <local|staging|prod>
+ticket qa reset <id> --ci
 ```
 
 ### Metadata
@@ -384,11 +423,20 @@ If a sub-agent will work on it, push so they can pull:
 - `git push`
 
 ### After completing work
-1) Mark done:
+1) If QA is required:
+   - `ticket qa ready <id> --env <local|staging|prod>`
+   - send `QA READY` handoff message (ticket ID, exact steps, risks, failure evidence request)
+2) If QA fails:
+   - `ticket qa fail <id> --reason "<reason>"`
+   - `ticket qa reset <id> --ci`
+   - implement fix, then `ticket qa ready <id> --env <local|staging|prod>`
+3) If QA passes:
+   - `ticket qa pass <id> --env <local|staging|prod>`
+4) Mark done (only after QA pass when required):
    - `ticket done <id> --ci`
-2) Validate:
+5) Validate:
    - `ticket validate --json --ci`
-3) Push:
+6) Push:
    - `git push`
 
 ### Blocked work
@@ -420,8 +468,20 @@ Rules:
 - Pull latest main
 - Use canonical branch: tk-<short_id>-<slug> (run: ticket branch <SHORT_ID> --ci)
 - No fuzzy matching, always use --ci
-- Do the work, run tests, then:
+- Do the work and run tests.
+- If QA is required for the ticket:
+  - ticket qa ready <SHORT_ID> --env <local|staging|prod>
+  - stop for QA decision (do not mark done yet)
+- If QA passes:
+  - ticket qa pass <SHORT_ID> --env <local|staging|prod>
   - ticket done <SHORT_ID> --ci
+- If QA fails:
+  - ticket qa fail <SHORT_ID> --reason "<reason>"
+  - ticket qa reset <SHORT_ID> --ci
+  - implement fix and return to ticket qa ready
+- If QA is not required:
+  - ticket done <SHORT_ID> --ci
+- In all cases:
   - ticket validate --json --ci
   - git push
 
@@ -434,7 +494,8 @@ Task:
 Reply with:
 - Summary of changes
 - Tests run
-- Confirm ticket done + pushed
+- QA signal used (`QA READY`, `QA FAILED`, or `QA PASSED`) when applicable
+- Confirm ticket done + pushed (or waiting QA)
 - PR link (if created)
 ```
 

@@ -62,6 +62,7 @@ Commands:
 - `ticket move <id> <state>` — Change state
 - `ticket edit <id>` — Edit metadata
 - `ticket validate` — Check for errors (`--policy-tier` controls governance enforcement)
+- `ticket qa ready|fail|pass|reset` — Manage QA signaling in `x_ticket.qa`
 - `ticket events write <event>` — Append telemetry lane events
 - `ticket events read` — Read telemetry lane events (`--compact` for one-line output)
 - `ticket events compact` — Build/apply telemetry compaction snapshots (`--apply` required to write)
@@ -103,6 +104,7 @@ GitHub Actions policy workflow (`.github/workflows/policy-tiers.yml`):
 - `integrity` job is required and blocking.
 - `quality` job runs in advisory mode (`continue-on-error: true`).
 - `strict` job is opt-in via repository variable `TICKET_POLICY_STRICT=1` or manual dispatch input.
+- `integrity` job also surfaces QA workflow queues (`ready_for_qa`, `qa_failed`) for automation visibility.
 
 Env overrides:
 - `TICKET_TELEMETRY_BACKEND`
