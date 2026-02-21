@@ -1,20 +1,10 @@
 import crypto from "node:crypto";
-
-export interface IndexJson {
-  format_version: number;
-  tickets: Array<{
-    id: string;
-    short_id?: string;
-    display_id?: string;
-    title?: string;
-    state?: string;
-    priority?: string;
-    labels?: string[];
-    assignee?: string | null;
-    reviewer?: string | null;
-    path?: string;
-  }>;
-}
+import {
+  createVersionedTicketIndexSnapshot,
+  isValidTicketIndexJson,
+  type TicketIndexJson,
+  type VersionedTicketIndexSnapshot,
+} from "@/lib/derived-cache-snapshot";
 
 export interface PushPayload {
   ref: string;
@@ -61,6 +51,7 @@ export interface CheckPayload {
 }
 
 interface RepoRecord {
+  id: string;
   fullName: string;
   installationId: number | null;
 }
@@ -103,11 +94,17 @@ export interface GithubWebhookStore {
     repoFullName: string,
     indexSha: string,
     headSha: string,
-    entry: IndexJson["tickets"][number],
+    entry: TicketIndexJson["tickets"][number],
   ): Promise<void>;
   deleteAllTickets(repoFullName: string): Promise<void>;
   deleteTicketsNotIn(repoFullName: string, ticketIds: string[]): Promise<void>;
   updateRepoAfterPush(repoFullName: string, update: RepoPushUpdate): Promise<void>;
+  upsertTicketIndexSnapshot(input: {
+    repoId: string;
+    headSha: string;
+    generatedAt: Date;
+    snapshot: VersionedTicketIndexSnapshot;
+  }): Promise<void>;
   replaceTicketPrMappings(repoFullName: string, prNumber: number): Promise<void>;
   findTicketsByShortIds(repoFullName: string, shortIds: string[]): Promise<TicketRecord[]>;
   upsertTicketPr(input: UpsertTicketPrInput): Promise<void>;
@@ -258,10 +255,26 @@ export function createGithubWebhookService(deps: GithubWebhookServiceDeps) {
       const indexSha = content.sha;
       const rawIndex = content.raw;
 
-      const parsed = JSON.parse(rawIndex) as IndexJson;
-      if (parsed.format_version !== 1 || !Array.isArray(parsed.tickets)) {
+      const parsed = JSON.parse(rawIndex) as TicketIndexJson;
+      if (!isValidTicketIndexJson(parsed)) {
         throw new Error("index.json format invalid");
       }
+
+      const syncTimestamp = new Date();
+      const snapshot = createVersionedTicketIndexSnapshot({
+        repoId: repo.id,
+        repoFullName: fullName,
+        headSha,
+        indexSha,
+        capturedAt: syncTimestamp,
+        payload: parsed,
+      });
+      await deps.store.upsertTicketIndexSnapshot({
+        repoId: repo.id,
+        headSha: headSha || `index:${indexSha}`,
+        generatedAt: syncTimestamp,
+        snapshot,
+      });
 
       await deps.store.upsertBlob(fullName, ".tickets/index.json", indexSha, rawIndex);
 

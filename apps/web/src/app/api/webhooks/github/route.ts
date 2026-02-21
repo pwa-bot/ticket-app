@@ -88,6 +88,25 @@ const webhookStore: GithubWebhookStore = {
       .where(eq(schema.repos.fullName, repoFullName));
   },
 
+  async upsertTicketIndexSnapshot(input) {
+    await db
+      .insert(schema.ticketIndexSnapshots)
+      .values({
+        repoId: input.repoId,
+        headSha: input.headSha,
+        generatedAt: input.generatedAt,
+        indexJson: input.snapshot,
+        createdAt: input.generatedAt,
+      })
+      .onConflictDoUpdate({
+        target: [schema.ticketIndexSnapshots.repoId, schema.ticketIndexSnapshots.headSha],
+        set: {
+          generatedAt: input.generatedAt,
+          indexJson: input.snapshot,
+        },
+      });
+  },
+
   async replaceTicketPrMappings(repoFullName, prNumber) {
     await db
       .delete(schema.ticketPrs)

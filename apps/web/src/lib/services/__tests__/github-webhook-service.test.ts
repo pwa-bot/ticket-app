@@ -19,7 +19,7 @@ function createStoreMock(overrides: Partial<GithubWebhookStore> = {}): GithubWeb
   return {
     recordDeliveryIfNew: async () => true,
     recordIdempotencyKeyIfNew: async () => true,
-    findRepo: async () => ({ fullName: "acme/repo", installationId: 11 }),
+    findRepo: async () => ({ id: "repo-1", fullName: "acme/repo", installationId: 11 }),
     findGithubInstallationId: async () => 123,
     tryAcquireRepoSyncLock: async () => true,
     releaseRepoSyncLock: async () => undefined,
@@ -29,6 +29,7 @@ function createStoreMock(overrides: Partial<GithubWebhookStore> = {}): GithubWeb
     deleteAllTickets: async () => undefined,
     deleteTicketsNotIn: async () => undefined,
     updateRepoAfterPush: async () => undefined,
+    upsertTicketIndexSnapshot: async () => undefined,
     replaceTicketPrMappings: async () => undefined,
     findTicketsByShortIds: async () => [],
     upsertTicketPr: async () => undefined,
@@ -166,6 +167,7 @@ test("processWebhook rejects invalid signature", async () => {
 
 test("push event syncs index and updates repo metadata", async () => {
   const calls = {
+    upsertSnapshot: 0,
     upsertBlob: 0,
     upsertTicket: 0,
     deleteNotIn: 0,
@@ -175,6 +177,9 @@ test("push event syncs index and updates repo metadata", async () => {
   const service = createGithubWebhookService({
     secret: SECRET,
     store: createStoreMock({
+      upsertTicketIndexSnapshot: async () => {
+        calls.upsertSnapshot += 1;
+      },
       upsertBlob: async () => {
         calls.upsertBlob += 1;
       },
@@ -206,10 +211,53 @@ test("push event syncs index and updates repo metadata", async () => {
 
   assert.equal(result.status, 200);
   assert.equal(result.body.ok, true);
+  assert.equal(calls.upsertSnapshot, 1);
   assert.equal(calls.upsertBlob, 1);
   assert.equal(calls.upsertTicket, 1);
   assert.equal(calls.deleteNotIn, 1);
   assert.equal(calls.updateRepoAfterPush, 1);
+});
+
+test("push event rejects invalid index format and does not persist snapshot", async () => {
+  let upsertSnapshot = 0;
+  let markedError = 0;
+
+  const service = createGithubWebhookService({
+    secret: SECRET,
+    store: createStoreMock({
+      upsertTicketIndexSnapshot: async () => {
+        upsertSnapshot += 1;
+      },
+      setRepoSyncError: async () => {
+        markedError += 1;
+      },
+    }),
+    github: createGithubMock({
+      getIndexJson: async () => ({
+        sha: "index-sha",
+        raw: JSON.stringify({ format_version: 99, tickets: [] }),
+      }),
+    }),
+  });
+
+  const body = JSON.stringify({
+    ref: "refs/heads/main",
+    after: "head123",
+    repository: { full_name: "acme/repo", default_branch: "main" },
+  });
+
+  await assert.rejects(
+    service.processWebhook({
+      rawBodyBytes: Buffer.from(body),
+      signature: signBody(body, SECRET),
+      event: "push",
+      deliveryId: "d3-invalid-index",
+    }),
+    /index\.json format invalid/
+  );
+
+  assert.equal(upsertSnapshot, 0);
+  assert.equal(markedError, 1);
 });
 
 test("push event ignores non-default branch", async () => {

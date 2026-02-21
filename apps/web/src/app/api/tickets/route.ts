@@ -1,7 +1,6 @@
-import { eq } from "drizzle-orm";
-import { db, schema } from "@/db/client";
 import { apiError, apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
+import { readRepoTicketsWithFallback } from "@/lib/derived-cache-reader";
 import { hasRepoAccess } from "@/lib/security/repo-access";
 import { getManualRefreshJobService } from "@/lib/services/manual-refresh-job-service";
 import { computeSyncHealth } from "@/lib/sync-health";
@@ -41,10 +40,9 @@ export async function GET(request: Request) {
     }
   }
 
-  const [repoRow, tickets] = await Promise.all([
-    db.query.repos.findFirst({ where: eq(schema.repos.fullName, repo) }),
-    db.query.tickets.findMany({ where: eq(schema.tickets.repoFullName, repo) }),
-  ]);
+  const snapshot = await readRepoTicketsWithFallback(repo);
+  const repoRow = snapshot.repo;
+  const tickets = snapshot.tickets;
   const syncHealth = computeSyncHealth({
     syncStatus: repoRow?.syncStatus ?? "idle",
     syncError: repoRow?.syncError ?? null,
@@ -55,8 +53,8 @@ export async function GET(request: Request) {
     format_version: 1,
     tickets: tickets.map((t) => ({
       id: t.id,
-      short_id: t.shortId,
-      display_id: t.displayId,
+      short_id: t.short_id,
+      display_id: t.display_id,
       title: t.title,
       state: t.state,
       priority: t.priority,
@@ -64,17 +62,19 @@ export async function GET(request: Request) {
       assignee: t.assignee,
       reviewer: t.reviewer,
       path: t.path,
-      created: t.createdAt?.toISOString(),
-      updated: t.cachedAt?.toISOString(),
+      created: t.created,
+      updated: t.updated,
     })),
     _meta: {
-      source: "postgres_cache",
-      lastSyncedAt: repoRow?.lastSyncedAt?.toISOString(),
-      lastIndexSha: repoRow?.lastIndexSha ?? null,
-      headSha: repoRow?.headSha ?? null,
+      source: snapshot.source,
+      lastSyncedAt: repoRow?.lastSyncedAt?.toISOString() ?? snapshot.snapshotMeta?.capturedAt ?? null,
+      lastIndexSha: snapshot.snapshotMeta?.indexSha ?? repoRow?.lastIndexSha ?? null,
+      headSha: snapshot.snapshotMeta?.headSha ?? repoRow?.headSha ?? null,
       webhookSyncedAt: repoRow?.webhookSyncedAt?.toISOString() ?? null,
       syncStatus: repoRow?.syncStatus ?? "idle",
       stale: !repoRow?.webhookSyncedAt,
+      sourceHint: snapshot.source,
+      fallbackReason: snapshot.fallbackReason,
       syncHealth,
     },
     refreshJob,

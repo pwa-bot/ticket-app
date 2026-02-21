@@ -1,5 +1,10 @@
 import { eq, and, notInArray } from "drizzle-orm";
 import { db, schema } from "./client";
+import {
+  createVersionedTicketIndexSnapshot,
+  isValidTicketIndexJson,
+  type TicketIndexJson,
+} from "@/lib/derived-cache-snapshot";
 
 // Helper for timestamps
 const now = () => new Date();
@@ -270,22 +275,6 @@ interface SyncResult {
   errorCode?: string;
 }
 
-interface IndexJson {
-  format_version: number;
-  tickets: Array<{
-    id: string;
-    short_id?: string;
-    display_id?: string;
-    title?: string;
-    state?: string;
-    priority?: string;
-    labels?: string[];
-    assignee?: string | null;
-    reviewer?: string | null;
-    path?: string;
-  }>;
-}
-
 /**
  * SHA-first incremental sync.
  * 
@@ -374,6 +363,10 @@ export async function syncRepo(
 
     // 4) If not forced and sha unchanged, stop early
     const repoRow = await getRepo(fullName);
+    if (!repoRow?.id) {
+      await setSyncError(fullName, "repo_missing", "Repo row missing after upsert.");
+      return { success: false, changed: false, error: "Repo row missing", errorCode: "repo_missing" };
+    }
     const lastIndexSha = repoRow?.lastIndexSha ?? null;
 
     if (!force && lastIndexSha && lastIndexSha === indexSha) {
@@ -398,7 +391,7 @@ export async function syncRepo(
     }
 
     // 5) Parse index.json
-    let idx: IndexJson;
+    let idx: TicketIndexJson;
     try {
       idx = JSON.parse(rawIndex);
     } catch {
@@ -406,10 +399,38 @@ export async function syncRepo(
       return { success: false, changed: false, error: "index.json invalid JSON", errorCode: "index_invalid_format" };
     }
 
-    if (idx.format_version !== 1 || !Array.isArray(idx.tickets)) {
+    if (!isValidTicketIndexJson(idx)) {
       await setSyncError(fullName, "index_invalid_format", "index.json envelope invalid.");
       return { success: false, changed: false, error: "index.json envelope invalid", errorCode: "index_invalid_format" };
     }
+
+    const syncTimestamp = now();
+    const snapshot = createVersionedTicketIndexSnapshot({
+      repoId: repoRow.id,
+      repoFullName: fullName,
+      headSha,
+      indexSha,
+      capturedAt: syncTimestamp,
+      payload: idx,
+    });
+    const snapshotHeadSha = headSha ?? `index:${indexSha}`;
+
+    await db
+      .insert(schema.ticketIndexSnapshots)
+      .values({
+        repoId: repoRow.id,
+        headSha: snapshotHeadSha,
+        generatedAt: syncTimestamp,
+        indexJson: snapshot,
+        createdAt: syncTimestamp,
+      })
+      .onConflictDoUpdate({
+        target: [schema.ticketIndexSnapshots.repoId, schema.ticketIndexSnapshots.headSha],
+        set: {
+          generatedAt: syncTimestamp,
+          indexJson: snapshot,
+        },
+      });
 
     // 6) Upsert raw blob cache
     await upsertBlob(fullName, ".tickets/index.json", indexSha, rawIndex);
