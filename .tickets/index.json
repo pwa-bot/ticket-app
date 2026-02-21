@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-21T01:07:39.168Z",
+  "generated_at": "2026-02-21T01:07:39.405Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -21,7 +21,7 @@
       "id": "01KHYK095CXZEQB50WYR9ZGSWG",
       "short_id": "01KHYK09",
       "title": "P2 Audit webhook signature verification and replay protection metrics",
-      "state": "ready",
+      "state": "in_progress",
       "priority": "p2",
       "labels": [
         "security",
