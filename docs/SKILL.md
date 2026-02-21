@@ -51,6 +51,7 @@ ticket rebuild-index
 4. **Never skip states** to complete work
 5. **Always validate before pushing**
 6. **CLI commits automatically** — do not manually commit ticket changes
+7. **Use QA contract for handoff** — see `docs/QA-HANDOFF-CONTRACT.md`
 
 ---
 
@@ -109,20 +110,36 @@ backlog → ready → in_progress → done
 
 ### B) After Completing Work
 
-1. **Mark done** (only valid from `in_progress`):
+1. **For QA-required tickets, perform QA handoff first:**
+   - Fill the `## QA` section in the ticket body.
+   - Set `x_ticket.qa.required: true` and move QA status to `ready_for_qa`.
+   - Post handoff message with marker `QA READY`, ticket ID, exact steps, and risk callouts.
+
+2. **Mark done** (only after QA pass when `x_ticket.qa.required: true`):
    ```bash
    ticket done <id> --ci
    ```
 
-2. **Validate protocol state:**
+3. **Validate protocol state:**
    ```bash
    ticket validate --json --ci
    ```
 
-3. **Push:**
+4. **Push:**
    ```bash
    git push
    ```
+
+### C) QA Result Handling (required when QA is requested)
+
+1. **If QA fails:**
+   - Mark QA status `qa_failed` with a concise reason.
+   - Keep ticket in `in_progress`.
+   - Implement fix, then return to `ready_for_qa`.
+
+2. **If QA passes:**
+   - Mark QA status `qa_passed`.
+   - Then move ticket to `done`.
 
 ---
 
@@ -317,6 +334,13 @@ ticket start <id> --ci
 ticket done <id> --ci
 ticket move <id> blocked --ci
 ticket validate --json --ci
+```
+
+### QA (contract-defined behavior)
+```bash
+ticket qa ready <id> --env <local|staging|prod>
+ticket qa fail <id> --reason "<reason>"
+ticket qa pass <id> --env <local|staging|prod>
 ```
 
 ### Metadata

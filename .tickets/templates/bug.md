@@ -31,3 +31,26 @@ What happens instead.
 - [ ] Repro is confirmed
 - [ ] Root cause is fixed
 - [ ] Regression risk checked
+
+## QA
+
+### Test Steps
+1.
+
+### Expected Results
+- 
+
+### Risk Notes
+- 
+
+### Rollback Notes
+- 
+
+### Observed Results
+- (filled by QA)
+
+### Environment
+- 
+
+### Pass/Fail Decision
+- 

@@ -4,6 +4,7 @@ Core specs:
 - [Protocol v1.0](../protocol/PROTOCOL.md)
 - [Protocol v1.1 Addendum: Dual-Lane Model](./PROTOCOL-V1.1-DUAL-LANE.md)
 - [Migration Guide: Dual-Lane v1.1](./MIGRATION-DUAL-LANE-V1.1.md)
+- [QA Handoff Contract v1](./QA-HANDOFF-CONTRACT.md)
 
 Related architecture docs:
 - [Dashboard Writes Spec](./DASHBOARD-WRITES-SPEC.md)

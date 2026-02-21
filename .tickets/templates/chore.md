@@ -21,6 +21,29 @@ Describe the maintenance / infrastructure work.
 
 - [ ] 
 
+## QA
+
+### Test Steps
+1.
+
+### Expected Results
+- 
+
+### Risk Notes
+- 
+
+### Rollback Notes
+- 
+
+### Observed Results
+- (filled by QA)
+
+### Environment
+- 
+
+### Pass/Fail Decision
+- 
+
 ## Notes
 
 Operational details and follow-up work.

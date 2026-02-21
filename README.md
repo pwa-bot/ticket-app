@@ -42,6 +42,7 @@ The protocol spec lives in [`/protocol/PROTOCOL.md`](./protocol/PROTOCOL.md) and
 v1.1 planning and migration docs:
 - [`docs/PROTOCOL-V1.1-DUAL-LANE.md`](./docs/PROTOCOL-V1.1-DUAL-LANE.md) - dual-lane model (canonical + telemetry)
 - [`docs/MIGRATION-DUAL-LANE-V1.1.md`](./docs/MIGRATION-DUAL-LANE-V1.1.md) - phased migration, rollback, and verification
+- [`docs/QA-HANDOFF-CONTRACT.md`](./docs/QA-HANDOFF-CONTRACT.md) - QA signaling states, transitions, checklist, and handoff rules
 
 Key features:
 - Tickets stored as Markdown files with YAML frontmatter
