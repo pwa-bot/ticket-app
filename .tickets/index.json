@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-20T23:57:33.344Z",
+  "generated_at": "2026-02-21T00:07:24.609Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -100,20 +100,6 @@
       ],
       "path": ".tickets/tickets/01KHYK09CZ428DT3D7SFXKW02F.md",
       "display_id": "TK-01KHYK09-2"
-    },
-    {
-      "id": "01KHYK08P2R9Z43ET50CVTFRGF",
-      "short_id": "01KHYK08",
-      "title": "P1 Add refresh endpoint quotas and backoff per user install repo",
-      "state": "in_progress",
-      "priority": "p1",
-      "labels": [
-        "reliability",
-        "rate-limit",
-        "api"
-      ],
-      "path": ".tickets/tickets/01KHYK08P2R9Z43ET50CVTFRGF.md",
-      "display_id": "TK-01KHYK08-3"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
@@ -937,6 +923,20 @@
       ],
       "path": ".tickets/tickets/01KHYK08EC06SFT3G87TQV47ZN.md",
       "display_id": "TK-01KHYK08-2"
+    },
+    {
+      "id": "01KHYK08P2R9Z43ET50CVTFRGF",
+      "short_id": "01KHYK08",
+      "title": "P1 Add refresh endpoint quotas and backoff per user install repo",
+      "state": "done",
+      "priority": "p1",
+      "labels": [
+        "reliability",
+        "rate-limit",
+        "api"
+      ],
+      "path": ".tickets/tickets/01KHYK08P2R9Z43ET50CVTFRGF.md",
+      "display_id": "TK-01KHYK08-3"
     },
     {
       "id": "01KHMG86G7ZPTKKE8PWBTVYRYZ",
