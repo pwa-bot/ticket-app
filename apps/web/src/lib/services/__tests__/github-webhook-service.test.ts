@@ -6,6 +6,8 @@ import {
   extractShortIds,
   mapChecksState,
   type GithubContentClient,
+  type GithubWebhookSecurityEvent,
+  type GithubWebhookSecurityMonitor,
   type GithubWebhookStore,
 } from "../github-webhook-service";
 
@@ -48,6 +50,18 @@ function createGithubMock(overrides: Partial<GithubContentClient> = {}): GithubC
       }),
     }),
     ...overrides,
+  };
+}
+
+function createSecurityRecorder(): { monitor: GithubWebhookSecurityMonitor; events: GithubWebhookSecurityEvent[] } {
+  const events: GithubWebhookSecurityEvent[] = [];
+  return {
+    events,
+    monitor: {
+      record(event) {
+        events.push(event);
+      },
+    },
   };
 }
 
@@ -148,10 +162,12 @@ test("processWebhook returns deduped when idempotency key is already seen", asyn
 });
 
 test("processWebhook rejects invalid signature", async () => {
+  const security = createSecurityRecorder();
   const service = createGithubWebhookService({
     secret: SECRET,
     store: createStoreMock(),
     github: createGithubMock(),
+    security: security.monitor,
   });
 
   const result = await service.processWebhook({
@@ -163,6 +179,142 @@ test("processWebhook rejects invalid signature", async () => {
 
   assert.equal(result.status, 401);
   assert.equal(result.body.error, "invalid_signature");
+  assert.deepEqual(
+    security.events.map((event) => event.type),
+    ["signature_malformed"],
+  );
+});
+
+test("processWebhook records invalid signature hash mismatch", async () => {
+  const security = createSecurityRecorder();
+  const body = JSON.stringify({});
+  const validButWrong = signBody(body, `${SECRET}-wrong`);
+
+  const service = createGithubWebhookService({
+    secret: SECRET,
+    store: createStoreMock(),
+    github: createGithubMock(),
+    security: security.monitor,
+  });
+
+  const result = await service.processWebhook({
+    rawBodyBytes: Buffer.from(body),
+    signature: validButWrong,
+    event: "push",
+    deliveryId: "d1-mismatch",
+  });
+
+  assert.equal(result.status, 401);
+  assert.equal(result.body.error, "invalid_signature");
+  assert.deepEqual(
+    security.events.map((event) => event.type),
+    ["signature_invalid"],
+  );
+});
+
+test("processWebhook records replay attempts for delivery-id and idempotency dedupe", async () => {
+  const idempotencyKeys = new Set<string>();
+  const security = createSecurityRecorder();
+  const service = createGithubWebhookService({
+    secret: SECRET,
+    store: createStoreMock({
+      recordDeliveryIfNew: async (deliveryId) => deliveryId !== "duplicate-delivery",
+      recordIdempotencyKeyIfNew: async (idempotencyKey) => {
+        if (idempotencyKeys.has(idempotencyKey)) return false;
+        idempotencyKeys.add(idempotencyKey);
+        return true;
+      },
+    }),
+    github: createGithubMock(),
+    security: security.monitor,
+  });
+
+  const body = JSON.stringify({
+    ref: "refs/heads/main",
+    after: "head123",
+    repository: { full_name: "acme/repo", default_branch: "main" },
+  });
+  const signature = signBody(body, SECRET);
+
+  const replayDeliveryResult = await service.processWebhook({
+    rawBodyBytes: Buffer.from(body),
+    signature,
+    event: "push",
+    deliveryId: "duplicate-delivery",
+  });
+
+  const firstPass = await service.processWebhook({
+    rawBodyBytes: Buffer.from(body),
+    signature,
+    event: "push",
+    deliveryId: "unique-delivery-1",
+  });
+
+  const replayIdempotencyResult = await service.processWebhook({
+    rawBodyBytes: Buffer.from(body),
+    signature,
+    event: "push",
+    deliveryId: "unique-delivery-2",
+  });
+
+  assert.equal(replayDeliveryResult.status, 200);
+  assert.equal(replayDeliveryResult.body.dedupeReason, "delivery_id");
+  assert.equal(firstPass.status, 200);
+  assert.equal(replayIdempotencyResult.status, 200);
+  assert.equal(replayIdempotencyResult.body.dedupeReason, "idempotency_key");
+  assert.equal(security.events.some((event) => event.type === "replay_delivery"), true);
+  assert.equal(security.events.some((event) => event.type === "replay_idempotency"), true);
+});
+
+test("processWebhook records missing delivery id while still processing", async () => {
+  const security = createSecurityRecorder();
+  const service = createGithubWebhookService({
+    secret: SECRET,
+    store: createStoreMock(),
+    github: createGithubMock(),
+    security: security.monitor,
+  });
+
+  const body = JSON.stringify({
+    ref: "refs/heads/main",
+    after: "head123",
+    repository: { full_name: "acme/repo", default_branch: "main" },
+  });
+
+  const result = await service.processWebhook({
+    rawBodyBytes: Buffer.from(body),
+    signature: signBody(body, SECRET),
+    event: "push",
+    deliveryId: null,
+  });
+
+  assert.equal(result.status, 200);
+  assert.equal(result.body.ok, true);
+  assert.equal(security.events.some((event) => event.type === "signature_verified"), true);
+  assert.equal(security.events.some((event) => event.type === "delivery_id_missing"), true);
+});
+
+test("processWebhook records invalid JSON payload security event", async () => {
+  const security = createSecurityRecorder();
+  const rawBody = "{";
+
+  const service = createGithubWebhookService({
+    secret: SECRET,
+    store: createStoreMock(),
+    github: createGithubMock(),
+    security: security.monitor,
+  });
+
+  const result = await service.processWebhook({
+    rawBodyBytes: Buffer.from(rawBody),
+    signature: signBody(rawBody, SECRET),
+    event: "push",
+    deliveryId: "invalid-json",
+  });
+
+  assert.equal(result.status, 400);
+  assert.equal(result.body.error, "invalid_payload");
+  assert.equal(security.events.some((event) => event.type === "payload_invalid_json"), true);
 });
 
 test("push event syncs index and updates repo metadata", async () => {

@@ -119,6 +119,7 @@ interface GithubWebhookServiceDeps {
   secret: string | undefined;
   store: GithubWebhookStore;
   github: GithubContentClient;
+  security?: GithubWebhookSecurityMonitor;
 }
 
 interface ProcessWebhookInput {
@@ -131,6 +132,28 @@ interface ProcessWebhookInput {
 interface ServiceResponse {
   status: number;
   body: Record<string, unknown>;
+}
+
+export type GithubWebhookSecurityEventType =
+  | "secret_not_configured"
+  | "signature_missing"
+  | "signature_malformed"
+  | "signature_invalid"
+  | "signature_verified"
+  | "delivery_id_missing"
+  | "replay_delivery"
+  | "replay_idempotency"
+  | "payload_invalid_json";
+
+export interface GithubWebhookSecurityEvent {
+  type: GithubWebhookSecurityEventType;
+  event: string;
+  deliveryId: string | null;
+  repoFullName?: string | null;
+}
+
+export interface GithubWebhookSecurityMonitor {
+  record(event: GithubWebhookSecurityEvent): void;
 }
 
 const SUPPORTED_PR_ACTIONS = new Set(["opened", "reopened", "synchronize", "closed"]);
@@ -159,6 +182,10 @@ export function mapChecksState(status: string | null, conclusion: string | null)
 }
 
 export function createGithubWebhookService(deps: GithubWebhookServiceDeps) {
+  function recordSecurityEvent(event: GithubWebhookSecurityEvent): void {
+    deps.security?.record(event);
+  }
+
   function sha256Hex(value: string): string {
     return crypto.createHash("sha256").update(value).digest("hex");
   }
@@ -201,8 +228,13 @@ export function createGithubWebhookService(deps: GithubWebhookServiceDeps) {
     return `${event}:payload:${sha256Hex(rawBody.toString("utf8"))}`;
   }
 
+  function isSignatureFormatValid(signature: string): boolean {
+    return /^sha256=[a-f0-9]{64}$/i.test(signature);
+  }
+
   function verifySignature(payload: Buffer, signature: string): boolean {
     if (!deps.secret) return false;
+    if (!isSignatureFormatValid(signature)) return false;
     const expected = `sha256=${crypto.createHmac("sha256", deps.secret).update(payload).digest("hex")}`;
 
     try {
@@ -379,19 +411,62 @@ export function createGithubWebhookService(deps: GithubWebhookServiceDeps) {
 
   async function processWebhook(input: ProcessWebhookInput): Promise<ServiceResponse> {
     if (!deps.secret) {
+      recordSecurityEvent({
+        type: "secret_not_configured",
+        event: input.event,
+        deliveryId: input.deliveryId,
+      });
       return { status: 500, body: { ok: false, error: "webhook_secret_not_configured" } };
     }
 
     if (!input.signature) {
+      recordSecurityEvent({
+        type: "signature_missing",
+        event: input.event,
+        deliveryId: input.deliveryId,
+      });
       return { status: 401, body: { ok: false, error: "missing_signature" } };
     }
 
-    if (!verifySignature(input.rawBodyBytes, input.signature)) {
+    if (!isSignatureFormatValid(input.signature)) {
+      recordSecurityEvent({
+        type: "signature_malformed",
+        event: input.event,
+        deliveryId: input.deliveryId,
+      });
       return { status: 401, body: { ok: false, error: "invalid_signature" } };
+    }
+
+    if (!verifySignature(input.rawBodyBytes, input.signature)) {
+      recordSecurityEvent({
+        type: "signature_invalid",
+        event: input.event,
+        deliveryId: input.deliveryId,
+      });
+      return { status: 401, body: { ok: false, error: "invalid_signature" } };
+    }
+
+    recordSecurityEvent({
+      type: "signature_verified",
+      event: input.event,
+      deliveryId: input.deliveryId,
+    });
+
+    if (!input.deliveryId) {
+      recordSecurityEvent({
+        type: "delivery_id_missing",
+        event: input.event,
+        deliveryId: input.deliveryId,
+      });
     }
 
     const isNewDelivery = await deps.store.recordDeliveryIfNew(input.deliveryId, input.event);
     if (!isNewDelivery) {
+      recordSecurityEvent({
+        type: "replay_delivery",
+        event: input.event,
+        deliveryId: input.deliveryId,
+      });
       return { status: 200, body: { ok: true, deduped: true, dedupeReason: "delivery_id" } };
     }
 
@@ -399,6 +474,11 @@ export function createGithubWebhookService(deps: GithubWebhookServiceDeps) {
     try {
       payload = JSON.parse(input.rawBodyBytes.toString("utf8")) as unknown;
     } catch {
+      recordSecurityEvent({
+        type: "payload_invalid_json",
+        event: input.event,
+        deliveryId: input.deliveryId,
+      });
       return { status: 400, body: { ok: false, error: "invalid_payload" } };
     }
 
@@ -406,6 +486,12 @@ export function createGithubWebhookService(deps: GithubWebhookServiceDeps) {
     const idempotencyKey = buildIdempotencyKey(input.event, payload, input.rawBodyBytes);
     const isNewIdempotencyKey = await deps.store.recordIdempotencyKeyIfNew(idempotencyKey, input.event, repoFullName);
     if (!isNewIdempotencyKey) {
+      recordSecurityEvent({
+        type: "replay_idempotency",
+        event: input.event,
+        deliveryId: input.deliveryId,
+        repoFullName,
+      });
       return { status: 200, body: { ok: true, deduped: true, dedupeReason: "idempotency_key" } };
     }
 

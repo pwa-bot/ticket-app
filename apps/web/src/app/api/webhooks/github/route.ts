@@ -5,6 +5,7 @@ import { upsertBlob, upsertTicketFromIndexEntry, tryAcquireRepoSyncLock, release
 import { apiError, apiSuccess, readLegacyErrorMessage } from "@/lib/api/response";
 import { getInstallationOctokit } from "@/lib/github-app";
 import { createGithubWebhookService, type GithubWebhookStore } from "@/lib/services/github-webhook-service";
+import { getWebhookSecurityMetricsSnapshot, webhookSecurityMonitor } from "@/lib/services/webhook-security-monitor";
 
 const webhookStore: GithubWebhookStore = {
   async recordDeliveryIfNew(deliveryId, event) {
@@ -161,6 +162,7 @@ const webhookStore: GithubWebhookStore = {
 const webhookService = createGithubWebhookService({
   secret: process.env.GITHUB_WEBHOOK_SECRET,
   store: webhookStore,
+  security: webhookSecurityMonitor,
   github: {
     async getIndexJson({ fullName, defaultBranch, installationId }) {
       const [owner, repo] = fullName.split("/");
@@ -208,5 +210,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
-  return apiSuccess({ service: "github-webhook" });
+  return apiSuccess({
+    service: "github-webhook",
+    security: getWebhookSecurityMetricsSnapshot(),
+  });
 }
