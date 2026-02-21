@@ -1,7 +1,7 @@
 ---
 id: 01KHYK25XKPWS7TG5P4WYH40HK
 title: QA signaling in ticket CLI surfaces and state transitions
-state: backlog
+state: ready
 priority: p1
 labels:
   - qa
