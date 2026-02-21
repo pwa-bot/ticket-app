@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-21T00:57:45.479Z",
+  "generated_at": "2026-02-21T00:57:45.717Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -35,7 +35,7 @@
       "id": "01KHYK265E540VJ255C646CFCQ",
       "short_id": "01KHYK26",
       "title": "QA signaling integration in agent skill and automation pipeline",
-      "state": "ready",
+      "state": "in_progress",
       "priority": "p1",
       "labels": [
         "qa",
