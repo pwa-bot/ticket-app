@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-21T00:47:36.711Z",
+  "generated_at": "2026-02-21T00:47:36.947Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -49,7 +49,7 @@
       "id": "01KHYK25XKPWS7TG5P4WYH40HK",
       "short_id": "01KHYK25",
       "title": "QA signaling in ticket CLI surfaces and state transitions",
-      "state": "ready",
+      "state": "in_progress",
       "priority": "p1",
       "labels": [
         "qa",
