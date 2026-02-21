@@ -2,7 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { INDEX_PATH, TICKETS_DIR, TICKETS_ROOT, PRIORITY_ORDER, STATE_ORDER, type TicketPriority, type TicketState } from "./constants.js";
 import { ERROR_CODE, EXIT_CODE, TicketError } from "./errors.js";
-import { parseTicketDocument } from "./parse.js";
+import { parseTicketDocument, type QaStatus } from "./parse.js";
 import { displayId, now, shortId } from "./ulid.js";
 
 export interface TicketIndexEntry {
@@ -16,6 +16,8 @@ export interface TicketIndexEntry {
   created?: string;
   assignee?: string;
   reviewer?: string;
+  qa_required?: boolean;
+  qa_status?: QaStatus;
   path: string;
 }
 
@@ -113,6 +115,10 @@ export async function generateIndex(cwd: string): Promise<TicketsIndex> {
       created: parsed.frontmatter.created,
       assignee: parsed.frontmatter.assignee,
       reviewer: parsed.frontmatter.reviewer,
+      ...(typeof parsed.frontmatter.qa?.required === "boolean"
+        ? { qa_required: parsed.frontmatter.qa.required }
+        : {}),
+      ...(parsed.frontmatter.qa?.status ? { qa_status: parsed.frontmatter.qa.status } : {}),
       path: `${TICKETS_DIR}/${file}`
     });
   }

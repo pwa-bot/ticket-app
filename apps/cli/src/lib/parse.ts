@@ -2,6 +2,16 @@ import matter from "gray-matter";
 import { PRIORITY_ORDER, STATE_ORDER, type TicketPriority, type TicketState } from "./constants.js";
 import { ERROR_CODE, EXIT_CODE, TicketError } from "./errors.js";
 
+export const QA_STATUS_ORDER = ["pending_impl", "ready_for_qa", "qa_failed", "qa_passed"] as const;
+export type QaStatus = (typeof QA_STATUS_ORDER)[number];
+
+export interface ParsedTicketQa {
+  required?: boolean;
+  status?: QaStatus;
+  status_reason?: string;
+  environment?: string;
+}
+
 export interface ParsedTicketFrontmatter {
   id: string;
   title: string;
@@ -11,6 +21,7 @@ export interface ParsedTicketFrontmatter {
   created?: string;
   assignee?: string;
   reviewer?: string;
+  qa?: ParsedTicketQa;
 }
 
 export interface ParsedTicketDocument {
@@ -24,6 +35,10 @@ function isState(value: string): value is TicketState {
 
 function isPriority(value: string): value is TicketPriority {
   return PRIORITY_ORDER.includes(value as TicketPriority);
+}
+
+function isQaStatus(value: string): value is QaStatus {
+  return QA_STATUS_ORDER.includes(value as QaStatus);
 }
 
 function requireFrontmatterEnvelope(markdown: string, file: string): string {
@@ -61,6 +76,13 @@ function parseCreated(value: unknown): string | undefined {
 
 function hasOwnKey(record: Record<string, unknown>, key: string): boolean {
   return Object.prototype.hasOwnProperty.call(record, key);
+}
+
+function asObject(value: unknown): Record<string, unknown> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+  return value as Record<string, unknown>;
 }
 
 function isValidActor(value: string): boolean {
@@ -170,6 +192,74 @@ export function parseTicketDocument(markdown: string, file: string, expectedId?:
       fieldErrors.push(`${file}: reviewer must match 'human:<slug>' or 'agent:<slug>'`);
     } else {
       frontmatter.reviewer = reviewer;
+    }
+  }
+
+  if (hasOwnKey(parsed.data as Record<string, unknown>, "x_ticket")) {
+    const xTicket = asObject(parsed.data.x_ticket);
+    if (!xTicket) {
+      fieldErrors.push(`${file}: x_ticket must be an object when present`);
+    } else if (hasOwnKey(xTicket, "qa")) {
+      const qaRaw = asObject(xTicket.qa);
+      if (!qaRaw) {
+        fieldErrors.push(`${file}: x_ticket.qa must be an object when present`);
+      } else {
+        const qa: ParsedTicketQa = {};
+
+        if (hasOwnKey(qaRaw, "required")) {
+          if (typeof qaRaw.required !== "boolean") {
+            fieldErrors.push(`${file}: x_ticket.qa.required must be a boolean`);
+          } else {
+            qa.required = qaRaw.required;
+          }
+        }
+
+        if (hasOwnKey(qaRaw, "status")) {
+          const status = typeof qaRaw.status === "string" ? qaRaw.status.trim() : "";
+          if (!status || !isQaStatus(status)) {
+            fieldErrors.push(`${file}: x_ticket.qa.status must be one of ${QA_STATUS_ORDER.join(", ")}`);
+          } else {
+            qa.status = status;
+          }
+        }
+
+        if (hasOwnKey(qaRaw, "status_reason")) {
+          const reason = typeof qaRaw.status_reason === "string" ? qaRaw.status_reason.trim() : "";
+          if (!reason) {
+            fieldErrors.push(`${file}: x_ticket.qa.status_reason must be a non-empty string when present`);
+          } else {
+            qa.status_reason = reason;
+          }
+        }
+
+        if (hasOwnKey(qaRaw, "environment")) {
+          const environment = typeof qaRaw.environment === "string" ? qaRaw.environment.trim() : "";
+          if (!environment) {
+            fieldErrors.push(`${file}: x_ticket.qa.environment must be a non-empty string when present`);
+          } else {
+            qa.environment = environment;
+          }
+        }
+
+        if (qa.required === true) {
+          if (!qa.status) {
+            fieldErrors.push(`${file}: x_ticket.qa.status is required when x_ticket.qa.required=true`);
+          }
+          if (qa.status === "qa_failed" && !qa.status_reason) {
+            fieldErrors.push(`${file}: x_ticket.qa.status_reason is required when x_ticket.qa.status=qa_failed`);
+          }
+          if ((qa.status === "ready_for_qa" || qa.status === "qa_passed") && !qa.environment) {
+            fieldErrors.push(`${file}: x_ticket.qa.environment is required when x_ticket.qa.status=${qa.status}`);
+          }
+          if (frontmatter.state === "done" && qa.status !== "qa_passed") {
+            fieldErrors.push(`${file}: state 'done' requires x_ticket.qa.status=qa_passed when x_ticket.qa.required=true`);
+          }
+        }
+
+        if (Object.keys(qa).length > 0) {
+          frontmatter.qa = qa;
+        }
+      }
     }
   }
 

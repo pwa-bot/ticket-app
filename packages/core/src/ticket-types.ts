@@ -2,6 +2,14 @@ import type { ActorRef, TicketPriority, TicketState } from "./protocol.js";
 
 export type Actor = ActorRef;
 export type Priority = TicketPriority;
+export type QaStatus = "pending_impl" | "ready_for_qa" | "qa_failed" | "qa_passed";
+
+export interface TicketQa {
+  required?: boolean;
+  status?: QaStatus;
+  status_reason?: string;
+  environment?: string;
+}
 
 export interface TicketFrontmatter {
   title: string;
@@ -12,6 +20,7 @@ export interface TicketFrontmatter {
   updated: string;
   assignee?: ActorRef;
   reviewer?: ActorRef;
+  qa?: TicketQa;
 }
 
 export interface Ticket extends TicketFrontmatter {
@@ -30,6 +39,8 @@ export interface TicketIndexEntry {
   path: string;
   assignee?: ActorRef;
   reviewer?: ActorRef;
+  qa_required?: boolean;
+  qa_status?: QaStatus;
   extras?: Record<string, unknown>;
 }
 

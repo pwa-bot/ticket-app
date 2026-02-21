@@ -6,6 +6,7 @@ import { runNew } from "./commands/new.js";
 import { runList } from "./commands/list.js";
 import { runShow } from "./commands/show.js";
 import { runDone, runMove, runStart } from "./commands/move.js";
+import { runQaFail, runQaPass, runQaReady, runQaReset } from "./commands/qa.js";
 import { runAssign, runReviewer } from "./commands/actor.js";
 import { runRebuildIndex } from "./commands/rebuild-index.js";
 import { runEdit } from "./commands/edit.js";
@@ -90,11 +91,12 @@ async function main(): Promise<void> {
     .command("list")
     .description("List tickets from index")
     .option("--state <state>", "Filter by state")
+    .option("--qa-status <status>", "Filter by QA status (pending_impl|ready_for_qa|qa_failed|qa_passed)")
     .option("--label <label>", "Filter by label")
     .option("--format <format>", "Output format: table|kanban", "table")
     .option("--json", "Emit a JSON envelope")
     .option("--ci", "CI mode (accepted for consistency)")
-    .action(async (options: { state?: string; label?: string; format?: string; json?: boolean; ci?: boolean }, command: Command) => {
+    .action(async (options: { state?: string; qaStatus?: string; label?: string; format?: string; json?: boolean; ci?: boolean }, command: Command) => {
       const global = getGlobalOptions(command);
       await runList(process.cwd(), { ...options, json: options.json ?? global.json ?? false });
     });
@@ -136,6 +138,49 @@ async function main(): Promise<void> {
     .option("--ci", "Enable CI mode (exact id matching only)")
     .action(async (id: string, options: { ci?: boolean }) => {
       await runDone(process.cwd(), id, options);
+    });
+
+  const qa = program
+    .command("qa")
+    .description("Manage ticket QA signaling");
+
+  qa
+    .command("ready")
+    .description("Set QA status to ready_for_qa")
+    .argument("<id>", "Ticket id (ULID, display_id, or short_id)")
+    .requiredOption("--env <env>", "QA environment (e.g. staging@sha)")
+    .option("--ci", "Enable CI mode (exact id matching only)")
+    .action(async (id: string, options: { env: string; ci?: boolean }) => {
+      await runQaReady(process.cwd(), id, options);
+    });
+
+  qa
+    .command("fail")
+    .description("Set QA status to qa_failed")
+    .argument("<id>", "Ticket id (ULID, display_id, or short_id)")
+    .requiredOption("--reason <reason>", "Failure reason")
+    .option("--ci", "Enable CI mode (exact id matching only)")
+    .action(async (id: string, options: { reason: string; ci?: boolean }) => {
+      await runQaFail(process.cwd(), id, options);
+    });
+
+  qa
+    .command("pass")
+    .description("Set QA status to qa_passed")
+    .argument("<id>", "Ticket id (ULID, display_id, or short_id)")
+    .requiredOption("--env <env>", "QA environment (e.g. staging@sha)")
+    .option("--ci", "Enable CI mode (exact id matching only)")
+    .action(async (id: string, options: { env: string; ci?: boolean }) => {
+      await runQaPass(process.cwd(), id, options);
+    });
+
+  qa
+    .command("reset")
+    .description("Set QA status back to pending_impl")
+    .argument("<id>", "Ticket id (ULID, display_id, or short_id)")
+    .option("--ci", "Enable CI mode (exact id matching only)")
+    .action(async (id: string, options: { ci?: boolean }) => {
+      await runQaReset(process.cwd(), id, options);
     });
 
   program

@@ -54,6 +54,8 @@ export { summarizePatch } from "./summarize-patch.js";
 export {
   type Actor,
   type Priority,
+  type QaStatus,
+  type TicketQa,
   type TicketFrontmatter,
   type Ticket,
   type TicketIndexEntry,

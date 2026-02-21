@@ -38,6 +38,46 @@ Ticket body
   await fs.writeFile(file, contents, "utf8");
 }
 
+async function writeQaTicket(cwd: string, id: string, title: string, qaStatus: string): Promise<void> {
+  const file = path.join(cwd, ".tickets/tickets", `${id}.md`);
+  const contents = `---
+id: ${id}
+title: ${JSON.stringify(title)}
+state: in_progress
+priority: p1
+labels: [bug]
+x_ticket:
+  qa:
+    required: true
+    status: ${qaStatus}
+    environment: staging
+---
+## QA
+
+### Test Steps
+1. Step
+
+### Expected Results
+- Result
+
+### Risk Notes
+- Risk
+
+### Rollback Notes
+- Rollback
+
+### Observed Results
+- Result
+
+### Environment
+- staging
+
+### Pass/Fail Decision
+- PASS
+`;
+  await fs.writeFile(file, contents, "utf8");
+}
+
 function captureStdout(): { output: string[] } {
   const output: string[] = [];
   vi.spyOn(process.stdout, "write").mockImplementation(((chunk: string | Uint8Array) => {
@@ -66,6 +106,24 @@ describe("json output mode", () => {
     expect(payload.warnings).toEqual([]);
   });
 
+  it("filters list by qa status in json mode", async () => {
+    const cwd = await mkTempRepo();
+    await writeQaTicket(cwd, "01ARZ3NDEKTSV4RRFFQ69G5FAA", "Ready for QA", "ready_for_qa");
+    await writeQaTicket(cwd, "01ARZ3NDEKTSV4RRFFQ69G5FAB", "QA Passed", "qa_passed");
+    await rebuildIndex(cwd);
+
+    const { output } = captureStdout();
+    await runList(cwd, { json: true, qaStatus: "ready_for_qa" });
+
+    const payload = JSON.parse(output.join("").trim()) as {
+      ok: boolean;
+      data: { tickets: Array<{ id: string; qa_status?: string }>; count: number };
+    };
+    expect(payload.ok).toBe(true);
+    expect(payload.data.count).toBe(1);
+    expect(payload.data.tickets[0].qa_status).toBe("ready_for_qa");
+  });
+
   it("prints a JSON envelope for show with body_md", async () => {
     const cwd = await mkTempRepo();
     const id = "01ARZ3NDEKTSV4RRFFQ69G5FAV";
@@ -80,6 +138,7 @@ describe("json output mode", () => {
       data: {
         ticket: { id: string; title: string; state: string; priority: string; labels: string[]; path: string };
         frontmatter: { id: string; title: string; state: string; priority: string; labels: string[] };
+        qa: { checklist_complete: boolean; missing_sections: string[]; latest_decision: string | null };
         body_md: string;
       };
       warnings: unknown[];
@@ -92,6 +151,9 @@ describe("json output mode", () => {
     expect(payload.data.frontmatter.state).toBe("ready");
     expect(payload.data.frontmatter.priority).toBe("p1");
     expect(payload.data.frontmatter.labels).toEqual(["bug"]);
+    expect(payload.data.qa.checklist_complete).toBe(false);
+    expect(payload.data.qa.latest_decision).toBeNull();
+    expect(payload.data.qa.missing_sections).toContain("QA");
     expect(payload.data.body_md.trim()).toBe("Ticket body");
     expect(payload.warnings).toEqual([]);
   });

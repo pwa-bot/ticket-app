@@ -127,6 +127,10 @@ Any extra context, links, screenshots.
 | `assignee` | string | Actor responsible for implementation. Format: `human:<slug>` or `agent:<slug>`. |
 | `reviewer` | string | Actor responsible for PR review. Format: `human:<slug>` or `agent:<slug>`. |
 | `author` | string | Actor who created the ticket. Format: `human:<slug>` or `agent:<slug>`. Can be derived from git blame. |
+| `x_ticket.qa.required` | boolean | Enables QA gate when `true`. |
+| `x_ticket.qa.status` | enum | `pending_impl`, `ready_for_qa`, `qa_failed`, `qa_passed` (required when `x_ticket.qa.required=true`). |
+| `x_ticket.qa.status_reason` | string | Required when `x_ticket.qa.status=qa_failed`. |
+| `x_ticket.qa.environment` | string | Required when `x_ticket.qa.status=ready_for_qa` or `qa_passed`. |
 
 ### 3.4.1 Actor Format
 
@@ -153,6 +157,7 @@ In v1, these are opaque strings. The CLI treats them as labels. Web can filter o
 - `state` and `priority` must be lowercase
 - `id` must match filename stem exactly (case-sensitive)
 - Unknown top-level keys are ignored unless under `x_ticket`
+- When `x_ticket.qa.required=true`, `state: done` is invalid unless `x_ticket.qa.status=qa_passed`
 
 ### 3.7 Invalid Ticket Handling
 
@@ -163,6 +168,9 @@ In v1, these are opaque strings. The CLI treats them as labels. Web can filter o
 
 ```yaml
 x_ticket:
+  qa:
+    required: true
+    status: pending_impl
   source:
     kind: intake
     id: in_01J...
@@ -182,10 +190,11 @@ x_ticket:
 | `relations` | Dependency tracking (`blocks`, `blocked_by`) |
 | `last_run_id` | Agent run trace reference |
 | `enforcement` | Per-ticket policy overrides |
+| `qa` | QA signaling and done-gate metadata |
 
 **Rules:**
-- v1 CLI ignores `x_ticket` entirely
-- v1 Web renders but does not interpret `x_ticket`
+- v1 CLI validates and updates `x_ticket.qa` when present
+- v1 Web may render `x_ticket` without enforcing QA transitions
 - Never store PII (names, emails, screenshots) in ticket files
 - External references use `ticket://` URIs (see §17)
 
@@ -213,6 +222,17 @@ any → blocked
 blocked → ready
 blocked → in_progress
 ```
+
+### QA Signaling Overlay (`x_ticket.qa`)
+
+QA lifecycle is tracked as extension metadata without changing canonical workflow states:
+
+1. Implementation start: `state=in_progress`, `x_ticket.qa.status=pending_impl`
+2. QA handoff: `state=in_progress`, `x_ticket.qa.status=ready_for_qa`, `x_ticket.qa.environment=<env>`
+3. QA fail: `state=in_progress`, `x_ticket.qa.status=qa_failed`, `x_ticket.qa.status_reason=<reason>`
+4. Rework: `state=in_progress`, `x_ticket.qa.status=pending_impl`
+5. QA pass: `state=in_progress`, `x_ticket.qa.status=qa_passed`, `x_ticket.qa.environment=<env>`
+6. Completion gate: `state=done` allowed only after QA pass when `x_ticket.qa.required=true`
 
 ### Terminal State
 
@@ -358,6 +378,8 @@ Rules:
       "labels": ["growth", "onboarding"],
       "assignee": "human:morgan",
       "reviewer": "agent:openclaw",
+      "qa_required": true,
+      "qa_status": "ready_for_qa",
       "path": ".tickets/tickets/01ARZ3NDEKTSV4RRFFQ69G5FAV.md",
       "extras": {
         "source_kind": "intake",
@@ -370,6 +392,7 @@ Rules:
 
 **Field notes:**
 - `assignee`, `reviewer`: Included if set in ticket frontmatter (for web filtering)
+- `qa_required`, `qa_status`: Included when QA extension metadata is set in frontmatter
 - `extras`: Optional object for future extension data (v1 ignores, v2+ can filter/group)
 
 #### Regeneration Triggers
@@ -410,11 +433,15 @@ In `--ci` mode:
 |---------|-------------|
 | `ticket init` | Create `.tickets/` structure, config.yml, template.md, empty index.json |
 | `ticket new "Title" [--priority p1] [--state backlog] [--label x]` | Create ticket with ULID, regenerate index, auto-commit |
-| `ticket list [--state x] [--priority x] [--label x]` | List tickets from index.json |
+| `ticket list [--state x] [--qa-status x] [--priority x] [--label x]` | List tickets from index.json, including QA indicator/filter |
 | `ticket show <id>` | Display ticket details using deterministic id resolution |
 | `ticket move <id> <state>` | Transition state, validate, regenerate index, auto-commit |
 | `ticket start <id>` | Shortcut for `move <id> in_progress` |
-| `ticket done <id>` | Shortcut for `move <id> done` |
+| `ticket done <id>` | Shortcut for `move <id> done` (blocked if QA required and not passed) |
+| `ticket qa ready <id> --env <value>` | Set `x_ticket.qa.status=ready_for_qa` |
+| `ticket qa fail <id> --reason "<reason>"` | Set `x_ticket.qa.status=qa_failed` |
+| `ticket qa pass <id> --env <value>` | Set `x_ticket.qa.status=qa_passed` |
+| `ticket qa reset <id>` | Set `x_ticket.qa.status=pending_impl` |
 | `ticket edit <id>` | Open in $EDITOR, validate on save, regenerate index, auto-commit |
 | `ticket assign <id> <actor>` | Set assignee (e.g., `human:morgan`, `agent:openclaw`) |
 | `ticket reviewer <id> <actor>` | Set reviewer for PR |

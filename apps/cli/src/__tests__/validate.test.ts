@@ -262,6 +262,53 @@ reviewer: 123
     await expect(runValidate(cwd, {})).rejects.toThrow("reviewer must match 'human:<slug>' or 'agent:<slug>'");
   });
 
+  it("fails when qa-required ticket is done without qa_passed", async () => {
+    const cwd = await mkTempRepo();
+    const id = "01ARZ3NDEKTSV4RRFFQ69G5QAE";
+    await writeTicket(
+      cwd,
+      id,
+      `---
+id: ${id}
+title: Done without QA pass
+state: done
+priority: p1
+labels: []
+x_ticket:
+  qa:
+    required: true
+    status: ready_for_qa
+    environment: staging
+---
+`
+    );
+
+    await expect(runValidate(cwd, {})).rejects.toThrow("state 'done' requires x_ticket.qa.status=qa_passed");
+  });
+
+  it("fails when qa-required status is missing required metadata", async () => {
+    const cwd = await mkTempRepo();
+    const id = "01ARZ3NDEKTSV4RRFFQ69G5QAF";
+    await writeTicket(
+      cwd,
+      id,
+      `---
+id: ${id}
+title: QA missing fields
+state: in_progress
+priority: p1
+labels: []
+x_ticket:
+  qa:
+    required: true
+    status: qa_failed
+---
+`
+    );
+
+    await expect(runValidate(cwd, {})).rejects.toThrow("x_ticket.qa.status_reason is required");
+  });
+
   it("defaults to integrity tier (quality checks disabled)", async () => {
     const cwd = await mkTempRepo();
     const id = "01ARZ3NDEKTSV4RRFFQ69G5FAM";

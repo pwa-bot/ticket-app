@@ -122,7 +122,10 @@ Process contract for CLI UX and automation:
 3. Mark QA passed
    - `ticket qa pass <id> --env <value>`
    - Sets `x_ticket.qa.status=qa_passed`
-4. Done gate
+4. Mark rework / reset after failure
+   - `ticket qa reset <id>`
+   - Sets `x_ticket.qa.status=pending_impl`
+5. Done gate
    - `ticket done <id>` MUST fail when `x_ticket.qa.required=true` and status is not `qa_passed`
 
 Surfacing conventions:

@@ -135,6 +135,23 @@ Markdown body content here.
 | `assignee` | string | Actor responsible for work. See §2.5. |
 | `reviewer` | string | Actor responsible for review. See §2.5. |
 
+### 2.4.1 QA Extension Fields (`x_ticket.qa`)
+
+Implementations MAY encode QA signaling in the extension namespace:
+
+```yaml
+x_ticket:
+  qa:
+    required: true
+    status: pending_impl
+```
+
+When `x_ticket.qa.required=true`, the following rules apply:
+- `x_ticket.qa.status` MUST be one of: `pending_impl`, `ready_for_qa`, `qa_failed`, `qa_passed`
+- `x_ticket.qa.status_reason` MUST be present when `status=qa_failed`
+- `x_ticket.qa.environment` MUST be present when `status=ready_for_qa` or `status=qa_passed`
+- `state=done` MUST NOT be used unless `x_ticket.qa.status=qa_passed`
+
 ### 2.5 Actor Format
 
 Actors MUST match the pattern `{type}:{slug}`.
@@ -171,6 +188,9 @@ The `x_ticket` namespace is reserved for extensions.
 
 ```yaml
 x_ticket:
+  qa:
+    required: true
+    status: pending_impl
   custom_field: value
 ```
 
@@ -287,6 +307,8 @@ The index file (`.tickets/index.json`) provides a pre-computed summary of all ti
 |-------|------|-------------|
 | `assignee` | string | Actor assigned (if set) |
 | `reviewer` | string | Reviewer assigned (if set) |
+| `qa_required` | boolean | `x_ticket.qa.required` when present |
+| `qa_status` | string | `x_ticket.qa.status` when present |
 
 Implementations MUST ignore unknown keys in `index.json`. The index is derived and disposable; there is no requirement to preserve unknown fields.
 
@@ -353,6 +375,7 @@ A conforming implementation SHOULD validate tickets against these rules.
 - [ ] `state` is one of: `backlog`, `ready`, `in_progress`, `blocked`, `done`
 - [ ] `priority` is one of: `p0`, `p1`, `p2`, `p3`
 - [ ] `labels` exists and is an array (may be empty)
+- [ ] If `x_ticket.qa.required=true`, enforce QA status conditional requirements and done gate
 
 ### 6.3 Index-Level (Indexed profile only)
 
