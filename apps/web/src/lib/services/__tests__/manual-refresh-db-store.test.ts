@@ -30,6 +30,7 @@ test("createDbManualRefreshStore.insertQueuedJob maps first returning row", asyn
     maxAttempts: 3,
     errorCode: null,
     errorMessage: null,
+    nextAttemptAt: now,
     startedAt: null,
     completedAt: null,
     createdAt: now,
@@ -56,6 +57,7 @@ test("createDbManualRefreshStore.insertQueuedJob maps first returning row", asyn
 
     assert.equal(job.id, "job-1");
     assert.equal(job.status, "queued");
+    assert.equal(job.nextAttemptAt?.toISOString(), now.toISOString());
   } finally {
     db.insert = originalInsert;
   }
@@ -76,6 +78,7 @@ test("createDbManualRefreshStore.claimQueuedJobs claims rows returned from updat
     maxAttempts: 3,
     errorCode: null,
     errorMessage: null,
+    nextAttemptAt: new Date("2026-02-20T12:00:00.000Z"),
     startedAt: null,
     completedAt: null,
     createdAt: new Date("2026-02-20T12:00:00.000Z"),

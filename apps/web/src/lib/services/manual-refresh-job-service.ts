@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, sql } from "drizzle-orm";
 import { db, schema } from "@/db/client";
 import { syncRepo } from "@/db/sync";
 
@@ -17,6 +17,7 @@ export interface RefreshJobRecord {
   errorMessage: string | null;
   startedAt: Date | null;
   completedAt: Date | null;
+  nextAttemptAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -34,9 +35,21 @@ interface SyncResult {
   errorCode?: string;
 }
 
+interface RefreshQuotaSnapshot {
+  userCount: number;
+  repoCount: number;
+  oldestUserCreatedAt: Date | null;
+  oldestRepoCreatedAt: Date | null;
+}
+
 export interface ManualRefreshStore {
   findRepoByFullName(fullName: string): Promise<RefreshRepoRecord | null>;
   findActiveJobForRepo(repoId: string): Promise<RefreshJobRecord | null>;
+  getRefreshQuotaSnapshot(input: {
+    repoId: string;
+    requestedByUserId: string;
+    windowStart: Date;
+  }): Promise<RefreshQuotaSnapshot>;
   insertQueuedJob(input: {
     id: string;
     repoId: string;
@@ -53,7 +66,13 @@ export interface ManualRefreshStore {
   markRepoSyncError(repoId: string, now: Date, errorCode: string, errorMessage: string): Promise<void>;
   markJobSucceeded(jobId: string, now: Date): Promise<void>;
   markJobFailed(jobId: string, now: Date, errorCode: string, errorMessage: string): Promise<void>;
-  requeueJob(jobId: string, now: Date, errorCode: string, errorMessage: string): Promise<void>;
+  requeueJob(input: {
+    jobId: string;
+    now: Date;
+    nextAttemptAt: Date;
+    errorCode: string;
+    errorMessage: string;
+  }): Promise<void>;
   getInstallationToken(installationId: number): Promise<string>;
   runSync(fullName: string, token: string, force: boolean): Promise<SyncResult>;
   findRepoById(repoId: string): Promise<RefreshRepoRecord | null>;
@@ -78,14 +97,110 @@ export interface ProcessRefreshResult {
   requeued: number;
 }
 
+interface RefreshQuotaConfig {
+  userLimit: number;
+  repoLimit: number;
+  windowMs: number;
+}
+
+interface BackoffConfig {
+  baseMs: number;
+  maxMs: number;
+}
+
+interface RetryBackoffResult {
+  delayMs: number;
+  nextAttemptAt: Date;
+}
+
+export class RefreshQuotaExceededError extends Error {
+  readonly scope: "user" | "repo";
+  readonly limit: number;
+  readonly windowMs: number;
+  readonly retryAfterSeconds: number;
+
+  constructor(input: {
+    scope: "user" | "repo";
+    limit: number;
+    windowMs: number;
+    retryAfterSeconds: number;
+    message: string;
+  }) {
+    super(input.message);
+    this.name = "RefreshQuotaExceededError";
+    this.scope = input.scope;
+    this.limit = input.limit;
+    this.windowMs = input.windowMs;
+    this.retryAfterSeconds = input.retryAfterSeconds;
+  }
+}
+
+function computeRetryAfterSeconds(oldestCreatedAt: Date | null, nowTs: Date, windowMs: number): number {
+  if (!oldestCreatedAt) {
+    return Math.ceil(windowMs / 1000);
+  }
+
+  const retryAt = oldestCreatedAt.getTime() + windowMs;
+  return Math.max(1, Math.ceil(Math.max(0, retryAt - nowTs.getTime()) / 1000));
+}
+
+export function computeRetryBackoff(attempts: number, nowTs: Date, backoff: BackoffConfig): RetryBackoffResult {
+  const normalizedAttempts = Math.max(1, attempts);
+  const delayMs = Math.min(backoff.maxMs, backoff.baseMs * 2 ** (normalizedAttempts - 1));
+  return {
+    delayMs,
+    nextAttemptAt: new Date(nowTs.getTime() + delayMs),
+  };
+}
+
 export function createManualRefreshJobService(options: {
   store: ManualRefreshStore;
   now?: () => Date;
   generateId?: () => string;
+  quotas?: Partial<RefreshQuotaConfig>;
+  backoff?: Partial<BackoffConfig>;
 }) {
   const now = options.now ?? (() => new Date());
   const generateId = options.generateId ?? (() => crypto.randomUUID());
+  const quotaConfig: RefreshQuotaConfig = {
+    userLimit: options.quotas?.userLimit ?? 10,
+    repoLimit: options.quotas?.repoLimit ?? 20,
+    windowMs: options.quotas?.windowMs ?? 15 * 60 * 1000,
+  };
+  const backoffConfig: BackoffConfig = {
+    baseMs: options.backoff?.baseMs ?? 15_000,
+    maxMs: options.backoff?.maxMs ?? 10 * 60 * 1000,
+  };
   const { store } = options;
+
+  async function enforceQuotas(repoId: string, requestedByUserId: string, timestamp: Date): Promise<void> {
+    const windowStart = new Date(timestamp.getTime() - quotaConfig.windowMs);
+    const snapshot = await store.getRefreshQuotaSnapshot({
+      repoId,
+      requestedByUserId,
+      windowStart,
+    });
+
+    if (snapshot.userCount >= quotaConfig.userLimit) {
+      throw new RefreshQuotaExceededError({
+        scope: "user",
+        limit: quotaConfig.userLimit,
+        windowMs: quotaConfig.windowMs,
+        retryAfterSeconds: computeRetryAfterSeconds(snapshot.oldestUserCreatedAt, timestamp, quotaConfig.windowMs),
+        message: "User refresh quota exceeded",
+      });
+    }
+
+    if (snapshot.repoCount >= quotaConfig.repoLimit) {
+      throw new RefreshQuotaExceededError({
+        scope: "repo",
+        limit: quotaConfig.repoLimit,
+        windowMs: quotaConfig.windowMs,
+        retryAfterSeconds: computeRetryAfterSeconds(snapshot.oldestRepoCreatedAt, timestamp, quotaConfig.windowMs),
+        message: "Repository refresh quota exceeded",
+      });
+    }
+  }
 
   async function enqueueRefresh(input: EnqueueRefreshInput): Promise<EnqueueRefreshResult> {
     const repo = await store.findRepoByFullName(input.repoFullName);
@@ -99,6 +214,8 @@ export function createManualRefreshJobService(options: {
     }
 
     const timestamp = now();
+    await enforceQuotas(repo.id, input.requestedByUserId, timestamp);
+
     const job = await store.insertQueuedJob({
       id: generateId(),
       repoId: repo.id,
@@ -157,7 +274,14 @@ export function createManualRefreshJobService(options: {
           await store.markRepoSyncError(repo.id, now(), errorCode, errorMessage);
         } else {
           requeued += 1;
-          await store.requeueJob(job.id, now(), errorCode, errorMessage);
+          const retry = computeRetryBackoff(job.attempts, now(), backoffConfig);
+          await store.requeueJob({
+            jobId: job.id,
+            now: now(),
+            nextAttemptAt: retry.nextAttemptAt,
+            errorCode,
+            errorMessage,
+          });
           await store.markRepoSyncError(repo.id, now(), errorCode, errorMessage);
         }
       } catch (error) {
@@ -169,7 +293,14 @@ export function createManualRefreshJobService(options: {
           await store.markRepoSyncError(repo.id, now(), errorCode, errorMessage);
         } else {
           requeued += 1;
-          await store.requeueJob(job.id, now(), errorCode, errorMessage);
+          const retry = computeRetryBackoff(job.attempts, now(), backoffConfig);
+          await store.requeueJob({
+            jobId: job.id,
+            now: now(),
+            nextAttemptAt: retry.nextAttemptAt,
+            errorCode,
+            errorMessage,
+          });
           await store.markRepoSyncError(repo.id, now(), errorCode, errorMessage);
         }
       }
@@ -203,6 +334,7 @@ function mapJob(row: typeof schema.manualRefreshJobs.$inferSelect): RefreshJobRe
     errorMessage: row.errorMessage,
     startedAt: row.startedAt,
     completedAt: row.completedAt,
+    nextAttemptAt: row.nextAttemptAt,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -247,6 +379,40 @@ export function createDbManualRefreshStore(): ManualRefreshStore {
       return row ? mapJob(row) : null;
     },
 
+    async getRefreshQuotaSnapshot({ repoId, requestedByUserId, windowStart }) {
+      const [userRows, repoRows] = await Promise.all([
+        db
+          .select({
+            count: sql<number>`count(*)::int`,
+            oldestCreatedAt: sql<Date | null>`min(${schema.manualRefreshJobs.createdAt})`,
+          })
+          .from(schema.manualRefreshJobs)
+          .where(
+            and(
+              eq(schema.manualRefreshJobs.requestedByUserId, requestedByUserId),
+              gte(schema.manualRefreshJobs.createdAt, windowStart),
+            ),
+          ),
+        db
+          .select({
+            count: sql<number>`count(*)::int`,
+            oldestCreatedAt: sql<Date | null>`min(${schema.manualRefreshJobs.createdAt})`,
+          })
+          .from(schema.manualRefreshJobs)
+          .where(and(eq(schema.manualRefreshJobs.repoId, repoId), gte(schema.manualRefreshJobs.createdAt, windowStart))),
+      ]);
+
+      const userRow = userRows[0];
+      const repoRow = repoRows[0];
+
+      return {
+        userCount: Number(userRow?.count ?? 0),
+        repoCount: Number(repoRow?.count ?? 0),
+        oldestUserCreatedAt: userRow?.oldestCreatedAt ?? null,
+        oldestRepoCreatedAt: repoRow?.oldestCreatedAt ?? null,
+      };
+    },
+
     async insertQueuedJob(input) {
       const rows = (await db
         .insert(schema.manualRefreshJobs)
@@ -259,6 +425,7 @@ export function createDbManualRefreshStore(): ManualRefreshStore {
           status: "queued",
           attempts: 0,
           maxAttempts: input.maxAttempts,
+          nextAttemptAt: input.now,
           createdAt: input.now,
           updatedAt: input.now,
         })
@@ -293,8 +460,11 @@ export function createDbManualRefreshStore(): ManualRefreshStore {
 
     async claimQueuedJobs(limit, nowTs) {
       const queued = await db.query.manualRefreshJobs.findMany({
-        where: eq(schema.manualRefreshJobs.status, "queued"),
-        orderBy: [asc(schema.manualRefreshJobs.createdAt)],
+        where: and(
+          eq(schema.manualRefreshJobs.status, "queued"),
+          sql`${schema.manualRefreshJobs.nextAttemptAt} <= ${nowTs}`,
+        ),
+        orderBy: [asc(schema.manualRefreshJobs.nextAttemptAt), asc(schema.manualRefreshJobs.createdAt)],
         limit,
       });
 
@@ -417,6 +587,7 @@ export function createDbManualRefreshStore(): ManualRefreshStore {
           completedAt: nowTs,
           errorCode: null,
           errorMessage: null,
+          nextAttemptAt: null,
           updatedAt: nowTs,
         })
         .where(eq(schema.manualRefreshJobs.id, jobId));
@@ -430,19 +601,21 @@ export function createDbManualRefreshStore(): ManualRefreshStore {
           completedAt: nowTs,
           errorCode,
           errorMessage,
+          nextAttemptAt: null,
           updatedAt: nowTs,
         })
         .where(eq(schema.manualRefreshJobs.id, jobId));
     },
 
-    async requeueJob(jobId, nowTs, errorCode, errorMessage) {
+    async requeueJob({ jobId, now, nextAttemptAt, errorCode, errorMessage }) {
       await db
         .update(schema.manualRefreshJobs)
         .set({
           status: "queued",
+          nextAttemptAt,
           errorCode,
           errorMessage,
-          updatedAt: nowTs,
+          updatedAt: now,
         })
         .where(eq(schema.manualRefreshJobs.id, jobId));
     },

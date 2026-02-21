@@ -4,7 +4,7 @@ import { db, schema } from "@/db/client";
 import { apiError, apiSuccess } from "@/lib/api/response";
 import { applyMutationGuards } from "@/lib/security/mutation-guard";
 import { requireRepoAccess } from "@/lib/security/repo-access";
-import { getManualRefreshJobService } from "@/lib/services/manual-refresh-job-service";
+import { getManualRefreshJobService, RefreshQuotaExceededError } from "@/lib/services/manual-refresh-job-service";
 
 interface Params {
   params: Promise<{ owner: string; repo: string }>;
@@ -39,11 +39,30 @@ export async function POST(_req: NextRequest, { params }: Params) {
   }
 
   const service = getManualRefreshJobService();
-  const result = await service.enqueueRefresh({
-    repoFullName: fullName,
-    requestedByUserId: session.userId,
-    force: true,
-  });
+  let result;
+  try {
+    result = await service.enqueueRefresh({
+      repoFullName: fullName,
+      requestedByUserId: session.userId,
+      force: true,
+    });
+  } catch (error) {
+    if (error instanceof RefreshQuotaExceededError) {
+      return apiError(error.message, {
+        status: 429,
+        headers: {
+          "Retry-After": String(error.retryAfterSeconds),
+        },
+        details: {
+          scope: error.scope,
+          limit: error.limit,
+          windowMs: error.windowMs,
+          retryAfterSeconds: error.retryAfterSeconds,
+        },
+      });
+    }
+    throw error;
+  }
 
   return apiSuccess(
     {

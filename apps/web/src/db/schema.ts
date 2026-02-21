@@ -371,6 +371,7 @@ export const manualRefreshJobs = pgTable(
     maxAttempts: integer("max_attempts").notNull().default(3),
     errorCode: text("error_code"),
     errorMessage: text("error_message"),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }),
     startedAt: timestamp("started_at", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -379,6 +380,8 @@ export const manualRefreshJobs = pgTable(
   (t) => ({
     repoStatusCreatedIdx: index("manual_refresh_jobs_repo_status_created_idx").on(t.repoId, t.status, t.createdAt),
     statusCreatedIdx: index("manual_refresh_jobs_status_created_idx").on(t.status, t.createdAt),
+    queuedNextAttemptIdx: index("manual_refresh_jobs_queued_next_attempt_idx").on(t.status, t.nextAttemptAt, t.createdAt),
+    userCreatedIdx: index("manual_refresh_jobs_user_created_idx").on(t.requestedByUserId, t.createdAt),
   })
 );
 
