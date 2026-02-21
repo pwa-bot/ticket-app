@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-21T00:47:36.947Z",
+  "generated_at": "2026-02-21T00:57:34.595Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -44,20 +44,6 @@
       ],
       "path": ".tickets/tickets/01KHYK09CZ428DT3D7SFXKW02F.md",
       "display_id": "TK-01KHYK09-2"
-    },
-    {
-      "id": "01KHYK25XKPWS7TG5P4WYH40HK",
-      "short_id": "01KHYK25",
-      "title": "QA signaling in ticket CLI surfaces and state transitions",
-      "state": "in_progress",
-      "priority": "p1",
-      "labels": [
-        "qa",
-        "cli",
-        "workflow"
-      ],
-      "path": ".tickets/tickets/01KHYK25XKPWS7TG5P4WYH40HK.md",
-      "display_id": "TK-01KHYK25-2"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
@@ -937,6 +923,20 @@
       ],
       "path": ".tickets/tickets/01KHYK25NRH89N01K73KR1K1CK.md",
       "display_id": "TK-01KHYK25"
+    },
+    {
+      "id": "01KHYK25XKPWS7TG5P4WYH40HK",
+      "short_id": "01KHYK25",
+      "title": "QA signaling in ticket CLI surfaces and state transitions",
+      "state": "done",
+      "priority": "p1",
+      "labels": [
+        "qa",
+        "cli",
+        "workflow"
+      ],
+      "path": ".tickets/tickets/01KHYK25XKPWS7TG5P4WYH40HK.md",
+      "display_id": "TK-01KHYK25-2"
     },
     {
       "id": "01KHMG86G7ZPTKKE8PWBTVYRYZ",
