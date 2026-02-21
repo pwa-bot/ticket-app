@@ -117,6 +117,7 @@ describe("qa signaling commands", () => {
     expect(parsed.data.x_ticket.qa.status).toBe("pending_impl");
     expect(parsed.data.x_ticket.qa.status_reason).toBeUndefined();
 
+    await runQaReady(cwd, id, { ci: true, env: "staging@def456" });
     await runQaPass(cwd, id, { ci: true, env: "staging@def456" });
     parsed = await readTicket(cwd, id);
     expect(parsed.data.x_ticket.qa.status).toBe("qa_passed");
@@ -159,10 +160,46 @@ describe("qa signaling commands", () => {
     const id = "01ARZ3NDEKTSV4RRFFQ69G5QAD";
     await writeTicket(cwd, id);
     await rebuildIndex(cwd);
+    await runQaReady(cwd, id, { ci: true, env: "staging" });
     await runQaPass(cwd, id, { ci: true, env: "staging" });
 
     await expect(runDone(cwd, id, { ci: true })).resolves.toBeUndefined();
     const parsed = await readTicket(cwd, id);
     expect(parsed.data.state).toBe("done");
+  });
+
+  it("blocks qa fail unless ticket is ready_for_qa", async () => {
+    const cwd = await mkTempRepo();
+    const id = "01ARZ3NDEKTSV4RRFFQ69G5QAE";
+    await writeTicket(cwd, id);
+    await rebuildIndex(cwd);
+
+    await expect(runQaFail(cwd, id, { ci: true, reason: "found a bug" })).rejects.toThrow(
+      "invalid QA transition"
+    );
+  });
+
+  it("blocks qa pass unless ticket is ready_for_qa", async () => {
+    const cwd = await mkTempRepo();
+    const id = "01ARZ3NDEKTSV4RRFFQ69G5QAF";
+    await writeTicket(cwd, id);
+    await rebuildIndex(cwd);
+
+    await expect(runQaPass(cwd, id, { ci: true, env: "staging" })).rejects.toThrow(
+      "invalid QA transition"
+    );
+  });
+
+  it("blocks qa ready after qa_passed until reset", async () => {
+    const cwd = await mkTempRepo();
+    const id = "01ARZ3NDEKTSV4RRFFQ69G5QAG";
+    await writeTicket(cwd, id);
+    await rebuildIndex(cwd);
+    await runQaReady(cwd, id, { ci: true, env: "staging" });
+    await runQaPass(cwd, id, { ci: true, env: "staging" });
+
+    await expect(runQaReady(cwd, id, { ci: true, env: "staging" })).rejects.toThrow(
+      "invalid QA transition"
+    );
   });
 });

@@ -6,7 +6,7 @@ import { autoCommit } from "../lib/git.js";
 import { rebuildIndex } from "../lib/index.js";
 import { readIndex } from "../lib/io.js";
 import { shouldCommit, success } from "../lib/output.js";
-import { parseTicketDocument, renderTicketDocument } from "../lib/parse.js";
+import { parseTicketDocument, renderTicketDocument, type QaStatus } from "../lib/parse.js";
 import { assertQaChecklistPresent, setQaStatus } from "../lib/qa.js";
 import { resolveTicket } from "../lib/resolve.js";
 
@@ -87,6 +87,32 @@ function assertInProgressState(state: string, fileName: string): void {
   );
 }
 
+function formatQaStatus(status: QaStatus | undefined): string {
+  return status ?? "unset";
+}
+
+function assertQaStatusTransition(
+  fileName: string,
+  currentStatus: QaStatus | undefined,
+  nextStatus: QaStatus,
+  allowedCurrent: readonly (QaStatus | undefined)[]
+): void {
+  if (allowedCurrent.includes(currentStatus)) {
+    return;
+  }
+  const allowed = allowedCurrent.map((status) => formatQaStatus(status)).join(", ");
+  throw new TicketError(
+    ERROR_CODE.INVALID_TRANSITION,
+    `${fileName}: invalid QA transition ${formatQaStatus(currentStatus)} -> ${nextStatus} (allowed from: ${allowed})`,
+    EXIT_CODE.INVALID_TRANSITION,
+    {
+      qa_status: currentStatus ?? null,
+      target_qa_status: nextStatus,
+      allowed_from: allowedCurrent.map((status) => status ?? null)
+    }
+  );
+}
+
 export async function runQaReady(cwd: string, id: string, options: QaReadyOptions): Promise<void> {
   const environment = normalizeRequiredString(options.env, "--env");
   await updateQaStatus(
@@ -95,6 +121,7 @@ export async function runQaReady(cwd: string, id: string, options: QaReadyOption
     options,
     (fileName, parsed) => {
       assertInProgressState(parsed.frontmatter.state, fileName);
+      assertQaStatusTransition(fileName, parsed.frontmatter.qa?.status, "ready_for_qa", [undefined, "pending_impl", "qa_failed"]);
       assertQaChecklistPresent(parsed.parsed.content, fileName);
       setQaStatus(parsed.parsed, "ready_for_qa", { required: true, environment });
     },
@@ -111,6 +138,7 @@ export async function runQaFail(cwd: string, id: string, options: QaFailOptions)
     options,
     (fileName, parsed) => {
       assertInProgressState(parsed.frontmatter.state, fileName);
+      assertQaStatusTransition(fileName, parsed.frontmatter.qa?.status, "qa_failed", ["ready_for_qa"]);
       setQaStatus(parsed.parsed, "qa_failed", { required: true, reason });
     },
     "qa -> qa_failed",
@@ -126,6 +154,7 @@ export async function runQaPass(cwd: string, id: string, options: QaPassOptions)
     options,
     (fileName, parsed) => {
       assertInProgressState(parsed.frontmatter.state, fileName);
+      assertQaStatusTransition(fileName, parsed.frontmatter.qa?.status, "qa_passed", ["ready_for_qa"]);
       setQaStatus(parsed.parsed, "qa_passed", { required: true, environment });
     },
     "qa -> qa_passed",
@@ -140,6 +169,7 @@ export async function runQaReset(cwd: string, id: string, options: QaCommandOpti
     options,
     (fileName, parsed) => {
       assertInProgressState(parsed.frontmatter.state, fileName);
+      assertQaStatusTransition(fileName, parsed.frontmatter.qa?.status, "pending_impl", ["ready_for_qa", "qa_failed", "qa_passed"]);
       setQaStatus(parsed.parsed, "pending_impl", { required: true });
     },
     "qa -> pending_impl",

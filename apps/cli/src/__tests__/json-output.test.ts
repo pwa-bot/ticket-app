@@ -40,6 +40,9 @@ Ticket body
 
 async function writeQaTicket(cwd: string, id: string, title: string, qaStatus: string): Promise<void> {
   const file = path.join(cwd, ".tickets/tickets", `${id}.md`);
+  const qaExtra = qaStatus === "qa_failed"
+    ? "    status_reason: regression in checkout\n"
+    : "";
   const contents = `---
 id: ${id}
 title: ${JSON.stringify(title)}
@@ -51,7 +54,7 @@ x_ticket:
     required: true
     status: ${qaStatus}
     environment: staging
----
+${qaExtra}---
 ## QA
 
 ### Test Steps
@@ -124,6 +127,26 @@ describe("json output mode", () => {
     expect(payload.data.tickets[0].qa_status).toBe("ready_for_qa");
   });
 
+  it("filters list by multiple qa statuses and required flag in json mode", async () => {
+    const cwd = await mkTempRepo();
+    await writeQaTicket(cwd, "01ARZ3NDEKTSV4RRFFQ69G5FAC", "Ready for QA", "ready_for_qa");
+    await writeQaTicket(cwd, "01ARZ3NDEKTSV4RRFFQ69G5FAD", "QA Failed", "qa_failed");
+    await writeTicket(cwd, "01ARZ3NDEKTSV4RRFFQ69G5FAE", "No QA");
+    await rebuildIndex(cwd);
+
+    const { output } = captureStdout();
+    await runList(cwd, { json: true, qaStatus: ["ready_for_qa", "qa_failed"], qaRequired: true });
+
+    const payload = JSON.parse(output.join("").trim()) as {
+      ok: boolean;
+      data: { tickets: Array<{ id: string; qa_status?: string; qa_required?: boolean }>; count: number };
+    };
+    expect(payload.ok).toBe(true);
+    expect(payload.data.count).toBe(2);
+    expect(payload.data.tickets.every((ticket) => ticket.qa_required === true)).toBe(true);
+    expect(payload.data.tickets.map((ticket) => ticket.qa_status).sort()).toEqual(["qa_failed", "ready_for_qa"]);
+  });
+
   it("prints a JSON envelope for show with body_md", async () => {
     const cwd = await mkTempRepo();
     const id = "01ARZ3NDEKTSV4RRFFQ69G5FAV";
@@ -138,7 +161,16 @@ describe("json output mode", () => {
       data: {
         ticket: { id: string; title: string; state: string; priority: string; labels: string[]; path: string };
         frontmatter: { id: string; title: string; state: string; priority: string; labels: string[] };
-        qa: { checklist_complete: boolean; missing_sections: string[]; latest_decision: string | null };
+        qa: {
+          required: boolean;
+          status: string | null;
+          signal: string;
+          status_reason: string | null;
+          environment: string | null;
+          checklist_complete: boolean;
+          missing_sections: string[];
+          latest_decision: string | null;
+        };
         body_md: string;
       };
       warnings: unknown[];
@@ -153,9 +185,27 @@ describe("json output mode", () => {
     expect(payload.data.frontmatter.labels).toEqual(["bug"]);
     expect(payload.data.qa.checklist_complete).toBe(false);
     expect(payload.data.qa.latest_decision).toBeNull();
+    expect(payload.data.qa.required).toBe(false);
+    expect(payload.data.qa.signal).toBe("QA_NONE");
     expect(payload.data.qa.missing_sections).toContain("QA");
     expect(payload.data.body_md.trim()).toBe("Ticket body");
     expect(payload.warnings).toEqual([]);
+  });
+
+  it("prints QA summary in show non-json mode", async () => {
+    const cwd = await mkTempRepo();
+    const id = "01ARZ3NDEKTSV4RRFFQ69G5FAF";
+    await writeQaTicket(cwd, id, "Ready for QA", "ready_for_qa");
+    await rebuildIndex(cwd);
+
+    const { output } = captureStdout();
+    await runShow(cwd, id, {});
+
+    const rendered = output.join("");
+    expect(rendered).toContain("QA SUMMARY");
+    expect(rendered).toContain("status: ready_for_qa");
+    expect(rendered).toContain("signal: QA_READY");
+    expect(rendered).toContain("checklist: complete");
   });
 
   it("prints a JSON envelope for validate and avoids console.log", async () => {

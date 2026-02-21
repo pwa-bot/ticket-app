@@ -89,14 +89,21 @@ async function main(): Promise<void> {
 
   program
     .command("list")
-    .description("List tickets from index")
+    .description("List tickets from index with QA signaling")
     .option("--state <state>", "Filter by state")
-    .option("--qa-status <status>", "Filter by QA status (pending_impl|ready_for_qa|qa_failed|qa_passed)")
+    .option(
+      "--qa-status <status>",
+      "Filter by QA status; repeat or comma-separate values (pending_impl|ready_for_qa|qa_failed|qa_passed|none)",
+      collectLabel,
+      []
+    )
+    .option("--qa-required", "Show only tickets with x_ticket.qa.required=true")
+    .option("--qa-optional", "Show only tickets without required QA")
     .option("--label <label>", "Filter by label")
     .option("--format <format>", "Output format: table|kanban", "table")
     .option("--json", "Emit a JSON envelope")
     .option("--ci", "CI mode (accepted for consistency)")
-    .action(async (options: { state?: string; qaStatus?: string; label?: string; format?: string; json?: boolean; ci?: boolean }, command: Command) => {
+    .action(async (options: { state?: string; qaStatus?: string[]; qaRequired?: boolean; qaOptional?: boolean; label?: string; format?: string; json?: boolean; ci?: boolean }, command: Command) => {
       const global = getGlobalOptions(command);
       await runList(process.cwd(), { ...options, json: options.json ?? global.json ?? false });
     });
@@ -142,11 +149,11 @@ async function main(): Promise<void> {
 
   const qa = program
     .command("qa")
-    .description("Manage ticket QA signaling");
+    .description("Manage ticket QA signaling (pending_impl -> ready_for_qa -> qa_failed|qa_passed)");
 
   qa
     .command("ready")
-    .description("Set QA status to ready_for_qa")
+    .description("Mark ticket ready for QA (requires in_progress and completed QA checklist)")
     .argument("<id>", "Ticket id (ULID, display_id, or short_id)")
     .requiredOption("--env <env>", "QA environment (e.g. staging@sha)")
     .option("--ci", "Enable CI mode (exact id matching only)")
@@ -156,7 +163,7 @@ async function main(): Promise<void> {
 
   qa
     .command("fail")
-    .description("Set QA status to qa_failed")
+    .description("Record QA failure (allowed after ready_for_qa)")
     .argument("<id>", "Ticket id (ULID, display_id, or short_id)")
     .requiredOption("--reason <reason>", "Failure reason")
     .option("--ci", "Enable CI mode (exact id matching only)")
@@ -166,7 +173,7 @@ async function main(): Promise<void> {
 
   qa
     .command("pass")
-    .description("Set QA status to qa_passed")
+    .description("Record QA pass (allowed after ready_for_qa)")
     .argument("<id>", "Ticket id (ULID, display_id, or short_id)")
     .requiredOption("--env <env>", "QA environment (e.g. staging@sha)")
     .option("--ci", "Enable CI mode (exact id matching only)")
@@ -176,7 +183,7 @@ async function main(): Promise<void> {
 
   qa
     .command("reset")
-    .description("Set QA status back to pending_impl")
+    .description("Reset QA status to pending_impl for implementation rework")
     .argument("<id>", "Ticket id (ULID, display_id, or short_id)")
     .option("--ci", "Enable CI mode (exact id matching only)")
     .action(async (id: string, options: { ci?: boolean }) => {
