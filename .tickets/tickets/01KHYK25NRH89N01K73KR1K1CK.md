@@ -1,7 +1,7 @@
 ---
 id: 01KHYK25NRH89N01K73KR1K1CK
 title: QA signaling v1 in ticket spec and markdown contract
-state: in_progress
+state: done
 priority: p1
 labels:
   - qa
