@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-21T00:37:50.094Z",
+  "generated_at": "2026-02-21T00:37:50.334Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -63,7 +63,7 @@
       "id": "01KHYK25NRH89N01K73KR1K1CK",
       "short_id": "01KHYK25",
       "title": "QA signaling v1 in ticket spec and markdown contract",
-      "state": "ready",
+      "state": "in_progress",
       "priority": "p1",
       "labels": [
         "qa",
