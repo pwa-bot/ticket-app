@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-21T00:07:35.205Z",
+  "generated_at": "2026-02-21T00:27:58.789Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -86,20 +86,6 @@
       ],
       "path": ".tickets/tickets/01KHYK09CZ428DT3D7SFXKW02F.md",
       "display_id": "TK-01KHYK09-2"
-    },
-    {
-      "id": "01KHYK08XSFYB8G5WTG1PE0TH8",
-      "short_id": "01KHYK08",
-      "title": "P1 Version derived-cache writes and serve last-known-good snapshot",
-      "state": "in_progress",
-      "priority": "p1",
-      "labels": [
-        "reliability",
-        "cache",
-        "data-integrity"
-      ],
-      "path": ".tickets/tickets/01KHYK08XSFYB8G5WTG1PE0TH8.md",
-      "display_id": "TK-01KHYK08-4"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
@@ -937,6 +923,20 @@
       ],
       "path": ".tickets/tickets/01KHYK08P2R9Z43ET50CVTFRGF.md",
       "display_id": "TK-01KHYK08-3"
+    },
+    {
+      "id": "01KHYK08XSFYB8G5WTG1PE0TH8",
+      "short_id": "01KHYK08",
+      "title": "P1 Version derived-cache writes and serve last-known-good snapshot",
+      "state": "done",
+      "priority": "p1",
+      "labels": [
+        "reliability",
+        "cache",
+        "data-integrity"
+      ],
+      "path": ".tickets/tickets/01KHYK08XSFYB8G5WTG1PE0TH8.md",
+      "display_id": "TK-01KHYK08-4"
     },
     {
       "id": "01KHMG86G7ZPTKKE8PWBTVYRYZ",

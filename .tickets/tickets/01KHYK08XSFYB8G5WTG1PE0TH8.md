@@ -1,7 +1,7 @@
 ---
 id: 01KHYK08XSFYB8G5WTG1PE0TH8
 title: P1 Version derived-cache writes and serve last-known-good snapshot
-state: in_progress
+state: done
 priority: p1
 labels:
   - reliability
