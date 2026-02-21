@@ -1,7 +1,7 @@
 ---
 id: 01KHYK095CXZEQB50WYR9ZGSWG
 title: P2 Audit webhook signature verification and replay protection metrics
-state: in_progress
+state: done
 priority: p2
 labels:
   - security

@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "generated_at": "2026-02-21T01:07:39.405Z",
+  "generated_at": "2026-02-21T01:17:27.720Z",
   "workflow": "simple-v1",
   "tickets": [
     {
@@ -16,20 +16,6 @@
       ],
       "path": ".tickets/tickets/01KHYK09CZ428DT3D7SFXKW02F.md",
       "display_id": "TK-01KHYK09-2"
-    },
-    {
-      "id": "01KHYK095CXZEQB50WYR9ZGSWG",
-      "short_id": "01KHYK09",
-      "title": "P2 Audit webhook signature verification and replay protection metrics",
-      "state": "in_progress",
-      "priority": "p2",
-      "labels": [
-        "security",
-        "webhooks",
-        "audit"
-      ],
-      "path": ".tickets/tickets/01KHYK095CXZEQB50WYR9ZGSWG.md",
-      "display_id": "TK-01KHYK09"
     },
     {
       "id": "01KHQ0K0JMG4HGT2A78FDWJ5BX",
@@ -1058,6 +1044,20 @@
       "reviewer": "human:morgan",
       "path": ".tickets/tickets/01KHT40T5MGCWRB1KQYB8M568T.md",
       "display_id": "TK-01KHT40T"
+    },
+    {
+      "id": "01KHYK095CXZEQB50WYR9ZGSWG",
+      "short_id": "01KHYK09",
+      "title": "P2 Audit webhook signature verification and replay protection metrics",
+      "state": "done",
+      "priority": "p2",
+      "labels": [
+        "security",
+        "webhooks",
+        "audit"
+      ],
+      "path": ".tickets/tickets/01KHYK095CXZEQB50WYR9ZGSWG.md",
+      "display_id": "TK-01KHYK09"
     },
     {
       "id": "01KHMG861RFP1FWRX8BXP68D9P",
