@@ -1,7 +1,7 @@
 ---
 id: 01KHYK09CZ428DT3D7SFXKW02F
 title: P2 Cache header audit for user-scoped JSON routes
-state: ready
+state: in_progress
 priority: p2
 labels:
   - security
