@@ -32,6 +32,7 @@ export default function SettingsClient() {
   const [showReconnectCta, setShowReconnectCta] = useState(false);
   const [installUrl, setInstallUrl] = useState<string | null>(null);
   const [connection, setConnection] = useState<ConnectionState | null>(null);
+  const [reconnecting, setReconnecting] = useState(false);
 
   useEffect(() => {
     void loadData();
@@ -89,6 +90,18 @@ export default function SettingsClient() {
       setInstallUrl((iJson.connection?.installUrl as string | undefined) ?? uJson.url ?? null);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function reconnectGithub() {
+    setReconnecting(true);
+    setRefreshError(null);
+    try {
+      await reconnectWithPost(currentPath);
+    } catch (err) {
+      setRefreshError(err instanceof Error ? err.message : "Failed to reconnect GitHub.");
+    } finally {
+      setReconnecting(false);
     }
   }
 
@@ -267,16 +280,16 @@ export default function SettingsClient() {
                   {refreshError}
                   {showReconnectCta && (
                     <div className="mt-2">
-                      <a
-                        href={currentPath}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          void reconnectWithPost(currentPath);
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void reconnectGithub();
                         }}
-                        className="text-sm font-medium text-red-800 underline hover:text-red-900"
+                        disabled={reconnecting}
+                        className="text-sm font-medium text-red-800 underline hover:text-red-900 disabled:opacity-60"
                       >
-                        Reconnect GitHub account →
-                      </a>
+                        {reconnecting ? "Reconnecting…" : "Reconnect GitHub account →"}
+                      </button>
                     </div>
                   )}
                 </div>
