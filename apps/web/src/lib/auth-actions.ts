@@ -37,22 +37,7 @@ export async function logoutWithPost(): Promise<void> {
 export async function reconnectWithPost(returnTo: string): Promise<void> {
   const fallback = `/api/auth/github?force=1&returnTo=${encodeURIComponent(returnTo || "/space")}`;
 
-  const response = await csrfFetch("/api/auth/reconnect", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ returnTo }),
-  });
-  const payload = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    throw new Error(getApiErrorMessage(payload, "Failed to reconnect GitHub"));
-  }
-
-  const redirectTo = readRedirectTo(payload, fallback);
-  if (!redirectTo || redirectTo === window.location.pathname || redirectTo === window.location.href) {
-    window.location.assign(fallback);
-    return;
-  }
-
-  window.location.assign(redirectTo);
+  // Primary reconnect path: force OAuth redirect directly.
+  // This avoids client-side no-op loops when reconnect API responses are cached/proxied oddly.
+  window.location.assign(fallback);
 }
