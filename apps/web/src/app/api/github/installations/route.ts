@@ -2,6 +2,7 @@ import { eq, inArray } from "drizzle-orm";
 import { db, schema } from "@/db/client";
 import { apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
+import { getConnectionState } from "@/lib/connection-state";
 
 /**
  * GET /api/github/installations
@@ -13,13 +14,14 @@ import { requireSession } from "@/lib/auth";
  */
 export async function GET() {
   const { userId } = await requireSession();
+  const connection = await getConnectionState();
 
   const userInstallations = await db.query.userInstallations.findMany({
     where: eq(schema.userInstallations.userId, userId),
   });
 
   if (userInstallations.length === 0) {
-    return apiSuccess({ installations: [] });
+    return apiSuccess({ installations: [], connection });
   }
 
   const installationIds = userInstallations.map((ui) => ui.installationId);
@@ -33,5 +35,6 @@ export async function GET() {
       accountLogin: installation.githubAccountLogin,
       accountType: installation.githubAccountType,
     })),
+    connection,
   });
 }

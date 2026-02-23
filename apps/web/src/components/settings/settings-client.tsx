@@ -12,6 +12,18 @@ type Installation = {
   accountType: "User" | "Organization";
 };
 
+type ConnectionState = {
+  ok: boolean;
+  reasonCode: string | null;
+  status: "ready" | "action_required";
+  authenticated: boolean;
+  oauthConnected: boolean;
+  githubAppInstalled: boolean;
+  installationCount: number;
+  enabledRepoCount: number;
+  installUrl: string;
+};
+
 export default function SettingsClient() {
   const [loading, setLoading] = useState(true);
   const [installations, setInstallations] = useState<Installation[]>([]);
@@ -19,6 +31,7 @@ export default function SettingsClient() {
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [showReconnectCta, setShowReconnectCta] = useState(false);
   const [installUrl, setInstallUrl] = useState<string | null>(null);
+  const [connection, setConnection] = useState<ConnectionState | null>(null);
 
   useEffect(() => {
     void loadData();
@@ -72,7 +85,8 @@ export default function SettingsClient() {
       const uJson = await uRes.json();
 
       setInstallations(iJson.installations ?? []);
-      setInstallUrl(uJson.url ?? null);
+      setConnection((iJson.connection ?? null) as ConnectionState | null);
+      setInstallUrl((iJson.connection?.installUrl as string | undefined) ?? uJson.url ?? null);
     } finally {
       setLoading(false);
     }
@@ -87,7 +101,7 @@ export default function SettingsClient() {
       const json = await res.json();
       console.log("[Settings] Refresh response:", json);
       if (json.ok) {
-        setInstallations(json.installations ?? []);
+        await loadData();
         if (json.installations?.length === 0) {
           const errorInfo = getInstallationErrorMessage(404, json);
           setRefreshError(`${errorInfo.title}: ${errorInfo.message}`);
@@ -126,6 +140,21 @@ export default function SettingsClient() {
           ← Back to boards
         </Link>
       </header>
+
+      {connection && !connection.ok ? (
+        <section className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <p className="font-medium">Connection needs attention</p>
+          <p className="mt-1">
+            {connection.reasonCode === "AUTH_REQUIRED" || connection.reasonCode === "OAUTH_TOKEN_MISSING"
+              ? "Your GitHub login has expired. Reconnect to continue."
+              : connection.reasonCode === "GITHUB_APP_NOT_INSTALLED"
+                ? "Install the Ticket GitHub App to connect repositories."
+                : connection.reasonCode === "REPO_NOT_ENABLED"
+                  ? "App is installed, but no connected repositories are enabled yet."
+                  : "Your GitHub connection state needs a refresh. Try reconnecting."}
+          </p>
+        </section>
+      ) : null}
 
       {/* GitHub App Installation */}
       <section className="rounded-xl border border-slate-200 bg-white">

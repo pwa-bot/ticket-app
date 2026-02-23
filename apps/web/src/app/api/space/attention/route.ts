@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { eq, inArray, and, ne, or, sql, lt } from "drizzle-orm";
 import { db, schema } from "@/db/client";
-import { apiSuccess } from "@/lib/api/response";
+import { apiError, apiSuccess } from "@/lib/api/response";
 import { requireSession } from "@/lib/auth";
 import type { CiStatus, MergeReadiness } from "@/lib/attention";
 import { compareAttentionItems, getReasonCatalog, toReasonDetails, type AttentionReason } from "@/lib/attention-contract";
@@ -472,6 +472,13 @@ export async function GET(req: NextRequest) {
     } satisfies AttentionResponse);
   } catch (error) {
     if (error instanceof Response) {
+      if (error.status === 401 || error.status === 403) {
+        return apiError("Authentication required. Reconnect your GitHub account.", {
+          status: error.status,
+          code: "unknown",
+          details: { action: "reconnect", reasonCode: "auth_required" },
+        });
+      }
       return error;
     }
     console.error("[/api/space/attention] Error:", error);

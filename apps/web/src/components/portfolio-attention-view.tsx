@@ -21,6 +21,8 @@ import { trackWebEvent } from "@/lib/telemetry";
 import { logoutWithPost, reconnectWithPost } from "@/lib/auth-actions";
 import { fetchWithQueryCache, readFreshQueryCache, readQueryCache } from "@/lib/space-query-cache";
 import { SyncHealthBadge } from "@/components/sync-health-badge";
+import { getApiErrorMessage } from "@/lib/api/client";
+import { shouldShowReconnectCta } from "@/lib/auth-errors";
 
 function prKey(repo: string, ticketId: string): string {
   return `${repo}:${ticketId}`;
@@ -153,6 +155,14 @@ function filterItemsBySearch(items: AttentionItem[], search: string): AttentionI
     (item.assignee ?? "").toLowerCase().includes(lowered) ||
     (item.reviewer ?? "").toLowerCase().includes(lowered),
   );
+}
+
+function readActionableFetchError(status: number, payload: unknown, fallback: string): string {
+  if (shouldShowReconnectCta(status)) {
+    return "Your GitHub session expired or permissions changed. Reconnect your account to continue.";
+  }
+
+  return getApiErrorMessage(payload, fallback);
 }
 
 function normalizeJumpId(value: string): { shortId: string; displayId: string; raw: string } | null {
@@ -302,7 +312,8 @@ export default function PortfolioAttentionView() {
             signal: controller.signal,
           });
           if (!res.ok) {
-            throw new Error(`Failed to load sync health (${res.status})`);
+            const payload = await res.json().catch(() => null);
+            throw new Error(readActionableFetchError(res.status, payload, `Failed to load sync health (${res.status})`));
           }
           return (await res.json()) as SpaceSyncHealthResponse;
         },
@@ -316,7 +327,8 @@ export default function PortfolioAttentionView() {
             signal: controller.signal,
           });
           if (!res.ok) {
-            throw new Error(`Failed to load tickets (${res.status})`);
+            const payload = await res.json().catch(() => null);
+            throw new Error(readActionableFetchError(res.status, payload, `Failed to load tickets (${res.status})`));
           }
 
           return (await res.json()) as SpaceIndexResponse;
@@ -336,7 +348,8 @@ export default function PortfolioAttentionView() {
             signal: controller.signal,
           });
           if (!res.ok) {
-            throw new Error(`Failed to load attention data (${res.status})`);
+            const payload = await res.json().catch(() => null);
+            throw new Error(readActionableFetchError(res.status, payload, `Failed to load attention data (${res.status})`));
           }
 
           return (await res.json()) as AttentionResponse;
@@ -850,7 +863,7 @@ export default function PortfolioAttentionView() {
       {error ? (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           <p>{error}</p>
-          {(error.includes("401") || error.includes("403")) ? (
+          {error.toLowerCase().includes("reconnect your account") ? (
             <div className="mt-2">
               <a
                 href={reconnectReturnTo}
