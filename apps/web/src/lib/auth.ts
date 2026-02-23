@@ -115,13 +115,16 @@ export async function createAuthSession(input: {
   const sessionId = createOpaqueToken(32);
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
 
+  const now = new Date();
   await db.insert(schema.authSessions).values({
     id: sessionId,
     userId: input.userId,
     githubLogin: input.githubLogin,
     accessTokenEncrypted: encryptToken(input.accessToken),
     expiresAt,
-    lastSeenAt: new Date(),
+    lastSeenAt: now,
+    createdAt: now,
+    updatedAt: now,
   });
 
   void maybeCleanupExpiredSessions().catch((error) => {
