@@ -21,6 +21,8 @@ type ConnectionState = {
   githubAppInstalled: boolean;
   installationCount: number;
   enabledRepoCount: number;
+  staleInstallationLinkCount?: number;
+  mismatchRepoCount?: number;
   installUrl: string;
 };
 
@@ -37,6 +39,26 @@ export default function SettingsClient() {
   useEffect(() => {
     void loadData();
   }, [])
+
+  function getConnectionReasonMessage(current: ConnectionState): string {
+    switch (current.reasonCode) {
+      case "AUTH_REQUIRED":
+      case "OAUTH_TOKEN_MISSING":
+        return "GitHub OAuth token is missing/expired (reason: " + current.reasonCode + "). Reconnect required.";
+      case "USER_RECORD_MISSING":
+        return "Session is valid, but the user record is missing in the database.";
+      case "GITHUB_APP_NOT_INSTALLED":
+        return "No linked GitHub App installation found for your account.";
+      case "INSTALLATION_STATE_STALE":
+        return `Detected stale installation links (${current.staleInstallationLinkCount ?? 0}). Run diagnostics/repair.`;
+      case "INSTALLATION_REPO_MISMATCH":
+        return `Enabled repos are not linked to valid installations (mismatches: ${current.mismatchRepoCount ?? 0}).`;
+      case "REPO_NOT_ENABLED":
+        return "GitHub App is installed, but no repositories are currently enabled.";
+      default:
+        return `Connection requires attention (reason: ${current.reasonCode ?? "unknown"}).`;
+    }
+  }
 
   function getInstallationErrorMessage(status: number, json: unknown): {
     title: string;
@@ -86,9 +108,10 @@ export default function SettingsClient() {
       const uJson = await uRes.json().catch(() => null);
 
       if (!iRes.ok) {
+        const reasonCode = (iJson as { error?: { details?: { reasonCode?: string } } } | null)?.error?.details?.reasonCode;
         const msg = getApiErrorMessage(iJson, `Failed to load installations (${iRes.status})`);
-        setRefreshError(msg);
-        setShowReconnectCta(iRes.status === 401 || iRes.status === 403);
+        setRefreshError(reasonCode ? `${msg} (reason: ${reasonCode})` : msg);
+        setShowReconnectCta(iRes.status === 401 || iRes.status === 403 || reasonCode === "auth_required");
         setInstallations([]);
         setConnection(null);
         return;
@@ -133,8 +156,9 @@ export default function SettingsClient() {
         }
       } else {
         const errorInfo = getInstallationErrorMessage(res.status, json);
-        setRefreshError(`${errorInfo.title}: ${errorInfo.message}`);
-        setShowReconnectCta(errorInfo.showReconnect);
+        const reasonCode = (json as { error?: { details?: { reasonCode?: string } } })?.error?.details?.reasonCode;
+        setRefreshError(`${errorInfo.title}: ${errorInfo.message}${reasonCode ? ` (reason: ${reasonCode})` : ""}`);
+        setShowReconnectCta(errorInfo.showReconnect || reasonCode === "auth_required");
       }
     } catch (err) {
       console.error("[Settings] Refresh error:", err);
@@ -168,15 +192,7 @@ export default function SettingsClient() {
       {connection && !connection.ok ? (
         <section className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           <p className="font-medium">Connection needs attention</p>
-          <p className="mt-1">
-            {connection.reasonCode === "AUTH_REQUIRED" || connection.reasonCode === "OAUTH_TOKEN_MISSING"
-              ? "Your GitHub login has expired. Reconnect to continue."
-              : connection.reasonCode === "GITHUB_APP_NOT_INSTALLED"
-                ? "Install the Ticket GitHub App to connect repositories."
-                : connection.reasonCode === "REPO_NOT_ENABLED"
-                  ? "App is installed, but no connected repositories are enabled yet."
-                  : "Your GitHub connection state needs a refresh. Try reconnecting."}
-          </p>
+          <p className="mt-1">{getConnectionReasonMessage(connection)}</p>
         </section>
       ) : null}
 

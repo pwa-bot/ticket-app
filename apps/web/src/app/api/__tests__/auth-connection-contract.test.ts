@@ -21,6 +21,7 @@ test("connection-state service defines canonical reason codes", async () => {
 test("settings and reconnect flows consume canonical connection-state service", async () => {
   const installationsRoute = await readSource("app/api/github/installations/route.ts");
   const reconnectRoute = await readSource("app/api/auth/reconnect/route.ts");
+  const settingsClient = await readSource("components/settings/settings-client.tsx");
 
   assert.match(installationsRoute, /getConnectionState\(/, "installations route should include canonical connection state payload");
   assert.match(installationsRoute, /connection,/, "installations route should return connection object");
@@ -28,6 +29,10 @@ test("settings and reconnect flows consume canonical connection-state service", 
   assert.match(reconnectRoute, /status:\s*"reconnect_required"/, "reconnect should return deterministic reconnect status");
   assert.match(reconnectRoute, /reasonCode:/, "reconnect should include actionable reason code");
   assert.match(reconnectRoute, /reasonCode:\s*"oauth_not_configured"/, "reconnect should return explicit oauth_not_configured reason");
+
+  assert.match(settingsClient, /getConnectionReasonMessage\(/, "settings should map explicit connection reason codes");
+  assert.match(settingsClient, /INSTALLATION_STATE_STALE/, "settings should surface stale-installation reason");
+  assert.match(settingsClient, /INSTALLATION_REPO_MISMATCH/, "settings should surface installation-repo mismatch reason");
 });
 
 test("space attention + sync-health expose actionable auth failures", async () => {
