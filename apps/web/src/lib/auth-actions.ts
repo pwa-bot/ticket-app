@@ -35,6 +35,8 @@ export async function logoutWithPost(): Promise<void> {
 }
 
 export async function reconnectWithPost(returnTo: string): Promise<void> {
+  const fallback = `/api/auth/github?force=1&returnTo=${encodeURIComponent(returnTo || "/space")}`;
+
   const response = await csrfFetch("/api/auth/reconnect", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -46,5 +48,11 @@ export async function reconnectWithPost(returnTo: string): Promise<void> {
     throw new Error(getApiErrorMessage(payload, "Failed to reconnect GitHub"));
   }
 
-  window.location.assign(readRedirectTo(payload, "/api/auth/github"));
+  const redirectTo = readRedirectTo(payload, fallback);
+  if (!redirectTo || redirectTo === window.location.pathname || redirectTo === window.location.href) {
+    window.location.assign(fallback);
+    return;
+  }
+
+  window.location.assign(redirectTo);
 }
