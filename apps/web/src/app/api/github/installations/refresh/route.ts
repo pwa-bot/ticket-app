@@ -21,19 +21,19 @@ interface GithubInstallation {
  * personal repos become visible immediately in /api/repos.
  */
 export async function POST(request: NextRequest) {
-  const { userId, token, sessionId } = await requireSession();
-  const guard = applyMutationGuards({
-    request,
-    bucket: "github-installations-refresh",
-    identity: userId,
-    limit: 15,
-    windowMs: 60_000,
-  });
-  if (guard) {
-    return guard;
-  }
-
   try {
+    const { userId, token, sessionId } = await requireSession();
+    const guard = applyMutationGuards({
+      request,
+      bucket: "github-installations-refresh",
+      identity: userId,
+      limit: 15,
+      windowMs: 60_000,
+    });
+    if (guard) {
+      return guard;
+    }
+
     const recentInstallations = await db.query.userInstallations.findMany({
       where: eq(schema.userInstallations.userId, userId),
     });
@@ -146,6 +146,9 @@ export async function POST(request: NextRequest) {
       hydratedRepoCount,
     });
   } catch (error) {
+    if (error instanceof Response) {
+      return error;
+    }
     console.error("[refresh installations] Error:", error);
     return apiError(error instanceof Error ? error.message : "Unknown error", { status: 500 });
   }

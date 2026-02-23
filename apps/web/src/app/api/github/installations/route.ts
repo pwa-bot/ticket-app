@@ -13,28 +13,35 @@ import { getConnectionState } from "@/lib/connection-state";
  * Use POST /api/github/installations/refresh for explicit, rate-safe refresh.
  */
 export async function GET() {
-  const { userId } = await requireSession();
-  const connection = await getConnectionState();
+  try {
+    const { userId } = await requireSession();
+    const connection = await getConnectionState();
 
-  const userInstallations = await db.query.userInstallations.findMany({
-    where: eq(schema.userInstallations.userId, userId),
-  });
+    const userInstallations = await db.query.userInstallations.findMany({
+      where: eq(schema.userInstallations.userId, userId),
+    });
 
-  if (userInstallations.length === 0) {
-    return apiSuccess({ installations: [], connection });
+    if (userInstallations.length === 0) {
+      return apiSuccess({ installations: [], connection });
+    }
+
+    const installationIds = userInstallations.map((ui) => ui.installationId);
+    const installations = await db.query.installations.findMany({
+      where: inArray(schema.installations.id, installationIds),
+    });
+
+    return apiSuccess({
+      installations: installations.map((installation) => ({
+        installationId: installation.githubInstallationId,
+        accountLogin: installation.githubAccountLogin,
+        accountType: installation.githubAccountType,
+      })),
+      connection,
+    });
+  } catch (error) {
+    if (error instanceof Response) {
+      return error;
+    }
+    throw error;
   }
-
-  const installationIds = userInstallations.map((ui) => ui.installationId);
-  const installations = await db.query.installations.findMany({
-    where: inArray(schema.installations.id, installationIds),
-  });
-
-  return apiSuccess({
-    installations: installations.map((installation) => ({
-      installationId: installation.githubInstallationId,
-      accountLogin: installation.githubAccountLogin,
-      accountType: installation.githubAccountType,
-    })),
-    connection,
-  });
 }

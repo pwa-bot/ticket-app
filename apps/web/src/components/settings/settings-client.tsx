@@ -82,12 +82,23 @@ export default function SettingsClient() {
         fetch("/api/github/app/install-url"),
       ]);
 
-      const iJson = await iRes.json();
-      const uJson = await uRes.json();
+      const iJson = await iRes.json().catch(() => null);
+      const uJson = await uRes.json().catch(() => null);
 
-      setInstallations(iJson.installations ?? []);
-      setConnection((iJson.connection ?? null) as ConnectionState | null);
-      setInstallUrl((iJson.connection?.installUrl as string | undefined) ?? uJson.url ?? null);
+      if (!iRes.ok) {
+        const msg = getApiErrorMessage(iJson, `Failed to load installations (${iRes.status})`);
+        setRefreshError(msg);
+        setShowReconnectCta(iRes.status === 401 || iRes.status === 403);
+        setInstallations([]);
+        setConnection(null);
+        return;
+      }
+
+      setRefreshError(null);
+      setShowReconnectCta(false);
+      setInstallations((iJson as { installations?: Installation[] })?.installations ?? []);
+      setConnection(((iJson as { connection?: ConnectionState | null })?.connection ?? null));
+      setInstallUrl((((iJson as { connection?: { installUrl?: string } })?.connection?.installUrl) ?? (uJson as { url?: string } | null)?.url ?? null));
     } finally {
       setLoading(false);
     }
@@ -127,7 +138,7 @@ export default function SettingsClient() {
       }
     } catch (err) {
       console.error("[Settings] Refresh error:", err);
-      setRefreshError("Network error. Please try again.");
+      setRefreshError(err instanceof Error ? err.message : "Network error. Please try again.");
     } finally {
       setRefreshing(false);
     }
