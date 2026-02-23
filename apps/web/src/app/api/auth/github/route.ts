@@ -6,7 +6,6 @@ import {
   cookieNames,
   createAuthSession,
   destroySessionById,
-  encryptToken,
   getSessionIdFromRequest,
   isUnauthorizedResponse,
   requireSession,
@@ -310,25 +309,13 @@ export async function GET(request: Request) {
   const previousSessionId = getSessionIdFromRequest(request);
   const response = NextResponse.redirect(toCanonicalUrl(request, redirectTo));
 
-  try {
-    const { sessionId } = await createAuthSession({
-      userId,
-      githubLogin: githubUser.login,
-      accessToken: tokenData.access_token,
-    });
+  const { sessionId } = await createAuthSession({
+    userId,
+    githubLogin: githubUser.login,
+    accessToken: tokenData.access_token,
+  });
 
-    response.cookies.set(cookieNames.session, sessionId, sessionCookieOptions());
-  } catch (error) {
-    console.error("[auth] Failed to create DB auth session; falling back to legacy cookie session:", error);
-
-    const legacySessionData = JSON.stringify({
-      token: tokenData.access_token,
-      userId,
-      githubLogin: githubUser.login,
-    });
-
-    response.cookies.set(cookieNames.session, encryptToken(legacySessionData), sessionCookieOptions());
-  }
+  response.cookies.set(cookieNames.session, sessionId, sessionCookieOptions());
 
   try {
     await destroySessionById(previousSessionId);
