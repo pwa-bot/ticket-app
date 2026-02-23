@@ -405,11 +405,18 @@ export function createDbManualRefreshStore(): ManualRefreshStore {
       const userRow = userRows[0];
       const repoRow = repoRows[0];
 
+      const toDateOrNull = (value: unknown): Date | null => {
+        if (value == null) return null;
+        if (value instanceof Date) return value;
+        const parsed = new Date(String(value));
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+      };
+
       return {
         userCount: Number(userRow?.count ?? 0),
         repoCount: Number(repoRow?.count ?? 0),
-        oldestUserCreatedAt: userRow?.oldestCreatedAt ?? null,
-        oldestRepoCreatedAt: repoRow?.oldestCreatedAt ?? null,
+        oldestUserCreatedAt: toDateOrNull(userRow?.oldestCreatedAt),
+        oldestRepoCreatedAt: toDateOrNull(repoRow?.oldestCreatedAt),
       };
     },
 
