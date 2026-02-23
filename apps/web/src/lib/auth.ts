@@ -107,6 +107,23 @@ async function maybeCleanupExpiredSessions(): Promise<void> {
   await db.delete(schema.authSessions).where(lte(schema.authSessions.expiresAt, new Date(nowMs)));
 }
 
+export class AuthSessionWriteError extends Error {
+  readonly reasonCode = "AUTH_SESSION_WRITE_FAILED" as const;
+
+  constructor(message = "Failed to persist auth session", options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = "AuthSessionWriteError";
+  }
+}
+
+function logAuthSessionEvent(event: string, context: Record<string, unknown>): void {
+  console.error("[auth/session]", {
+    event,
+    ...context,
+    timestamp: new Date().toISOString(),
+  });
+}
+
 export async function createAuthSession(input: {
   userId: string;
   githubLogin: string;
@@ -116,16 +133,28 @@ export async function createAuthSession(input: {
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
 
   const now = new Date();
-  await db.insert(schema.authSessions).values({
-    id: sessionId,
-    userId: input.userId,
-    githubLogin: input.githubLogin,
-    accessTokenEncrypted: encryptToken(input.accessToken),
-    expiresAt,
-    lastSeenAt: now,
-    createdAt: now,
-    updatedAt: now,
-  });
+
+  try {
+    await db.insert(schema.authSessions).values({
+      id: sessionId,
+      userId: input.userId,
+      githubLogin: input.githubLogin,
+      accessTokenEncrypted: encryptToken(input.accessToken),
+      expiresAt,
+      lastSeenAt: now,
+      createdAt: now,
+      updatedAt: now,
+    });
+  } catch (error) {
+    logAuthSessionEvent("write_failed", {
+      reasonCode: "AUTH_SESSION_WRITE_FAILED",
+      userId: input.userId,
+      githubLogin: input.githubLogin,
+      errorName: error instanceof Error ? error.name : "unknown_error",
+      errorMessage: error instanceof Error ? error.message : "non_error_throwable",
+    });
+    throw new AuthSessionWriteError("Failed to persist auth session", { cause: error });
+  }
 
   void maybeCleanupExpiredSessions().catch((error) => {
     console.error("[auth] Failed to cleanup expired sessions:", error);

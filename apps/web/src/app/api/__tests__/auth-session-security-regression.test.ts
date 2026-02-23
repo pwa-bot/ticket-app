@@ -18,9 +18,12 @@ test("auth sessions are stored server-side and cookies stay opaque", async () =>
 
 test("oauth callback writes opaque session id cookie", async () => {
   const source = await readSource("app/api/auth/github/route.ts");
+  const authSource = await readSource("lib/auth.ts");
 
   assert.match(source, /createAuthSession\(/, "oauth callback should persist server-side auth session");
   assert.match(source, /response\.cookies\.set\(cookieNames\.session, sessionId, sessionCookieOptions\(\)\)/, "session cookie should store opaque session id");
+  assert.match(authSource, /AUTH_SESSION_WRITE_FAILED/, "auth session writer should emit deterministic write failure code");
+  assert.match(source, /reasonCode:\s*error\.reasonCode/, "oauth callback should return explicit reason code for auth session write failures");
   assert.doesNotMatch(source, /encryptToken\(sessionData\)/, "oauth callback should not store access token in cookie");
 });
 

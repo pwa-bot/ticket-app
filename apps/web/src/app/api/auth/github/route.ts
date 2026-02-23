@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { apiError } from "@/lib/api/response";
 import {
   cookieNames,
+  AuthSessionWriteError,
   createAuthSession,
   destroySessionById,
   getSessionIdFromRequest,
@@ -309,11 +310,29 @@ export async function GET(request: Request) {
   const previousSessionId = getSessionIdFromRequest(request);
   const response = NextResponse.redirect(toCanonicalUrl(request, redirectTo));
 
-  const { sessionId } = await createAuthSession({
-    userId,
-    githubLogin: githubUser.login,
-    accessToken: tokenData.access_token,
-  });
+  let sessionId: string;
+  try {
+    ({ sessionId } = await createAuthSession({
+      userId,
+      githubLogin: githubUser.login,
+      accessToken: tokenData.access_token,
+    }));
+  } catch (error) {
+    if (error instanceof AuthSessionWriteError) {
+      console.error("[/api/auth/github]", {
+        event: "oauth_session_write_failed",
+        reasonCode: error.reasonCode,
+        userId,
+        githubLogin: githubUser.login,
+      });
+      return apiError("Failed to create authenticated session", {
+        status: 500,
+        code: "unknown",
+        details: { reasonCode: error.reasonCode },
+      });
+    }
+    throw error;
+  }
 
   response.cookies.set(cookieNames.session, sessionId, sessionCookieOptions());
 

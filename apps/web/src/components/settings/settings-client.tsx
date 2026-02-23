@@ -99,34 +99,38 @@ export default function SettingsClient() {
 
   async function loadData() {
     try {
-      const [iRes, uRes] = await Promise.all([
+      const [iRes, uRes, cRes] = await Promise.all([
         fetch("/api/github/installations"),
         fetch("/api/github/app/install-url"),
+        fetch("/api/connection/state"),
       ]);
 
       const iJson = await iRes.json().catch(() => null);
       const uJson = await uRes.json().catch(() => null);
+      const cJson = await cRes.json().catch(() => null);
+
+      const connectionState = ((cJson as { connection?: ConnectionState | null })?.connection ?? null);
 
       if (!iRes.ok) {
-        const reasonCode = (iJson as { error?: { details?: { reasonCode?: string } } } | null)?.error?.details?.reasonCode;
-        if (iRes.status === 401 || iRes.status === 403 || reasonCode === "auth_required") {
-          await reconnectWithPost(currentPath);
-          return;
-        }
+        const reasonCode =
+          (iJson as { error?: { details?: { reasonCode?: string } } } | null)?.error?.details?.reasonCode
+          ?? connectionState?.reasonCode
+          ?? null;
 
         const msg = getApiErrorMessage(iJson, `Failed to load installations (${iRes.status})`);
         setRefreshError(reasonCode ? `${msg} (reason: ${reasonCode})` : msg);
-        setShowReconnectCta(false);
+        setShowReconnectCta(reasonCode === "AUTH_REQUIRED" || reasonCode === "OAUTH_TOKEN_MISSING" || iRes.status === 401 || iRes.status === 403);
         setInstallations([]);
-        setConnection(null);
+        setConnection(connectionState);
+        setInstallUrl((((connectionState as { installUrl?: string } | null)?.installUrl) ?? (uJson as { url?: string } | null)?.url ?? null));
         return;
       }
 
       setRefreshError(null);
       setShowReconnectCta(false);
       setInstallations((iJson as { installations?: Installation[] })?.installations ?? []);
-      setConnection(((iJson as { connection?: ConnectionState | null })?.connection ?? null));
-      setInstallUrl((((iJson as { connection?: { installUrl?: string } })?.connection?.installUrl) ?? (uJson as { url?: string } | null)?.url ?? null));
+      setConnection(connectionState ?? ((iJson as { connection?: ConnectionState | null })?.connection ?? null));
+      setInstallUrl((((connectionState as { installUrl?: string } | null)?.installUrl) ?? (uJson as { url?: string } | null)?.url ?? null));
     } finally {
       setLoading(false);
     }
