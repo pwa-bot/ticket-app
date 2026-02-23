@@ -109,9 +109,14 @@ export default function SettingsClient() {
 
       if (!iRes.ok) {
         const reasonCode = (iJson as { error?: { details?: { reasonCode?: string } } } | null)?.error?.details?.reasonCode;
+        if (iRes.status === 401 || iRes.status === 403 || reasonCode === "auth_required") {
+          await reconnectWithPost(currentPath);
+          return;
+        }
+
         const msg = getApiErrorMessage(iJson, `Failed to load installations (${iRes.status})`);
         setRefreshError(reasonCode ? `${msg} (reason: ${reasonCode})` : msg);
-        setShowReconnectCta(iRes.status === 401 || iRes.status === 403 || reasonCode === "auth_required");
+        setShowReconnectCta(false);
         setInstallations([]);
         setConnection(null);
         return;
